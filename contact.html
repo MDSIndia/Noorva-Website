@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Contact Noorva</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Manrope:wght@400;500;600&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#ffd791",
+                        "on-error-container": "#ffb2b9",
+                        "inverse-surface": "#fcf8f8",
+                        "on-secondary-fixed-variant": "#591bdc",
+                        "tertiary-container": "#fcc75f",
+                        "on-secondary-fixed": "#3b00a0",
+                        "tertiary-dim": "#edb953",
+                        "on-primary-fixed-variant": "#005e64",
+                        "secondary-dim": "#7e51ff",
+                        "surface-tint": "#8ff5ff",
+                        "inverse-primary": "#006a71",
+                        "primary-fixed-dim": "#00deec",
+                        "secondary-fixed": "#d8caff",
+                        "on-surface-variant": "#adaaaa",
+                        "primary-dim": "#00deec",
+                        "on-tertiary": "#674900",
+                        "surface-container": "#1a1919",
+                        "surface-variant": "#262626",
+                        "on-error": "#490013",
+                        "on-tertiary-fixed-variant": "#684900",
+                        "on-background": "#ffffff",
+                        "surface-container-low": "#131313",
+                        "on-secondary-container": "#e4daff",
+                        "surface-bright": "#2c2c2c",
+                        "surface-container-highest": "#262626",
+                        "primary": "#8ff5ff",
+                        "on-surface": "#ffffff",
+                        "error": "#ff6e84",
+                        "on-tertiary-container": "#5c4100",
+                        "on-primary": "#005d63",
+                        "tertiary-fixed-dim": "#edb953",
+                        "surface-dim": "#0e0e0e",
+                        "secondary": "#a68cff",
+                        "error-container": "#a70138",
+                        "on-primary-container": "#005359",
+                        "surface-container-lowest": "#000000",
+                        "primary-fixed": "#00eefc",
+                        "on-primary-fixed": "#003f43",
+                        "background": "#0e0e0e",
+                        "secondary-container": "#591adc",
+                        "outline": "#777575",
+                        "on-tertiary-fixed": "#442f00",
+                        "on-secondary": "#25006b",
+                        "tertiary-fixed": "#fcc75f",
+                        "secondary-fixed-dim": "#cabaff",
+                        "primary-container": "#00eefc",
+                        "outline-variant": "#494847",
+                        "surface-container-high": "#201f1f",
+                        "surface": "#0e0e0e",
+                        "inverse-on-surface": "#565554",
+                        "error-dim": "#d73357"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Manrope", "sans-serif"]
+                    }
+                }
+            }
+        }
+        function joinWaitlist() {
+            window.location.href = "join.html";
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(26, 25, 25, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .aura {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(166, 140, 255, 0.05) 0%, rgba(143, 245, 255, 0.05) 50%, rgba(14, 14, 14, 0) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased selection:bg-primary/30 selection:text-primary min-h-screen flex flex-col relative overflow-x-hidden">
+<div class="aura"></div>
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#0e0e0e]/60 backdrop-blur-2xl shadow-2xl shadow-indigo-500/10">
+<div class="flex justify-between items-center px-10 py-5 w-full max-w-screen-2xl mx-auto">
+<div class="text-2xl font-black tracking-tighter text-white font-['Space_Grotesk']">
+                <a href="Home.html">Noorva</a>
+            </div>
+<div class="hidden md:flex space-x-8">
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-md" href="features.html">Features</a>
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-md" href="experience.html">Experience</a>
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-md" href="timeline.html">Timeline</a>
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-md" href="vision.html">Vision</a>
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-md" href="companion.html">Companion</a>
+<a class="text-white border-b-2 border-[#5C5CFF] pb-1 hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-md" href="contact.html">Contact</a>
+</div>
+<div class="hidden lg:flex items-center space-x-6">
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300" href="#">Log In</a>
+<button onclick="joinWaitlist()" class="text-[#5C5CFF] bg-white/5 hover:bg-white/10 px-6 py-2 rounded-full font-medium transition-all duration-300 scale-95 active:scale-90 transition-transform">
+                    Join Waitlist
+                </button>
+</div>
+<button class="md:hidden text-white">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</nav>
+<main class="flex-grow pt-32 pb-24 z-10 relative">
+<div class="max-w-7xl mx-auto px-6 lg:px-10">
+<!-- Header Section -->
+<div class="mb-24 md:w-2/3">
+<h1 class="font-headline text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
+                    Initiate <br/>
+<span class="text-transparent bg-clip-text bg-gradient-to-br from-secondary to-primary">Connection.</span>
+</h1>
+<p class="text-on-surface-variant text-lg md:text-xl font-light leading-relaxed max-w-2xl">
+                    Whether you seek to integrate the Ethereal Intelligence into your systems, explore investment horizons, or simply inquire, our channels are open.
+                </p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24">
+<!-- Main Contact Form (Bento Large) -->
+<div class="lg:col-span-7">
+<div class="glass-panel rounded-xl p-8 md:p-12 h-full flex flex-col justify-between">
+<div>
+<h2 class="font-headline text-2xl font-semibold mb-8 tracking-tight">Direct Transmission</h2>
+<form class="space-y-8">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="relative">
+<input class="block w-full bg-transparent border-0 border-b border-outline-variant/30 focus:border-primary focus:ring-0 text-on-surface px-0 py-3 transition-colors peer placeholder-transparent" id="name" placeholder="Name" type="text"/>
+<label class="absolute left-0 top-3 text-on-surface-variant text-sm font-label transition-all peer-focus:-top-4 peer-focus:text-xs peer-focus:text-primary peer-valid:-top-4 peer-valid:text-xs" for="name">Ident</label>
+</div>
+<div class="relative">
+<input class="block w-full bg-transparent border-0 border-b border-outline-variant/30 focus:border-primary focus:ring-0 text-on-surface px-0 py-3 transition-colors peer placeholder-transparent" id="email" placeholder="Email" type="email"/>
+<label class="absolute left-0 top-3 text-on-surface-variant text-sm font-label transition-all peer-focus:-top-4 peer-focus:text-xs peer-focus:text-primary peer-valid:-top-4 peer-valid:text-xs" for="email">Comm Channel (Email)</label>
+</div>
+</div>
+<div class="relative">
+<select class="block w-full bg-transparent border-0 border-b border-outline-variant/30 focus:border-primary focus:ring-0 text-on-surface px-0 py-3 transition-colors appearance-none" id="intent">
+<option class="bg-surface" disabled="" selected="" value="">Select Intent</option>
+<option class="bg-surface" value="business">Business Inquiry</option>
+<option class="bg-surface" value="support">Technical Support</option>
+<option class="bg-surface" value="press">Press &amp; Media</option>
+<option class="bg-surface" value="other">Other</option>
+</select>
+<span class="material-symbols-outlined absolute right-0 top-3 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+<div class="relative">
+<textarea class="block w-full bg-transparent border-0 border-b border-outline-variant/30 focus:border-primary focus:ring-0 text-on-surface px-0 py-3 transition-colors peer placeholder-transparent resize-none" id="message" placeholder="Message" rows="4"></textarea>
+<label class="absolute left-0 top-3 text-on-surface-variant text-sm font-label transition-all peer-focus:-top-4 peer-focus:text-xs peer-focus:text-primary peer-valid:-top-4 peer-valid:text-xs" for="message">Data Payload</label>
+</div>
+<div class="pt-4 flex justify-end">
+<button class="bg-gradient-to-br from-secondary to-primary text-on-primary px-8 py-3 rounded-full font-label font-semibold tracking-wide hover:opacity-90 transition-opacity flex items-center gap-2" type="button">
+                                        Transmit <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+<!-- Secondary Information (Bento Small Grid) -->
+<div class="lg:col-span-5 flex flex-col gap-8">
+<!-- Investor & Business -->
+<div class="bg-surface-container-low rounded-xl p-8 hover:bg-surface-container transition-colors duration-500 cursor-pointer group flex flex-col justify-between h-full">
+<div>
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-tertiary">query_stats</span>
+<h3 class="font-headline text-xl font-medium text-tertiary">Investor Relations</h3>
+</div>
+<p class="text-on-surface-variant font-light text-sm mb-6 leading-relaxed">
+                                Access prospectus details, financial briefings, and partnership frameworks for institutional entities.
+                            </p>
+</div>
+<div class="flex items-center text-on-surface font-label text-sm uppercase tracking-widest group-hover:text-tertiary transition-colors">
+                            Access Portal <span class="material-symbols-outlined ml-2 text-base transition-transform group-hover:translate-x-1">arrow_forward</span>
+</div>
+</div>
+<!-- Careers -->
+<div class="glass-panel rounded-xl p-8 hover:bg-surface-container-highest transition-colors duration-500 cursor-pointer group flex flex-col justify-between h-full">
+<div>
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary">psychology</span>
+<h3 class="font-headline text-xl font-medium">Join the Nexus</h3>
+</div>
+<p class="text-on-surface-variant font-light text-sm mb-6 leading-relaxed">
+                                We are seeking architects, ethicists, and neural engineers to shape the next iteration of the Ethereal Intelligence.
+                            </p>
+</div>
+<div class="flex items-center text-primary font-label text-sm uppercase tracking-widest">
+                            View Opportunities <span class="material-symbols-outlined ml-2 text-base transition-transform group-hover:translate-x-1">arrow_forward</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Global Offices / Social Grid -->
+<div class="mt-24 pt-24 border-t border-white/5">
+<h2 class="font-headline text-3xl font-bold tracking-tight mb-12">Global Presence</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Location 1 -->
+<div class="relative h-64 rounded-xl overflow-hidden group">
+<img class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-700 mix-blend-luminosity" data-alt="aerial night view of futuristic new york city skyline with cool blue glowing lights and deep shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkwl_a34DACOGM0vpKq-JEmbe2ZHxCN_M9SuAWotKyvvY8KSNnhZ8m6SXNkbqTM7ezNBpYO_qraJpQvz8rlr3-4UX2fuPN26MUFqIg97TriRc2GknTocaAMOr8mEkmvfS6annGB9MRTuukGZ4dr9X1Au2XvrqjQzPFzzWkr_vVOz39hXy6MkFoqPDEl1uYNd3rAYOm7EHl9BCvuPWBGBu73JWSfew1O9Gb9EyARc9w4ozmWpwqzmuGEeJPneFwxw60fU6XMrGWSSGv"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest to-transparent"></div>
+<div class="absolute bottom-6 left-6 right-6">
+<h4 class="font-headline text-xl font-medium mb-1">New York</h4>
+<p class="text-on-surface-variant text-sm font-label">Primary HQ &amp; Neural Research</p>
+</div>
+</div>
+<!-- Location 2 -->
+<div class="relative h-64 rounded-xl overflow-hidden group">
+<img class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-700 mix-blend-luminosity" data-alt="tokyo skyline at dusk with subtle neon reflections and deep moody atmospheric perspective" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNa-RUu990pAO7JGZDkygHiJJfy0gJRIpyfzmXW3oJZuupfwSit85RQGnJb8W82Pf2_nd680WNgIlfg68ftfjM2JXXjm93eEP7UXQj6aw4r-WNUtMOwgZ1bBu0A5FkJvNt0FRqxgQvl2EPUvtXpcPvieH3ZxrsdavYiiNr6mD-gohRQI5HE6CPxAjViF0UtLKmfYtD7UNLvjcK7Y0EcbloZvpHXyZXlQAN0TKLCCS_Rk9It7lgPLR3P-rohNbAx4rwNray6nuYotWe"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest to-transparent"></div>
+<div class="absolute bottom-6 left-6 right-6">
+<h4 class="font-headline text-xl font-medium mb-1">Tokyo</h4>
+<p class="text-on-surface-variant text-sm font-label">Hardware Integration Hub</p>
+</div>
+</div>
+<!-- Social / Alt -->
+<div class="h-64 rounded-xl bg-surface-container-low p-8 flex flex-col justify-center items-center text-center">
+<h4 class="font-headline text-lg font-medium mb-4">Digital Coordinates</h4>
+<div class="flex gap-4">
+<a class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">alternate_email</span>
+</a>
+<a class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">share</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-16 px-10 border-t border-white/5 bg-[#0e0e0e] z-10 relative">
+<div class="flex flex-col md:flex-row justify-between items-center gap-8 max-w-7xl mx-auto">
+<div class="text-xl font-bold text-white tracking-widest font-['Space_Grotesk']">
+                Noorva
+            </div>
+<div class="flex flex-wrap justify-center gap-6">
+<a class="text-neutral-500 hover:text-[#5C5CFF] transition-colors duration-200 opacity-80 hover:opacity-100 font-['Space_Grotesk'] font-light tracking-wide text-sm" href="#">Privacy Policy</a>
+<a class="text-neutral-500 hover:text-[#5C5CFF] transition-colors duration-200 opacity-80 hover:opacity-100 font-['Space_Grotesk'] font-light tracking-wide text-sm" href="#">Terms of Service</a>
+<a class="text-neutral-500 hover:text-[#5C5CFF] transition-colors duration-200 opacity-80 hover:opacity-100 font-['Space_Grotesk'] font-light tracking-wide text-sm" href="#">AI Ethics</a>
+<a class="text-neutral-500 hover:text-[#5C5CFF] transition-colors duration-200 opacity-80 hover:opacity-100 font-['Space_Grotesk'] font-light tracking-wide text-sm" href="#">Global Support</a>
+</div>
+<div class="text-neutral-500 font-['Space_Grotesk'] font-light tracking-wide text-sm text-center md:text-right">
+                © 2024 Noorva Intelligence. Defined by The Ethereal Intelligence.
+            </div>
+</div>
+</footer>
+</body></html>

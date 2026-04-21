@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Noorva - Companion</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;family=Manrope:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary": "#ffd791",
+                      "on-error-container": "#ffb2b9",
+                      "inverse-surface": "#fcf8f8",
+                      "on-secondary-fixed-variant": "#591bdc",
+                      "tertiary-container": "#fcc75f",
+                      "on-secondary-fixed": "#3b00a0",
+                      "tertiary-dim": "#edb953",
+                      "on-primary-fixed-variant": "#005e64",
+                      "secondary-dim": "#7e51ff",
+                      "surface-tint": "#8ff5ff",
+                      "inverse-primary": "#006a71",
+                      "primary-fixed-dim": "#00deec",
+                      "secondary-fixed": "#d8caff",
+                      "on-surface-variant": "#adaaaa",
+                      "primary-dim": "#00deec",
+                      "on-tertiary": "#674900",
+                      "surface-container": "#1a1919",
+                      "surface-variant": "#262626",
+                      "on-error": "#490013",
+                      "on-tertiary-fixed-variant": "#684900",
+                      "on-background": "#ffffff",
+                      "surface-container-low": "#131313",
+                      "on-secondary-container": "#e4daff",
+                      "surface-bright": "#2c2c2c",
+                      "surface-container-highest": "#262626",
+                      "primary": "#8ff5ff",
+                      "on-surface": "#ffffff",
+                      "error": "#ff6e84",
+                      "on-tertiary-container": "#5c4100",
+                      "on-primary": "#005d63",
+                      "tertiary-fixed-dim": "#edb953",
+                      "surface-dim": "#0e0e0e",
+                      "secondary": "#a68cff",
+                      "error-container": "#a70138",
+                      "on-primary-container": "#005359",
+                      "surface-container-lowest": "#000000",
+                      "primary-fixed": "#00eefc",
+                      "on-primary-fixed": "#003f43",
+                      "background": "#0e0e0e",
+                      "secondary-container": "#591adc",
+                      "outline": "#777575",
+                      "on-tertiary-fixed": "#442f00",
+                      "on-secondary": "#25006b",
+                      "tertiary-fixed": "#fcc75f",
+                      "secondary-fixed-dim": "#cabaff",
+                      "primary-container": "#00eefc",
+                      "outline-variant": "#494847",
+                      "surface-container-high": "#201f1f",
+                      "surface": "#0e0e0e",
+                      "inverse-on-surface": "#565554",
+                      "error-dim": "#d73357"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {},
+              "fontFamily": {
+                      "headline": [
+                              "Space Grotesk", "sans-serif"
+                      ],
+                      "body": [
+                              "Inter", "sans-serif"
+                      ],
+                      "label": [
+                              "Manrope", "sans-serif"
+                      ]
+              }
+            },
+          },
+        }
+        function joinWaitlist() {
+            window.location.href = "join.html";
+        }
+      </script>
+<style>
+        body { background-color: #0e0e0e; color: #ffffff; }
+        .glass-panel { background: rgba(26, 25, 25, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        .text-gradient { background: linear-gradient(135deg, #d1c6f2 0%, #8ff5ff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .bg-gradient-primary { background: linear-gradient(135deg, #8ff5ff 0%, #00deec 100%); }
+        .aura-glow { position: fixed; bottom: -10vw; right: -10vw; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(166, 140, 255, 0.08) 0%, rgba(143, 245, 255, 0.05) 50%, transparent 100%); border-radius: 50%; pointer-events: none; z-index: 0; }
+        .ghost-border:focus-within { outline: 1px solid rgba(143, 245, 255, 0.2); box-shadow: 0 0 15px rgba(0, 222, 236, 0.1); }
+      </style>
+</head>
+<body class="font-body antialiased selection:bg-primary selection:text-on-primary min-h-screen relative overflow-x-hidden">
+<!-- Ambient Aura -->
+<div class="aura-glow"></div>
+<!-- TopNavBar Component -->
+<nav class="fixed top-0 w-full z-50 bg-[#0e0e0e]/60 backdrop-blur-2xl no-border shadow-[0_1px_0_0_rgba(255,255,255,0.05)] shadow-2xl shadow-indigo-500/10">
+<div class="flex justify-between items-center px-10 py-5 w-full max-w-screen-2xl mx-auto">
+<div class="text-2xl font-black tracking-tighter text-white font-['Space_Grotesk'] font-bold tracking-tight">
+                Noorva
+            </div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-1 rounded-md text-sm" href="features.html">Features</a>
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-1 rounded-md text-sm" href="experience.html">Experience</a>
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-1 rounded-md text-sm" href="timeline.html">Timeline</a>
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-1 rounded-md text-sm" href="vision.html">Vision</a>
+<a class="text-white border-b-2 border-[#5C5CFF] pb-1 px-3 py-1 text-sm font-medium" href="companion.html">Companion</a>
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-1 rounded-md text-sm" href="contact.html">Contact</a>
+</div>
+<div class="flex gap-4 items-center hidden md:flex">
+<button class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-4 py-2 rounded-md text-sm">Log In</button>
+<button onclick="joinWaitlist()" class="bg-gradient-primary text-on-primary px-6 py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity scale-95 active:scale-90 transition-transform">Join Waitlist</button>
+</div>
+<button class="md:hidden text-white">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</nav>
+<main class="relative z-10 pt-32 pb-24">
+<!-- Hero Section -->
+<section class="max-w-screen-2xl mx-auto px-6 md:px-10 mb-32">
+<div class="flex flex-col md:flex-row items-center justify-between gap-16">
+<div class="w-full md:w-1/2 flex flex-col items-start text-left">
+<span class="text-secondary font-label text-sm uppercase tracking-widest mb-4 inline-block bg-secondary/10 px-3 py-1 rounded-md">Always On. Always You.</span>
+<h1 class="font-headline text-5xl md:text-7xl font-bold tracking-tighter mb-6 leading-[1.1]">
+                        Your Life, <br/>
+<span class="text-gradient">Harmonized.</span>
+</h1>
+<p class="text-on-surface-variant text-lg md:text-xl font-light mb-10 max-w-lg leading-relaxed">
+                        Experience a sentient companion that anticipates your needs, adapting seamlessly to your daily rhythm from dawn until dusk.
+                    </p>
+<div class="flex gap-4">
+<button class="bg-gradient-primary text-on-primary px-8 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity">Explore Modes</button>
+<button class="glass-panel text-on-surface px-8 py-3 rounded-lg font-medium flex items-center gap-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-secondary text-sm">play_circle</span>
+                            Watch Sync
+                        </button>
+</div>
+</div>
+<div class="w-full md:w-1/2 relative h-[600px] rounded-2xl overflow-hidden bg-surface-container-low flex items-center justify-center shadow-[0_0_80px_rgba(166,140,255,0.1)]">
+<img alt="Sleek modern smartphone with glowing holographic ethereal UI interface held in hand against dark atmospheric background" class="w-full h-full object-cover opacity-80 mix-blend-screen" data-alt="Sleek modern smartphone with glowing holographic ethereal UI interface held in hand against dark atmospheric background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAurZLM29rG9F81XrbXLwAeBGtrbY4jkJ4IgYbBJ2xnEFLUsXhQcXdSxF2K7A-enp0XKczZYy1WCla19HhUdGSNAagVXFcVs5hZKm6Jqhvhv9xftxmtIZa9FaSzJ0c64bZu62Nr_tX6dBgKoqiqQbUU2lOzbTLCAKWcc9MwLr01_jeo-LLE6i8NuQBv9Ph1msXzNwSFlTo4kBkas-Pb6MsOpj4C8NeUmTCE8gIzeTos8wv9mRtAROUQS9j8V8RFSdu0FMsh673OJ9NR"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+</div>
+</div>
+</section>
+<!-- Scenarios Bento Grid -->
+<section class="max-w-screen-2xl mx-auto px-6 md:px-10 mb-32">
+<div class="mb-16">
+<h2 class="font-headline text-3xl md:text-5xl font-bold tracking-tight mb-4">The Rhythm of Intelligence</h2>
+<p class="text-on-surface-variant text-lg">Adapting to every phase of your day.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[400px]">
+<!-- Morning Productivity (Large) -->
+<div class="col-span-1 md:col-span-2 row-span-1 bg-surface-container-low rounded-2xl p-8 relative overflow-hidden group hover:bg-surface-container transition-colors duration-500">
+<div class="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-500">
+<img alt="Crisp morning sunlight streaming through modern window onto clean desk with coffee and digital planner interface" class="w-full h-full object-cover" data-alt="Crisp morning sunlight streaming through modern window onto clean desk with coffee and digital planner interface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSqr9bOCWbhiDgleB-11V7KZyOibZSBF4uKToOjPW-LGow4VnEupddYdsDdhGaTMEwjECWSCe4re2cCYZ7i-Tjj7L5PudtBz6PMEDpmoNRY361x9JY6X5mpXDRDnNwlw5wPQoWJyLBDBhh9P4kzE0vt0-vHKtCIoE8_dT_rKp05DPOf1ZcJw2we2VRNo516n9BgmIPApSQDQVfuneugA8F-zST7K-WDA8I3EYR7g7tsK3JzXcyL7a1kROU5mgyNWJzmtfIwI9KzIRF"/>
+</div>
+<div class="absolute inset-0 bg-gradient-to-r from-surface-container-low via-surface-container-low/80 to-transparent"></div>
+<div class="relative z-10 h-full flex flex-col justify-between w-2/3">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary">wb_twilight</span>
+<span class="font-label text-tertiary uppercase tracking-wider text-sm font-semibold">Morning Sync</span>
+</div>
+<div>
+<h3 class="font-headline text-3xl font-bold mb-3">Clarity before chaos.</h3>
+<p class="text-on-surface-variant font-light">Your day, pre-organized. Briefings tailored to your exact cognitive load state, eliminating decision fatigue before 8 AM.</p>
+</div>
+</div>
+</div>
+<!-- Work Mode (Tall) -->
+<div class="col-span-1 row-span-2 bg-surface-container-low rounded-2xl p-8 relative overflow-hidden group hover:bg-surface-container transition-colors duration-500">
+<div class="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-500">
+<img alt="Minimalist dark mode workspace setup with focused glowing screen and high tech aesthetic elements" class="w-full h-full object-cover" data-alt="Minimalist dark mode workspace setup with focused glowing screen and high tech aesthetic elements" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSOQ51ssq_w1o7ksPzS1gkPQNEeNXiMq7bbmABjxXvI-F-ie03yYZflbZF_AQyGrxFLxsSOZlTwLeg8aabV9mEKWqnUipd6qF4AlX_55LrDDhhjV7TOJBZIxII1stXJ87QhoeTkvL1pesxcJCbjMq06suv7qdZiPAEbglIHMLqU7yf7oRh00P8UKSBNWuziC9w8eLjUJkigb3yC1l2WscORb5CdOLjYPdeqBBmDa9MIzcAnWCGla6FG7uhjVIF0bh8gojkqu__eaIn"/>
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-surface-container-low/60 to-transparent"></div>
+<div class="relative z-10 h-full flex flex-col justify-end">
+<div class="mb-auto flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">work</span>
+<span class="font-label text-primary uppercase tracking-wider text-sm font-semibold">Deep Work</span>
+</div>
+<div>
+<h3 class="font-headline text-3xl font-bold mb-3">Hyper-focus.</h3>
+<p class="text-on-surface-variant font-light mb-6">Distractions muted. Essential data surfaced. Noorva becomes your silent co-pilot during peak cognitive tasks.</p>
+<!-- Holographic UI Element -->
+<div class="glass-panel p-4 rounded-xl border border-white/5">
+<div class="flex justify-between items-center mb-2">
+<span class="text-xs text-on-surface-variant">Flow State</span>
+<span class="text-xs text-primary font-mono">87%</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-gradient-primary w-[87%] h-full rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Fitness/Learning Split -->
+<div class="col-span-1 md:col-span-2 row-span-1 flex flex-col md:flex-row gap-6">
+<!-- Fitness Mode -->
+<div class="flex-1 bg-surface-container-low rounded-2xl p-8 relative overflow-hidden group hover:bg-surface-container transition-colors duration-500">
+<div class="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+<img alt="Dark atmospheric gym setting with neon accents and high tech wearable device interface floating in foreground" class="w-full h-full object-cover" data-alt="Dark atmospheric gym setting with neon accents and high tech wearable device interface floating in foreground" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9Fh2JqrYexxcABze_hyZbYDoxI7HeIeQTaunQxa_AmDIwAc0mZj0CPD7IqQ4iFvjLgry35D4_WPMLjKJ5Sccp2WCXVG3EDw-SiEMHgd1fmR64oe8Vn_KEYxOsDpLzefKRTljCL9pozQXcninIEKUscKJ5Dnt9W6qfioppHAzJbOmb5smlt4fDmTcPdpZvOVlE1PAS8SmLk8NGOTye2Q8oyNXNE9cgq6x9wNcAK-By5DlYncoqESEre15JUZWv3JC5wrEhAk2WAkj1"/>
+</div>
+<div class="relative z-10 h-full flex flex-col justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error-dim">monitor_heart</span>
+<span class="font-label text-error-dim uppercase tracking-wider text-sm font-semibold">Kinetic Mode</span>
+</div>
+<div>
+<h3 class="font-headline text-2xl font-bold mb-2">Biometric harmony.</h3>
+<p class="text-on-surface-variant font-light text-sm">Real-time pacing and adaptive strain guidance based on your neural recovery rate.</p>
+</div>
+</div>
+</div>
+<!-- Learning Mode -->
+<div class="flex-1 bg-surface-container-low rounded-2xl p-8 relative overflow-hidden group hover:bg-surface-container transition-colors duration-500">
+<div class="absolute right-0 top-0 w-32 h-32 bg-secondary/10 rounded-bl-full blur-3xl"></div>
+<div class="relative z-10 h-full flex flex-col justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary">psychology</span>
+<span class="font-label text-secondary uppercase tracking-wider text-sm font-semibold">Expansion</span>
+</div>
+<div>
+<h3 class="font-headline text-2xl font-bold mb-2">Knowledge, integrated.</h3>
+<p class="text-on-surface-variant font-light text-sm">Curated micro-learning bursts delivered precisely when your mind is most receptive.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Evening Downshift -->
+<section class="max-w-screen-xl mx-auto px-6 md:px-10 mb-24">
+<div class="bg-surface-container-highest rounded-3xl p-1 md:p-12 relative overflow-hidden flex flex-col md:flex-row items-center gap-12">
+<div class="w-full md:w-1/2 p-8 md:p-0 z-10">
+<span class="font-label text-secondary-fixed uppercase tracking-wider text-sm font-semibold mb-4 inline-block">Evening Downshift</span>
+<h2 class="font-headline text-4xl font-bold mb-6">Transition to tranquility.</h2>
+<p class="text-on-surface-variant mb-8 text-lg font-light leading-relaxed">
+                        As the day concludes, Noorva shifts ambient tones, curates acoustic environments, and prepares your cognitive state for restorative rest.
+                    </p>
+<ul class="space-y-4 font-light text-sm">
+<li class="flex items-center gap-3 text-on-surface">
+<span class="material-symbols-outlined text-secondary text-sm">done</span>
+                            Automated environment dimming
+                        </li>
+<li class="flex items-center gap-3 text-on-surface">
+<span class="material-symbols-outlined text-secondary text-sm">done</span>
+                            Cognitive offloading prompts
+                        </li>
+<li class="flex items-center gap-3 text-on-surface">
+<span class="material-symbols-outlined text-secondary text-sm">done</span>
+                            Sleep architecture planning
+                        </li>
+</ul>
+</div>
+<div class="w-full md:w-1/2 relative h-[400px] rounded-2xl overflow-hidden glass-panel border border-white/5 flex items-center justify-center">
+<div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-secondary/20 via-surface/50 to-surface"></div>
+<!-- Sleep UI Mockup -->
+<div class="relative z-10 w-64 bg-surface/80 backdrop-blur-md rounded-3xl border border-white/10 p-6 shadow-2xl flex flex-col items-center">
+<div class="w-24 h-24 rounded-full border-4 border-secondary/30 flex items-center justify-center mb-6 relative">
+<div class="absolute inset-0 border-4 border-secondary rounded-full border-t-transparent animate-pulse"></div>
+<span class="font-headline text-2xl font-bold text-secondary">Zzz</span>
+</div>
+<h4 class="font-medium text-lg mb-1">Restorative Mode</h4>
+<p class="text-xs text-on-surface-variant mb-6">Monitoring sleep cycles</p>
+<div class="w-full bg-surface-container h-1 rounded-full overflow-hidden mb-2">
+<div class="bg-secondary w-1/3 h-full rounded-full opacity-50"></div>
+</div>
+<div class="w-full flex justify-between text-[10px] text-on-surface-variant font-mono">
+<span>Deep</span>
+<span>REM</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Component -->
+<footer class="bg-[#0e0e0e] w-full py-16 px-10 border-t border-white/5 tonal-shift-bg-surface-container flat-no-shadows">
+<div class="flex flex-col md:flex-row justify-between items-center gap-8 max-w-7xl mx-auto">
+<div class="text-xl font-bold text-white tracking-widest font-['Space_Grotesk'] font-light tracking-wide opacity-80 hover:opacity-100 transition-opacity">
+                NOORVA
+            </div>
+<div class="flex flex-wrap justify-center gap-6 md:gap-8">
+<a class="text-neutral-500 font-['Space_Grotesk'] font-light tracking-wide text-sm hover:text-[#5C5CFF] transition-colors duration-200" href="#">Privacy Policy</a>
+<a class="text-neutral-500 font-['Space_Grotesk'] font-light tracking-wide text-sm hover:text-[#5C5CFF] transition-colors duration-200" href="#">Terms of Service</a>
+<a class="text-neutral-500 font-['Space_Grotesk'] font-light tracking-wide text-sm hover:text-[#5C5CFF] transition-colors duration-200" href="#">AI Ethics</a>
+<a class="text-neutral-500 font-['Space_Grotesk'] font-light tracking-wide text-sm hover:text-[#5C5CFF] transition-colors duration-200" href="#">Global Support</a>
+</div>
+<div class="text-neutral-500 font-['Space_Grotesk'] font-light tracking-wide text-xs text-center md:text-right">
+                © 2024 Noorva Intelligence. Defined by The Ethereal Intelligence.
+            </div>
+</div>
+</footer>
+</body></html>
