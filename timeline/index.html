@@ -108,6 +108,8 @@
             pointer-events: none;
             z-index: -1;
         }
+            /* Responsive helpers */
+            img, picture, svg { max-width: 100%; height: auto; display: block; }
         .text-gradient-primary {
             background: linear-gradient(135deg, #a68cff 0%, #8ff5ff 100%);
             -webkit-background-clip: text;
@@ -121,16 +123,33 @@
 <div class="aura-glow"></div>
 <!-- TopNavBar -->
 <nav class="fixed top-0 w-full z-50 bg-[#0e0e0e]/60 backdrop-blur-2xl shadow-[0_1px_0_0_rgba(255,255,255,0.05)] shadow-2xl shadow-indigo-500/10 transition-transform duration-300">
-<div class="flex justify-between items-center px-10 py-5 w-full max-w-screen-2xl mx-auto">
-<div class="text-2xl font-black tracking-tighter text-white font-headline"><a href="../">Noorva</a></div>
-<div class="hidden md:flex items-center gap-8 font-['Space_Grotesk']">
-<a class="text-neutral-400 font-medium font-['Space_Grotesk'] tracking-tight hover:text-white hover:bg-white/5 transition-all duration-300 scale-95 active:scale-90 px-3 py-2 rounded-lg" href="../features/">Features</a>
-<a class="text-neutral-400 font-medium font-['Space_Grotesk'] tracking-tight hover:text-white hover:bg-white/5 transition-all duration-300 scale-95 active:scale-90 px-3 py-2 rounded-lg" href="../experience/">Experience</a>
-<a class="text-white border-b-2 border-[#5C5CFF] pb-1 hover:text-white hover:bg-white/5 transition-all duration-300 px-3 pt-2" href="../timeline/">Timeline</a>
-<a class="text-neutral-400 font-medium font-['Space_Grotesk'] tracking-tight hover:text-white hover:bg-white/5 transition-all duration-300 scale-95 active:scale-90 px-3 py-2 rounded-lg" href="../vision/">Vision</a>
-<a class="text-neutral-400 font-medium font-['Space_Grotesk'] tracking-tight hover:text-white hover:bg-white/5 transition-all duration-300 scale-95 active:scale-90 px-3 py-2 rounded-lg" href="../companion/">Companion</a>
-<a class="text-neutral-400 font-medium font-['Space_Grotesk'] tracking-tight hover:text-white hover:bg-white/5 transition-all duration-300 scale-95 active:scale-90 px-3 py-2 rounded-lg" href="../contact/">About Us</a>
-</div>
+<div class="flex justify-between items-center px-6 md:px-10 py-5 w-full max-w-screen-2xl mx-auto">
+        <div class="text-2xl font-black tracking-tighter text-white font-['Space_Grotesk']">
+            <a href="../">Noorva</a>
+        </div>
+        <div class="hidden md:flex items-center gap-8 font-['Space_Grotesk']">
+            <a class="text-neutral-400 font-medium tracking-tight hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-lg text-sm" href="../features/">Features</a>
+            <a class="text-neutral-400 font-medium tracking-tight hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-lg text-sm" href="../experience/">Experience</a>
+            <a class="text-neutral-400 font-medium tracking-tight hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-lg text-sm" href="../timeline/">Timeline</a>
+            <a class="text-neutral-400 font-medium tracking-tight hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-lg text-sm" href="../vision/">Vision</a>
+            <a class="text-neutral-400 font-medium tracking-tight hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-lg text-sm" href="../companion/">Companion</a>
+            <a class="text-neutral-400 font-medium tracking-tight hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-lg text-sm" href="../contact/">About Us</a>
+        </div>
+        <button id="mobile-menu-button" class="md:hidden text-white p-2">
+            <span class="material-symbols-outlined">menu</span>
+        </button>
+    </div>
+    <div id="mobile-menu" class="md:hidden hidden bg-[#0e0e0e]/90 backdrop-blur py-4">
+        <div class="flex flex-col px-6 gap-3">
+            <a class="text-neutral-300 py-2" href="../features/">Features</a>
+            <a class="text-neutral-300 py-2" href="../experience/">Experience</a>
+            <a class="text-neutral-300 py-2" href="../timeline/">Timeline</a>
+            <a class="text-neutral-300 py-2" href="../vision/">Vision</a>
+            <a class="text-neutral-300 py-2" href="../companion/">Companion</a>
+            <a class="text-neutral-300 py-2" href="../contact/">About Us</a>
+        </div>
+    </div>
+    <script>document.addEventListener('DOMContentLoaded',function(){const b=document.getElementById('mobile-menu-button');const m=document.getElementById('mobile-menu');if(b&&m)b.addEventListener('click',function(){m.classList.toggle('hidden');});});</script>
 </div>
 </nav>
 <!-- Main Canvas -->
