@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>About Noorva</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Manrope:wght@400;500;600&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#ffd791",
+                        "on-error-container": "#ffb2b9",
+                        "inverse-surface": "#fcf8f8",
+                        "on-secondary-fixed-variant": "#591bdc",
+                        "tertiary-container": "#fcc75f",
+                        "on-secondary-fixed": "#3b00a0",
+                        "tertiary-dim": "#edb953",
+                        "on-primary-fixed-variant": "#005e64",
+                        "secondary-dim": "#7e51ff",
+                        "surface-tint": "#8ff5ff",
+                        "inverse-primary": "#006a71",
+                        "primary-fixed-dim": "#00deec",
+                        "secondary-fixed": "#d8caff",
+                        "on-surface-variant": "#adaaaa",
+                        "primary-dim": "#00deec",
+                        "on-tertiary": "#674900",
+                        "surface-container": "#1a1919",
+                        "surface-variant": "#262626",
+                        "on-error": "#490013",
+                        "on-tertiary-fixed-variant": "#684900",
+                        "on-background": "#ffffff",
+                        "surface-container-low": "#131313",
+                        "on-secondary-container": "#e4daff",
+                        "surface-bright": "#2c2c2c",
+                        "surface-container-highest": "#262626",
+                        "primary": "#8ff5ff",
+                        "on-surface": "#ffffff",
+                        "error": "#ff6e84",
+                        "on-tertiary-container": "#5c4100",
+                        "on-primary": "#005d63",
+                        "tertiary-fixed-dim": "#edb953",
+                        "surface-dim": "#0e0e0e",
+                        "secondary": "#a68cff",
+                        "error-container": "#a70138",
+                        "on-primary-container": "#005359",
+                        "surface-container-lowest": "#000000",
+                        "primary-fixed": "#00eefc",
+                        "on-primary-fixed": "#003f43",
+                        "background": "#0e0e0e",
+                        "secondary-container": "#591adc",
+                        "outline": "#777575",
+                        "on-tertiary-fixed": "#442f00",
+                        "on-secondary": "#25006b",
+                        "tertiary-fixed": "#fcc75f",
+                        "secondary-fixed-dim": "#cabaff",
+                        "primary-container": "#00eefc",
+                        "outline-variant": "#494847",
+                        "surface-container-high": "#201f1f",
+                        "surface": "#0e0e0e",
+                        "inverse-on-surface": "#565554",
+                        "error-dim": "#d73357"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Manrope", "sans-serif"]
+                    }
+                }
+            }
+        }
+        function joinWaitlist() {
+            window.location.href = "../join/";
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(26, 25, 25, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .aura {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(166, 140, 255, 0.05) 0%, rgba(143, 245, 255, 0.05) 50%, rgba(14, 14, 14, 0) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased selection:bg-primary/30 selection:text-primary min-h-screen flex flex-col relative overflow-x-hidden">
+<div class="aura"></div>
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#0e0e0e]/60 backdrop-blur-2xl shadow-2xl shadow-indigo-500/10">
+<div class="flex justify-between items-center px-10 py-5 w-full max-w-screen-2xl mx-auto">
+<div class="text-2xl font-black tracking-tighter text-white font-['Space_Grotesk']">
+                <a href="../">Noorva</a>
+            </div>
+<div class="hidden md:flex space-x-8">
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-md" href="../features/">Features</a>
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-md" href="../experience/">Experience</a>
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-md" href="../timeline/">Timeline</a>
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-md" href="../vision/">Vision</a>
+<a class="text-neutral-400 font-medium hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-md" href="../companion/">Companion</a>
+<a class="text-white border-b-2 border-[#5C5CFF] pb-1 hover:text-white hover:bg-white/5 transition-all duration-300 px-3 py-2 rounded-md" href="../contact/">About Us</a>
+</div>
+<button class="md:hidden text-white">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</nav>
+<main class="flex-grow pt-32 pb-24 z-10 relative">
+<div class="max-w-7xl mx-auto px-6 lg:px-10">
+<section class="mb-24">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+<div class="lg:col-span-7">
+<p class="text-sm uppercase tracking-[0.35em] text-on-surface-variant font-label mb-6">About Noorva</p>
+<h1 class="font-headline text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
+                    Building the calm layer between <span class="text-transparent bg-clip-text bg-gradient-to-br from-secondary to-primary">human intent and digital complexity.</span>
+</h1>
+<p class="text-on-surface-variant text-lg md:text-xl font-light leading-relaxed max-w-3xl">
+                    Noorva AI is envisioned as an ambient intelligence that helps people navigate work, memory, decisions, and focus with more clarity. This website introduces that vision through product thinking, interface direction, and the principles shaping the experience.
+                </p>
+</div>
+<div class="lg:col-span-5">
+<div class="glass-panel rounded-2xl p-8 md:p-10 border border-white/10">
+<p class="text-sm uppercase tracking-[0.3em] text-primary font-label mb-5">Overview</p>
+<div class="space-y-5 text-on-surface-variant font-light leading-relaxed">
+<p>
+                            Noorva is not positioned here as another productivity dashboard. The story across the site is about an AI companion that feels composed, private, intentional, and deeply integrated into everyday digital life.
+                        </p>
+<p>
+                            Each page expands a different part of that story: capabilities, experience design, long-term vision, companion behavior, and the broader philosophy behind the product.
+                        </p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="mb-24">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<div class="lg:col-span-5 bg-surface-container-low rounded-2xl p-8 md:p-10">
+<p class="text-sm uppercase tracking-[0.3em] text-tertiary font-label mb-5">Who We Are</p>
+<h2 class="font-headline text-3xl md:text-4xl font-semibold tracking-tight mb-6">Noorva AI in one view</h2>
+<p class="text-on-surface-variant font-light leading-relaxed mb-6">
+                        Noorva AI is presented as an ethereal intelligence layer designed to reduce noise, surface the right information at the right time, and make technology feel more humane. The emphasis is on privacy, elegant orchestration, and support that works quietly in the background.
+                    </p>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<div class="rounded-xl border border-white/10 bg-surface-container px-4 py-5">
+<div class="text-2xl font-headline text-white mb-1">Private</div>
+<div class="text-sm text-on-surface-variant">Built around trust and sovereignty.</div>
+</div>
+<div class="rounded-xl border border-white/10 bg-surface-container px-4 py-5">
+<div class="text-2xl font-headline text-white mb-1">Calm</div>
+<div class="text-sm text-on-surface-variant">Designed to feel quiet, clear, and supportive.</div>
+</div>
+<div class="rounded-xl border border-white/10 bg-surface-container px-4 py-5">
+<div class="text-2xl font-headline text-white mb-1">Adaptive</div>
+<div class="text-sm text-on-surface-variant">Context-aware help that grows with the user.</div>
+</div>
+</div>
+</div>
+<div class="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="glass-panel rounded-2xl p-8 border border-white/10">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary">deployed_code</span>
+<h3 class="font-headline text-2xl font-medium">What the Website Covers</h3>
+</div>
+<p class="text-on-surface-variant font-light leading-relaxed">
+                            The site walks visitors through Noorva's product promise, visual language, interaction style, roadmap, and the companion-centric worldview behind the brand.
+                        </p>
+</div>
+<div class="rounded-2xl p-8 border border-white/10 bg-gradient-to-br from-surface-container to-surface-container-low">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-tertiary">visibility</span>
+<h3 class="font-headline text-2xl font-medium">What Makes Noorva Different</h3>
+</div>
+<p class="text-on-surface-variant font-light leading-relaxed">
+                            The concept focuses less on feature overload and more on thoughtful presence: proactive guidance, memory, privacy, and a refined interface that supports ambition without adding chaos.
+                        </p>
+</div>
+<div class="rounded-2xl p-8 border border-white/10 bg-surface-container-low">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-secondary">route</span>
+<h3 class="font-headline text-2xl font-medium">How to Explore the Site</h3>
+</div>
+<p class="text-on-surface-variant font-light leading-relaxed">
+                            Start with Features for capabilities, Experience for the interaction model, Timeline for the origin story, Vision for direction, and Companion for the personality of the AI itself.
+                        </p>
+</div>
+<div class="rounded-2xl p-8 border border-white/10 bg-surface-container-lowest/60">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary">favorite</span>
+<h3 class="font-headline text-2xl font-medium">Why Noorva Exists</h3>
+</div>
+<p class="text-on-surface-variant font-light leading-relaxed">
+                            To create an intelligence experience that feels less transactional and more aligned with the user's rhythm, priorities, and long-term aspirations.
+                        </p>
+</div>
+</div>
+</div>
+</section>
+<section class="mb-24">
+<div class="flex items-end justify-between gap-6 mb-10 flex-wrap">
+<div>
+<p class="text-sm uppercase tracking-[0.3em] text-on-surface-variant font-label mb-4">Website Map</p>
+<h2 class="font-headline text-3xl md:text-4xl font-bold tracking-tight">A quick overview of every page</h2>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<a class="group rounded-2xl border border-white/10 bg-surface-container-low p-7 hover:bg-surface-container transition-colors duration-300" href="../">
+<p class="font-headline text-2xl mb-3">Home</p>
+<p class="text-on-surface-variant font-light leading-relaxed">The opening narrative and brand atmosphere for Noorva.</p>
+</a>
+<a class="group rounded-2xl border border-white/10 bg-surface-container-low p-7 hover:bg-surface-container transition-colors duration-300" href="../features/">
+<p class="font-headline text-2xl mb-3">Features</p>
+<p class="text-on-surface-variant font-light leading-relaxed">Core capabilities and the intelligent systems Noorva is meant to orchestrate.</p>
+</a>
+<a class="group rounded-2xl border border-white/10 bg-surface-container-low p-7 hover:bg-surface-container transition-colors duration-300" href="../experience/">
+<p class="font-headline text-2xl mb-3">Experience</p>
+<p class="text-on-surface-variant font-light leading-relaxed">The interaction style, flow, and emotional texture of using Noorva daily.</p>
+</a>
+<a class="group rounded-2xl border border-white/10 bg-surface-container-low p-7 hover:bg-surface-container transition-colors duration-300" href="../timeline/">
+<p class="font-headline text-2xl mb-3">Timeline</p>
+<p class="text-on-surface-variant font-light leading-relaxed">The story, milestones, and evolving perspective behind the product.</p>
+</a>
+<a class="group rounded-2xl border border-white/10 bg-surface-container-low p-7 hover:bg-surface-container transition-colors duration-300" href="../vision/">
+<p class="font-headline text-2xl mb-3">Vision</p>
+<p class="text-on-surface-variant font-light leading-relaxed">The long-range direction for Noorva and the future it intends to shape.</p>
+</a>
+<a class="group rounded-2xl border border-white/10 bg-surface-container-low p-7 hover:bg-surface-container transition-colors duration-300" href="../companion/">
+<p class="font-headline text-2xl mb-3">Companion</p>
+<p class="text-on-surface-variant font-light leading-relaxed">A closer look at Noorva as a presence, guide, and AI relationship model.</p>
+</a>
+</div>
+</section>
+<section>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+<div class="lg:col-span-7 relative overflow-hidden rounded-2xl border border-white/10 min-h-[320px]">
+<img class="absolute inset-0 w-full h-full object-cover opacity-35" data-alt="futuristic abstract night skyline with atmospheric cyan and violet light gradients" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkwl_a34DACOGM0vpKq-JEmbe2ZHxCN_M9SuAWotKyvvY8KSNnhZ8m6SXNkbqTM7ezNBpYO_qraJpQvz8rlr3-4UX2fuPN26MUFqIg97TriRc2GknTocaAMOr8mEkmvfS6annGB9MRTuukGZ4dr9X1Au2XvrqjQzPFzzWkr_vVOz39hXy6MkFoqPDEl1uYNd3rAYOm7EHl9BCvuPWBGBu73JWSfew1O9Gb9EyARc9w4ozmWpwqzmuGEeJPneFwxw60fU6XMrGWSSGv"/>
+<div class="absolute inset-0 bg-gradient-to-br from-surface/85 via-surface/65 to-transparent"></div>
+<div class="relative z-10 p-8 md:p-10 max-w-2xl">
+<p class="text-sm uppercase tracking-[0.3em] text-primary font-label mb-4">Stay Connected</p>
+<h2 class="font-headline text-3xl md:text-4xl font-bold tracking-tight mb-5">Follow Noorva as the story evolves.</h2>
+<p class="text-on-surface-variant font-light leading-relaxed">
+                        Use the channels below to keep up with product updates, visual drops, and announcements around Noorva AI.
+                    </p>
+</div>
+</div>
+<div class="lg:col-span-5 rounded-2xl border border-white/10 bg-surface-container-low p-8 md:p-10">
+<p class="text-sm uppercase tracking-[0.3em] text-on-surface-variant font-label mb-6">Social Links</p>
+<div class="space-y-4">
+<a class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-surface-container px-5 py-4 hover:border-primary/40 hover:bg-surface-container-high transition-colors duration-300" href="https://twitter.com/noorvaai" rel="noreferrer" target="_blank">
+<div class="flex items-center gap-4">
+<span class="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 border border-white/10">
+<svg aria-hidden="true" class="h-5 w-5 fill-current text-white" viewBox="0 0 24 24"><path d="M18.901 1.153h3.68l-8.04 9.19 9.458 12.504h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932 6.064-6.933Zm-1.291 19.492h2.039L6.486 3.24H4.298l13.312 17.405Z"></path></svg>
+</span>
+<div>
+<p class="font-headline text-xl">Twitter / X</p>
+<p class="text-sm text-on-surface-variant">@noorvaai</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">arrow_outward</span>
+</a>
+<a class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-surface-container px-5 py-4 hover:border-primary/40 hover:bg-surface-container-high transition-colors duration-300" href="https://instagram.com/noorvaai" rel="noreferrer" target="_blank">
+<div class="flex items-center gap-4">
+<span class="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 border border-white/10">
+<svg aria-hidden="true" class="h-5 w-5 fill-current text-white" viewBox="0 0 24 24"><path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2Zm0 1.5A4.25 4.25 0 0 0 3.5 7.75v8.5a4.25 4.25 0 0 0 4.25 4.25h8.5a4.25 4.25 0 0 0 4.25-4.25v-8.5A4.25 4.25 0 0 0 16.25 3.5h-8.5Zm8.875 1.125a1.125 1.125 0 1 1 0 2.25 1.125 1.125 0 0 1 0-2.25ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.5A3.5 3.5 0 1 0 12 15.5 3.5 3.5 0 0 0 12 8.5Z"></path></svg>
+</span>
+<div>
+<p class="font-headline text-xl">Instagram</p>
+<p class="text-sm text-on-surface-variant">@noorvaai</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">arrow_outward</span>
+</a>
+<a class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-surface-container px-5 py-4 hover:border-primary/40 hover:bg-surface-container-high transition-colors duration-300" href="mailto:hello@noorva.ai">
+<div class="flex items-center gap-4">
+<span class="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 border border-white/10">
+<svg aria-hidden="true" class="h-5 w-5 fill-current text-white" viewBox="0 0 24 24"><path d="M3 5.75A2.75 2.75 0 0 1 5.75 3h12.5A2.75 2.75 0 0 1 21 5.75v12.5A2.75 2.75 0 0 1 18.25 21H5.75A2.75 2.75 0 0 1 3 18.25V5.75Zm1.5.307v.193l7.07 5.303a.75.75 0 0 0 .9 0l7.03-5.272v-.224A1.25 1.25 0 0 0 18.25 4.5H5.75A1.25 1.25 0 0 0 4.5 6.057Zm15 2.1-6.13 4.597a2.25 2.25 0 0 1-2.7 0L4.5 8.125v10.125A1.25 1.25 0 0 0 5.75 19.5h12.5a1.25 1.25 0 0 0 1.25-1.25V8.157Z"></path></svg>
+</span>
+<div>
+<p class="font-headline text-xl">Email</p>
+<p class="text-sm text-on-surface-variant">hello@noorva.ai</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">arrow_outward</span>
+</a>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-16 px-10 border-t border-white/5 bg-[#0e0e0e] z-10 relative">
+<div class="flex flex-col md:flex-row justify-between items-center gap-8 max-w-7xl mx-auto">
+<div class="text-xl font-bold text-white tracking-widest font-['Space_Grotesk']">
+                Noorva
+            </div>
+<div class="flex flex-wrap justify-center gap-6">
+<a class="text-neutral-500 hover:text-[#5C5CFF] transition-colors duration-200 opacity-80 hover:opacity-100 font-['Space_Grotesk'] font-light tracking-wide text-sm" href="#">Privacy Policy</a>
+<a class="text-neutral-500 hover:text-[#5C5CFF] transition-colors duration-200 opacity-80 hover:opacity-100 font-['Space_Grotesk'] font-light tracking-wide text-sm" href="#">Terms of Service</a>
+</div>
+<div class="text-neutral-500 font-['Space_Grotesk'] font-light tracking-wide text-sm text-center md:text-right">
+                © 2026 Noorva Intelligence. Defined by The Ethereal Intelligence.
+            </div>
+</div>
+</footer>
+</body></html>
