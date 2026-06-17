@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { label: "Future",    href: "#future"    },
   { label: "Contact",   href: "#contact"   },
 ];
+ 
 
 export default function Navbar() {
   const [open,      setOpen]      = useState(false);
