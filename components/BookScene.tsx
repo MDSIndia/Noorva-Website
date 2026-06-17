@@ -376,7 +376,7 @@ function P2() {
       <div style={{ marginTop: "12px", marginBottom: "10px" }}>
         <span style={{ float: "left", fontSize: "clamp(40px, 5.5vw, 58px)", fontFamily: "var(--font-playfair), serif", fontWeight: 900, color: GOLD, lineHeight: 0.82, marginRight: "7px", marginTop: "4px" }}>L</span>
         <p style={bodyStyle()}>
-          ike a wise sage who has witnessed centuries of human experience, Noorva draws from the deepest wells of knowledge to illuminate your path through life's greatest questions.
+          ike a wise sage who has witnessed centuries of human experience, Noorva draws from the deepest wells of knowledge to illuminate your path through {"life's"} greatest questions.
         </p>
       </div>
       <div style={{ clear: "both" }}/>
@@ -440,10 +440,10 @@ function P5() {
   return (
     <Page center>
       <div style={eyebrowStyle()}>Chapter V</div>
-      <div style={{ ...headingStyle(), textAlign: "center" }}>Tomorrow's<br/>Horizon</div>
+      <div style={{ ...headingStyle(), textAlign: "center" }}>{"Tomorrow's"}<br/>Horizon</div>
       <Divider w={140}/>
       <div style={{ margin: "12px 0", ...bodyStyle(), maxWidth: "320px", textAlign: "center" }}>
-        "The world where AI and human wisdom move as one is no longer a distant dream. Noorva stands at that threshold."
+        &quot;The world where AI and human wisdom move as one is no longer a distant dream. Noorva stands at that threshold.&quot;
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%", maxWidth: "300px" }}>
         {items.map(({ q, t }) => (
