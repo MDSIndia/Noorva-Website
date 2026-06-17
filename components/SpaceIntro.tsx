@@ -308,6 +308,15 @@ export default function SpaceIntro() {
 
     tick();
 
+    // Backup scroll listener so inIntro updates without waiting for RAF
+    // (needed for fast-scroll cases and programmatic scroll in automated tests)
+    function onScrollFast() {
+      const p = clamp(window.scrollY / ((SPACE_INTRO_VH/100)*window.innerHeight), 0, 1);
+      if (p >= 0.995 && prevInIntro) { prevInIntro = false; setInIntro(false); }
+      if (p < 0.995 && !prevInIntro) { prevInIntro = true; setInIntro(true); }
+    }
+    window.addEventListener("scroll", onScrollFast, { passive: true });
+
     function onResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -317,6 +326,7 @@ export default function SpaceIntro() {
 
     return () => {
       cancelAnimationFrame(animId);
+      window.removeEventListener("scroll", onScrollFast);
       window.removeEventListener("resize", onResize);
       [star1, star2, star3, dust1, dust2].forEach(p => {
         p.geometry.dispose();
@@ -443,49 +453,14 @@ export default function SpaceIntro() {
             </AnimatePresence>
           </div>
 
-          {/* Parchment fade-out */}
+          {/* Fade to dark — LandingScene takes over from here */}
           {overlay > 0 && (
             <div style={{
               position: "fixed", inset: 0, zIndex: 52,
-              background: "#F2E4C2",
+              background: "#06050F",
               opacity: overlay,
               pointerEvents: "none",
             }} />
-          )}
-
-          {/* Noorva logo reveal over white */}
-          {overlay > 0.25 && (
-            <div style={{
-              position: "fixed", inset: 0, zIndex: 53,
-              display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center",
-              pointerEvents: "none",
-              opacity: logoOpacity,
-            }}>
-              {/* Logo */}
-              <img
-                src="/NoorvaLogo.png"
-                alt="Noorva"
-                style={{
-                  width: "min(240px, 42vw)",
-                  height: "auto",
-                  objectFit: "contain",
-                  filter: "sepia(1) saturate(0.7) brightness(0.45)",
-                  marginBottom: "18px",
-                }}
-              />
-              {/* Tagline */}
-              <div style={{
-                fontSize: "clamp(0.75rem, 1.4vw, 1rem)",
-                color: "#5A3E20",
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                fontFamily: "var(--font-inter)",
-                fontWeight: 400,
-              }}>
-                The Future of Human‑AI Connection
-              </div>
-            </div>
           )}
       </div>
     </div>
