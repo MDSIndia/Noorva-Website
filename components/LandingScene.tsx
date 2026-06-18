@@ -15,8 +15,12 @@ function easeOutBounce(t: number): number {
   return n1 * (t -= 2.625 / d1) * t + 0.984375;
 }
 
-const GOLD   = "#C9A84C";
-const LEATHER = `linear-gradient(148deg, #3C1E0C 0%, #251208 28%, #1D0C06 50%, #291408 72%, #3C1E0C 100%)`;
+const CYAN   = "#00D4FF";
+const GOLD   = CYAN; // tech color replaces old gold
+const LEATHER = `
+  linear-gradient(135deg, rgba(0,212,255,0.07) 0%, transparent 45%, rgba(0,80,180,0.08) 100%),
+  linear-gradient(148deg, #030710 0%, #060B18 28%, #040912 50%, #060B18 72%, #030710 100%)
+`;
 
 // ── Dust mote component ──────────────────────────────────────────────────────
 function DustMote({ x, y, delay, dur }: { x: number; y: number; delay: number; dur: number }) {
@@ -26,7 +30,7 @@ function DustMote({ x, y, delay, dur }: { x: number; y: number; delay: number; d
       left: `${x}%`, top: `${y}%`,
       width: "3px", height: "3px",
       borderRadius: "50%",
-      background: `radial-gradient(circle, rgba(201,168,76,0.9) 0%, transparent 70%)`,
+      background: `radial-gradient(circle, rgba(0,212,255,0.85) 0%, transparent 70%)`,
       animation: `dustFloat ${dur}s ${delay}s ease-in-out infinite`,
       pointerEvents: "none",
       filter: "blur(0.5px)",
@@ -55,7 +59,8 @@ function ImpactRing({ delay, size }: { delay: number; size: number }) {
       position: "absolute",
       left: "50%", top: "0",
       width: `${size}px`, height: `${size * 0.22}px`,
-      border: `1px solid rgba(201,168,76,0.55)`,
+      border: `1px solid rgba(0,212,255,0.55)`,
+      boxShadow: `0 0 6px rgba(0,212,255,0.3)`,
       borderRadius: "50%",
       animation: `impactRing 0.9s ${delay}s ease-out forwards`,
       pointerEvents: "none",
@@ -301,7 +306,7 @@ export default function LandingScene() {
             zIndex: 10,
             perspective: "600px",
             filter: settledGlow > 0.1
-              ? `drop-shadow(0 0 ${32 * settledGlow}px rgba(201,168,76,0.75))
+              ? `drop-shadow(0 0 ${36 * settledGlow}px rgba(0,212,255,0.65))
                  drop-shadow(0 ${30 * bookScale}px ${55 * bookScale}px rgba(0,0,0,0.92))`
               : `drop-shadow(0 ${30 * bookScale}px ${55 * bookScale}px rgba(0,0,0,0.92))`,
           }}>
@@ -310,22 +315,23 @@ export default function LandingScene() {
               width: "100%", height: "100%",
               background: LEATHER,
               borderRadius: "2px 10px 10px 2px",
-              border: `1px solid rgba(201,168,76,${0.32 + settledGlow * 0.28})`,
+              border: `1px solid rgba(0,212,255,${0.28 + settledGlow * 0.32})`,
+              boxShadow: settledGlow > 0 ? `inset 0 0 20px rgba(0,212,255,${0.06 * settledGlow})` : "none",
               display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
               position: "relative", overflow: "hidden",
             }}>
-              {/* Inner borders */}
-              <div style={{ position: "absolute", inset: "9%", border: "1px solid rgba(201,168,76,0.22)", borderRadius: "1px", pointerEvents: "none" }}/>
-              <div style={{ position: "absolute", inset: "13%", border: "1px solid rgba(201,168,76,0.10)", borderRadius: "1px", pointerEvents: "none" }}/>
+              {/* Inner circuit borders */}
+              <div style={{ position: "absolute", inset: "9%", border: "1px solid rgba(0,212,255,0.18)", pointerEvents: "none" }}/>
+              <div style={{ position: "absolute", inset: "13%", border: "1px solid rgba(0,212,255,0.08)", pointerEvents: "none" }}/>
 
-              {/* Diagonal light sheen */}
+              {/* Diagonal sheen */}
               <div style={{
                 position: "absolute", inset: 0,
                 background: `linear-gradient(135deg,
-                  rgba(201,168,76,${0.09 + settledGlow * 0.10}) 0%,
+                  rgba(0,212,255,${0.06 + settledGlow * 0.08}) 0%,
                   transparent 50%,
-                  rgba(0,0,0,0.12) 100%)`,
+                  rgba(0,0,0,0.15) 100%)`,
                 pointerEvents: "none",
               }}/>
 
@@ -351,33 +357,34 @@ export default function LandingScene() {
               {/* NOORVA title */}
               <div style={{
                 fontSize: "clamp(14px, 2.8vw, 28px)",
-                fontFamily: "var(--font-playfair), serif",
-                fontWeight: 800, letterSpacing: "0.18em",
-                color: GOLD,
-                textShadow: `0 0 18px rgba(201,168,76,${0.55 + settledGlow * 0.5}), 0 2px 4px rgba(0,0,0,0.9)`,
+                fontFamily: "var(--font-inter), sans-serif",
+                fontWeight: 900, letterSpacing: "0.18em",
+                color: "#C8E0F4",
+                textShadow: `0 0 22px rgba(0,212,255,${0.5 + settledGlow * 0.55}), 0 0 6px rgba(0,212,255,0.4)`,
                 marginBottom: "5px",
               }}>NOORVA</div>
 
               <div style={{
                 width: "40px", height: "1px",
-                background: `linear-gradient(90deg, transparent, rgba(201,168,76,0.55), transparent)`,
+                background: `linear-gradient(90deg, transparent, rgba(0,212,255,0.55), transparent)`,
                 marginBottom: "5px",
               }}/>
 
               <div style={{
                 fontSize: "clamp(4.5px, 0.75vw, 7px)",
-                letterSpacing: "0.25em", textTransform: "uppercase",
-                color: `rgba(201,168,76,0.65)`,
-                fontFamily: "var(--font-inter)",
+                letterSpacing: "0.22em", textTransform: "uppercase",
+                color: `rgba(0,212,255,0.55)`,
+                fontFamily: "monospace",
                 textAlign: "center",
-              }}>The Book of Intelligence</div>
+              }}>{'>'} AI · Intelligence</div>
 
-              {/* Right-edge page stack */}
+              {/* Right-edge page stack (dark tech) */}
               <div style={{
                 position: "absolute", top: "2%", bottom: "2%", right: "-5px",
                 width: "5px",
-                background: "linear-gradient(90deg, #2a1206, #4a2810, #3a1808)",
+                background: "linear-gradient(90deg, #04090F, #08121E, #060E18)",
                 borderRadius: "0 2px 2px 0",
+                boxShadow: `1px 0 4px rgba(0,212,255,0.15)`,
               }}/>
             </div>
           </div>
@@ -411,15 +418,15 @@ export default function LandingScene() {
           }}/>
         )}
 
-        {/* ── GOLDEN GROUND GLOW under settled book ────── */}
+        {/* ── CYAN GROUND GLOW under settled book ────── */}
         {settledGlow > 0 && (
           <div style={{
             position: "absolute",
             left: "50%", bottom: "14%",
             transform: "translateX(-50%)",
             width: "520px", height: "110px",
-            background: `radial-gradient(ellipse, rgba(201,168,76,${0.38 * settledGlow}) 0%, rgba(160,120,35,${0.16 * settledGlow}) 40%, transparent 70%)`,
-            filter: "blur(16px)",
+            background: `radial-gradient(ellipse, rgba(0,212,255,${0.28 * settledGlow}) 0%, rgba(0,120,200,${0.12 * settledGlow}) 40%, transparent 70%)`,
+            filter: "blur(18px)",
             pointerEvents: "none",
           }}/>
         )}
