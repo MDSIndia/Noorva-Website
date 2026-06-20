@@ -227,10 +227,16 @@ export default function SpaceIntro() {
     sg.addColorStop(0.18, "rgba(235,240,255,0.92)");
     sg.addColorStop(0.38, "rgba(190,210,255,0.22)");
     sg.addColorStop(1,    "rgba(0,0,0,0)");
-    sctx.fillStyle = sg; sctx.fillRect(0, 0, 96, 96);
-    addFineNoise(sctx, 96, 96, 80, 0.08);
+    sctx.clearRect(0, 0, 96, 96);
+    sctx.fillStyle = sg;
+    sctx.beginPath();
+    sctx.arc(48, 48, 47, 0, Math.PI * 2);
+    sctx.fill();
     const starSprite = new THREE.CanvasTexture(sc);
     starSprite.colorSpace = THREE.SRGBColorSpace;
+    starSprite.minFilter = THREE.LinearFilter;
+    starSprite.magFilter = THREE.LinearFilter;
+    starSprite.generateMipmaps = false;
 
     function makeStars(n: number, spread: number, sz: number, op: number, flatness = 0.52): THREE.Points {
       const geo = new THREE.BufferGeometry();
@@ -254,20 +260,70 @@ export default function SpaceIntro() {
       const material = new THREE.PointsMaterial({
         size: sz,
         map: starSprite,
-        alphaTest: 0.025,
+        alphaMap: starSprite,
+        alphaTest: 0.08,
         transparent: true,
         opacity: op,
         blending: THREE.AdditiveBlending, depthWrite: false,
-        vertexColors: true, sizeAttenuation: true,
+        vertexColors: true, sizeAttenuation: false,
       });
       return new THREE.Points(geo, material);
     }
 
     const base  = isMobile ? 0.55 : 1;
-    const star1 = makeStars(Math.floor(16000 * base), 720, 0.52,  0.74);
-    const star2 = makeStars(Math.floor(6500  * base), 360, 0.78,  0.52, 0.44);
-    const star3 = makeStars(Math.floor(1800  * base), 180, 1.18,  0.38, 0.38);
+    const star1 = makeStars(Math.floor(16000 * base), 720, 1.15, 0.74);
+    const star2 = makeStars(Math.floor(6500  * base), 360, 1.65, 0.52, 0.44);
+    const star3 = makeStars(Math.floor(1800  * base), 180, 2.25, 0.38, 0.38);
     scene.add(star1, star2, star3);
+
+    // Brighter round stars add depth while preserving a soft cosmic look.
+    const sparkleCanvas = document.createElement("canvas");
+    sparkleCanvas.width = 128; sparkleCanvas.height = 128;
+    const sparkleCtx = sparkleCanvas.getContext("2d")!;
+    const sparkleGlow = sparkleCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    sparkleGlow.addColorStop(0, "rgba(255,255,255,1)");
+    sparkleGlow.addColorStop(0.09, "rgba(235,242,255,0.96)");
+    sparkleGlow.addColorStop(0.24, "rgba(170,200,255,0.42)");
+    sparkleGlow.addColorStop(0.55, "rgba(110,145,255,0.10)");
+    sparkleGlow.addColorStop(1, "rgba(80,120,255,0)");
+    sparkleCtx.fillStyle = sparkleGlow;
+    sparkleCtx.beginPath();
+    sparkleCtx.arc(64, 64, 63, 0, Math.PI * 2);
+    sparkleCtx.fill();
+    const sparkleSprite = new THREE.CanvasTexture(sparkleCanvas);
+    sparkleSprite.colorSpace = THREE.SRGBColorSpace;
+    sparkleSprite.minFilter = THREE.LinearFilter;
+    sparkleSprite.magFilter = THREE.LinearFilter;
+    sparkleSprite.generateMipmaps = false;
+
+    function makeSparkles(count: number, spread: number, size: number, opacity: number) {
+      const geo = new THREE.BufferGeometry();
+      const pos = new Float32Array(count * 3);
+      const col = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const r = spread * (0.22 + Math.random() * 0.78);
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+        pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta) * 0.48;
+        pos[i*3+2] = r * Math.cos(phi);
+        const warm = Math.random() < 0.22;
+        col[i*3] = warm ? 1.0 : 0.78;
+        col[i*3+1] = warm ? 0.86 : 0.88;
+        col[i*3+2] = warm ? 0.62 : 1.0;
+      }
+      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+      return new THREE.Points(geo, new THREE.PointsMaterial({
+        size, map: sparkleSprite, alphaMap: sparkleSprite, alphaTest: 0.025,
+        transparent: true, opacity, vertexColors: true,
+        blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: false,
+      }));
+    }
+
+    const sparkle1 = makeSparkles(Math.floor(420 * base), 620, 3.4, 0.48);
+    const sparkle2 = makeSparkles(Math.floor(180 * base), 310, 4.6, 0.34);
+    scene.add(sparkle1, sparkle2);
 
     // ── Nebulae ────────────────────────────────────────────────────────
     function makeNebulaTexture(): THREE.CanvasTexture {
@@ -342,15 +398,16 @@ export default function SpaceIntro() {
       geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
       geo.setAttribute("color",    new THREE.BufferAttribute(col, 3));
       return new THREE.Points(geo, new THREE.PointsMaterial({
-        size: 0.72,
+        size: 1.35,
         map: starSprite,
-        alphaTest: 0.035,
+        alphaMap: starSprite,
+        alphaTest: 0.08,
         vertexColors: true,
         transparent: true,
         opacity: 0.32,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
-        sizeAttenuation: true,
+        sizeAttenuation: false,
       }));
     }
     const dust1 = makeDust(Math.floor(1200*base), -40,  -200);
@@ -518,6 +575,92 @@ export default function SpaceIntro() {
     addRing(16.2, 18.8, 0x9a7a3c, 0.08);   // faint outer fringe
 
     scene.add(saturnGroup);
+
+    // ── DISTANT WORLDS ─────────────────────────────────────────────────
+    // Smaller supporting planets add depth without competing with Earth.
+    const extraPlanetTextures: THREE.CanvasTexture[] = [];
+    const extraPlanets: THREE.Group[] = [];
+
+    function makeDistantPlanet(
+      radius: number,
+      position: [number, number, number],
+      colors: [string, string, string, string],
+      atmosphere: number,
+      ringed = false
+    ) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 384; canvas.height = 192;
+      const ctx = canvas.getContext("2d")!;
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, colors[0]);
+      gradient.addColorStop(0.34, colors[1]);
+      gradient.addColorStop(0.68, colors[2]);
+      gradient.addColorStop(1, colors[3]);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Soft atmospheric bands make each planet feel organic rather than flat.
+      for (let i = 0; i < 18; i++) {
+        const y = Math.random() * canvas.height;
+        const h = 1 + Math.random() * 7;
+        ctx.fillStyle = `rgba(255,255,255,${0.018 + Math.random() * 0.055})`;
+        ctx.fillRect(0, y, canvas.width, h);
+      }
+      addFineNoise(ctx, canvas.width, canvas.height, 120, 0.025);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      extraPlanetTextures.push(texture);
+
+      const group = new THREE.Group();
+      group.position.set(...position);
+      const body = new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 48, 48),
+        new THREE.MeshPhongMaterial({
+          map: texture,
+          specular: new THREE.Color(0x182033),
+          shininess: 9,
+        })
+      );
+      body.rotation.z = -0.12 + Math.random() * 0.24;
+      group.add(body);
+
+      const glow = new THREE.Mesh(
+        new THREE.SphereGeometry(radius * 1.12, 32, 32),
+        new THREE.MeshBasicMaterial({
+          color: atmosphere,
+          transparent: true,
+          opacity: 0.055,
+          side: THREE.BackSide,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        })
+      );
+      group.add(glow);
+
+      if (ringed) {
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(radius * 1.45, radius * 2.05, 96),
+          new THREE.MeshBasicMaterial({
+            color: 0x9fd5dc,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.16,
+            depthWrite: false,
+          })
+        );
+        ring.rotation.x = Math.PI * 0.42;
+        ring.rotation.z = -0.18;
+        group.add(ring);
+      }
+
+      scene.add(group);
+      extraPlanets.push(group);
+    }
+
+    makeDistantPlanet(5.8, [30, -18, -42],  ["#3a1908", "#c06b25", "#e4a34c", "#4a210d"], 0xffa552);
+    makeDistantPlanet(7.2, [-52, -24, -152], ["#031a3a", "#075fa8", "#1594d2", "#05244f"], 0x38bdf8);
+    makeDistantPlanet(6.4, [50, 26, -238],  ["#153c48", "#70b7bd", "#a6d9d5", "#214f59"], 0x8ce7e5, true);
 
     // ── EARTH ──────────────────────────────────────────────────────────
     const EARTH_Z = -280;
@@ -725,14 +868,21 @@ export default function SpaceIntro() {
       (atmoLayers[3].material as THREE.MeshBasicMaterial).opacity = 0.02 + insideT * 0.18;
 
       // ── Rotations ───────────────────────────────────────────────────
-      star1.rotation.y = T*0.016; star1.rotation.x = T*0.007;
-      star2.rotation.y = -T*0.011;
-      star3.rotation.y = T*0.021;
+      star1.rotation.y = T*0.006; star1.rotation.x = T*0.0025;
+      star2.rotation.y = -T*0.004;
+      star3.rotation.y = T*0.008;
+      dust1.rotation.y = T*0.003;
+      dust2.rotation.y = -T*0.002;
+      sparkle1.rotation.y = T*0.0035;
+      sparkle2.rotation.y = -T*0.005;
+      (sparkle1.material as THREE.PointsMaterial).opacity = 0.43 + Math.sin(T * 0.42) * 0.05;
+      (sparkle2.material as THREE.PointsMaterial).opacity = 0.31 + Math.sin(T * 0.55 + 1.7) * 0.04;
       earth.rotation.y       = T*0.11;
       cloudMesh.rotation.y   = T*0.135;
       mars.rotation.y        = T*0.095;
       gasGiant.rotation.y    = T*0.145;
       saturnGroup.rotation.y = T*0.065;
+      extraPlanets.forEach((planet, i) => { planet.rotation.y = T * (0.055 + i * 0.018); });
       nebulae.slice(0,6).forEach((n,i) => {
         n.rotation.y = T*(0.008+i*0.003);
         n.rotation.z = T*(0.005+i*0.002);
@@ -781,15 +931,21 @@ export default function SpaceIntro() {
       cancelAnimationFrame(animId);
       window.removeEventListener("scroll", onScrollFast);
       window.removeEventListener("resize", onResize);
-      [star1,star2,star3,dust1,dust2].forEach(pt => {
+      [star1,star2,star3,sparkle1,sparkle2,dust1,dust2].forEach(pt => {
         pt.geometry.dispose(); (pt.material as THREE.Material).dispose();
       });
       nebulae.forEach(n => { n.geometry.dispose(); (n.material as THREE.Material).dispose(); });
       [earth, cloudMesh, mars, marsAtmo, gasGiant, gasAtmo, satPlanet].forEach(m => {
         m.geometry.dispose(); (m.material as THREE.Material).dispose();
       });
+      extraPlanets.forEach(group => group.traverse(obj => {
+        if (obj instanceof THREE.Mesh) {
+          obj.geometry.dispose();
+          (obj.material as THREE.Material).dispose();
+        }
+      }));
       atmoLayers.forEach(m => { m.geometry.dispose(); (m.material as THREE.Material).dispose(); });
-      [earthTex, cloudTex, starSprite, marsTex, gasTex, satTex].forEach(t => t.dispose());
+      [earthTex, cloudTex, starSprite, sparkleSprite, marsTex, gasTex, satTex, ...extraPlanetTextures].forEach(t => t.dispose());
       renderer.dispose();
       if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement);
     };
