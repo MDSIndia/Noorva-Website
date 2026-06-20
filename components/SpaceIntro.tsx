@@ -1025,14 +1025,14 @@ export default function SpaceIntro() {
                 <motion.div
                   animate={{ y:[0,10,0] }}
                   transition={{ duration:2, repeat:Infinity, ease:"easeInOut" }}
-                  style={{ color:"rgba(255,255,255,0.26)" }}
+                  style={{ color:"rgb(255, 255, 255)" }}
                 >
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                     <path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </motion.div>
                 <span style={{
-                  fontSize:"9px", letterSpacing:"0.30em", color:"rgba(255,255,255,0.18)",
+                  fontSize:"14px", letterSpacing:"0.30em", color:"rgb(255, 255, 255)",
                   textTransform:"uppercase", fontFamily:"var(--font-inter)", fontWeight:500,
                 }}>
                   scroll to begin
