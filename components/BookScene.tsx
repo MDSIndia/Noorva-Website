@@ -1011,7 +1011,20 @@ export default function BookScene() {
               {/* ── PAGE CONTENT AREA (offset right of spine) ─────────────── */}
               <div style={{ position:"absolute", top:0, left:"16px", right:0, bottom:0, overflow:"hidden", background:PAGE_BG }}>
 
-                {/* Page flip element */}
+                {/* UNDER-LAYER — next page always rendered beneath the flip element.
+                    Eliminates the dark flash that occurs at 90° when backfaceVisibility
+                    hides both faces simultaneously. */}
+                <div style={{ position:"absolute", inset:0 }}>
+                  {PAGES.map((Comp, i) => (
+                    <div key={i} style={{ position:"absolute", inset:0,
+                      display: i === Math.min(pageIdx + 1, TOTAL_PAGES - 1) ? "block" : "none" }}>
+                      <Comp wKey={writeKeys[i]}/>
+                    </div>
+                  ))}
+                </div>
+
+                {/* FLIP ELEMENT — current page rotates 0 → -180° to reveal under-layer.
+                    No back face needed; the under-layer fills the second half of the flip. */}
                 <div style={{
                   position:"absolute", inset:0,
                   transformStyle:"preserve-3d",
@@ -1053,26 +1066,6 @@ export default function BookScene() {
                       background:`radial-gradient(ellipse at 100% 100%, ${CYAN}22 0%, transparent 55%)`,
                       transition:"width 0.3s ease, height 0.3s ease",
                     }}/>
-                  </div>
-
-                  {/* BACK FACE */}
-                  <div style={{
-                    position:"absolute", inset:0,
-                    backfaceVisibility:"hidden", transform:"rotateY(180deg)", overflow:"hidden",
-                  }}>
-                    {PAGES.map((Comp, i) => (
-                      <div key={i} style={{ position:"absolute", inset:0,
-                        display: i === Math.min(pageIdx+1, TOTAL_PAGES-1) ? "block" : "none" }}>
-                        <Comp wKey={writeKeys[i]}/>
-                      </div>
-                    ))}
-                    <div style={{ position:"absolute", inset:0, pointerEvents:"none",
-                      background:`linear-gradient(to left,
-                        rgba(0,0,0,${midShadow*0.55}) 0%,
-                        rgba(0,0,0,${midShadow*0.18}) 6%,
-                        transparent 40%,
-                        rgba(0,0,0,${midShadow*0.22}) 88%,
-                        rgba(0,0,0,${midShadow*0.50}) 100%)` }}/>
                   </div>
                 </div>
               </div>
