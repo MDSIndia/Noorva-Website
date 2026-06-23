@@ -1,17 +1,13 @@
-import SmoothScroll   from "@/components/SmoothScroll";
-import SpaceIntro     from "@/components/SpaceIntro";
-import LandingScene   from "@/components/LandingScene";
-import BookScene      from "@/components/BookScene";
+"use client";
+
+import CinematicIntro from "@/components/CinematicIntro";
+import MainContent from "@/components/MainContent";
 
 export default function Home() {
   return (
-    <SmoothScroll>
-      {/* Scene 1-2 : deep space → Earth approach (500vh) */}
-      <SpaceIntro />
-      {/* Scene 3-4 : golden landscape → book falls from sky (380vh) */}
-      <LandingScene />
-      {/* Scene 5-8 : book opens → rapid flip → pen-written pages (1800vh) */}
-      <BookScene />
-    </SmoothScroll>
+    <main className="bg-black text-white" style={{ overflowX: "clip" }}>
+      <CinematicIntro />
+      <MainContent />
+    </main>
   );
 }
