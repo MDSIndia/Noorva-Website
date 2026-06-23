@@ -8,8 +8,8 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-/* ─── Floating Particle Canvas ─────────────────────────────────── */
-function ParticleCanvas() {
+/* ─── Cosmos Starfield Canvas — Fixed full-viewport background ──── */
+function CosmosBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -17,50 +17,54 @@ function ParticleCanvas() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     let raf: number;
+
     const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     };
     resize();
     window.addEventListener("resize", resize);
-    const dots = Array.from({ length: 80 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 1.2 + 0.2,
-      vx: (Math.random() - 0.5) * 0.18,
-      vy: (Math.random() - 0.5) * 0.18,
-      alpha: Math.random() * 0.4 + 0.1,
-    }));
+
+    // Generate 3 layers of stars: tiny distant, medium, and bright large
+    const makeStars = (count: number, minR: number, maxR: number, minA: number, maxA: number) =>
+      Array.from({ length: count }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * (maxR - minR) + minR,
+        alpha: Math.random() * (maxA - minA) + minA,
+        twinkleSpeed: 0.005 + Math.random() * 0.015,
+        twinkleOffset: Math.random() * Math.PI * 2,
+      }));
+
+    const tinyStars   = makeStars(260, 0.2, 0.7, 0.15, 0.45);
+    const medStars    = makeStars(100, 0.7, 1.4, 0.35, 0.70);
+    const brightStars = makeStars(25,  1.4, 2.2, 0.60, 1.00);
+
+    let frame = 0;
     const draw = () => {
+      frame++;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      dots.forEach((d) => {
-        d.x += d.vx;
-        d.y += d.vy;
-        if (d.x < 0) d.x = canvas.width;
-        if (d.x > canvas.width) d.x = 0;
-        if (d.y < 0) d.y = canvas.height;
-        if (d.y > canvas.height) d.y = 0;
+
+      // Draw all stars with twinkling
+      [...tinyStars, ...medStars, ...brightStars].forEach((s) => {
+        const twinkle = Math.sin(frame * s.twinkleSpeed + s.twinkleOffset) * 0.3 + 0.7;
+        const a = s.alpha * twinkle;
+        // Subtle soft glow for larger stars
+        if (s.r > 1.2) {
+          const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 4);
+          grd.addColorStop(0, `rgba(255,255,255,${a * 0.4})`);
+          grd.addColorStop(1, "rgba(255,255,255,0)");
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r * 4, 0, Math.PI * 2);
+          ctx.fillStyle = grd;
+          ctx.fill();
+        }
         ctx.beginPath();
-        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(180,140,255,${d.alpha})`;
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${a})`;
         ctx.fill();
       });
-      // Draw connections
-      for (let i = 0; i < dots.length; i++) {
-        for (let j = i + 1; j < dots.length; j++) {
-          const dx = dots[i].x - dots[j].x;
-          const dy = dots[i].y - dots[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 100) {
-            ctx.beginPath();
-            ctx.moveTo(dots[i].x, dots[i].y);
-            ctx.lineTo(dots[j].x, dots[j].y);
-            ctx.strokeStyle = `rgba(124,92,252,${0.06 * (1 - dist / 100)})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        }
-      }
+
       raf = requestAnimationFrame(draw);
     };
     draw();
@@ -72,7 +76,8 @@ function ParticleCanvas() {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none opacity-70"
+      className="fixed inset-0 w-full h-full pointer-events-none"
+      style={{ zIndex: 0 }}
     />
   );
 }
@@ -83,7 +88,7 @@ function GridLines() {
     <svg className="absolute inset-0 w-full h-full opacity-[0.035] pointer-events-none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-          <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(180,140,255,0.6)" strokeWidth="0.5" />
+          <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#grid)" />
@@ -123,6 +128,15 @@ export default function MainContent() {
     const el = containerRef.current;
     if (!el) return;
 
+    /* ── Standard fade ups ──────────────────────── */
+    el.querySelectorAll("[data-fade]").forEach((el) => {
+      const dly = parseFloat((el as HTMLElement).dataset.delay || "0");
+      gsap.fromTo(el, { opacity: 0, y: 35, filter: "blur(6px)" }, {
+        opacity: 1, y: 0, filter: "blur(0px)", duration: 1.4, delay: dly, ease: "sine.out",
+        scrollTrigger: { trigger: el, start: "top 88%", toggleActions: "play none none reverse" },
+      });
+    });
+
     /* ── Character slide-up ─────────────────────── */
     el.querySelectorAll("[data-chars]").forEach((target) => {
       const text = target.textContent || "";
@@ -137,19 +151,10 @@ export default function MainContent() {
       });
     });
 
-    /* ── Fade up ────────────────────────────────── */
-    el.querySelectorAll("[data-fade]").forEach((sec) => {
-      const delay = parseFloat((sec as HTMLElement).dataset.delay || "0");
-      gsap.fromTo(sec, { opacity: 0, y: 45 }, {
-        opacity: 1, y: 0, duration: 1.05, delay, ease: "power3.out",
-        scrollTrigger: { trigger: sec, start: "top 83%", toggleActions: "play none none reverse" },
-      });
-    });
-
     /* ── Scanline clip reveal ───────────────────── */
     el.querySelectorAll("[data-scan]").forEach((el) => {
       gsap.fromTo(el, { clipPath: "inset(0 100% 0 0)" }, {
-        clipPath: "inset(0 0% 0 0)", duration: 1.3, ease: "power3.inOut",
+        clipPath: "inset(0 0% 0 0)", duration: 1.6, ease: "sine.inOut",
         scrollTrigger: { trigger: el, start: "top 87%", toggleActions: "play none none reverse" },
       });
     });
@@ -157,10 +162,10 @@ export default function MainContent() {
     /* ── Staggered card grids ───────────────────── */
     el.querySelectorAll("[data-card-grid]").forEach((grid) => {
       gsap.fromTo(grid.querySelectorAll("[data-card]"),
-        { opacity: 0, y: 32, scale: 0.96 },
+        { opacity: 0, y: 40, scale: 0.98, filter: "blur(4px)" },
         {
-          opacity: 1, y: 0, scale: 1, duration: 0.85, ease: "power3.out", stagger: 0.1,
-          scrollTrigger: { trigger: grid, start: "top 82%", toggleActions: "play none none reverse" },
+          opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 1.3, ease: "sine.out", stagger: 0.15,
+          scrollTrigger: { trigger: grid, start: "top 85%", toggleActions: "play none none reverse" },
         }
       );
     });
@@ -173,11 +178,22 @@ export default function MainContent() {
       });
     });
 
-    /* ── Parallax glow ──────────────────────────── */
+    /* ── Liquid Ambient Glows ───────────────────── */
     el.querySelectorAll("[data-glow-parallax]").forEach((glow) => {
+      // 1) Scroll Parallax
       gsap.to(glow, {
-        y: -70,
-        scrollTrigger: { trigger: glow, start: "top bottom", end: "bottom top", scrub: 2 },
+        y: -100,
+        scrollTrigger: { trigger: glow, start: "top bottom", end: "bottom top", scrub: 2.5 },
+      });
+      // 2) Continuous Liquid Breathing
+      gsap.to(glow, {
+        scale: 1.15,
+        rotation: 15,
+        x: () => Math.random() * 40 - 20,
+        duration: () => 8 + Math.random() * 5,
+        ease: "sine.inOut",
+        yoyo: true,
+        repeat: -1,
       });
     });
 
@@ -233,19 +249,21 @@ export default function MainContent() {
   return (
     <div
       ref={containerRef}
-      className="relative z-10 overflow-hidden text-white w-full grain"
-      style={{ background: "linear-gradient(180deg,#000 0%,#03010c 8%,#07021a 22%,#04020f 50%,#06020f 78%,#000 100%)" }}
+      className="relative text-white w-full grain"
+      style={{ background: "#000000", zIndex: 1 }}
     >
+      {/* ── Fixed cosmos starfield behind all content ── */}
+      <CosmosBackground />
       <GridLines />
 
       {/* ── Ambient glows ─────────────────────── */}
       <div className="absolute inset-0 pointer-events-none -z-10">
-        <div data-glow-parallax className="absolute w-[80vw] h-[80vw] rounded-full blur-[160px] opacity-[0.13]"
-          style={{ background: "radial-gradient(circle,rgba(124,92,252,0.5) 0%,transparent 70%)", top: "2%", left: "10%" }} />
-        <div data-glow-parallax className="absolute w-[65vw] h-[65vw] rounded-full blur-[140px] opacity-[0.09]"
-          style={{ background: "radial-gradient(circle,rgba(79,168,213,0.45) 0%,transparent 70%)", top: "42%", right: "0%" }} />
-        <div data-glow-parallax className="absolute w-[75vw] h-[75vw] rounded-full blur-[170px] opacity-[0.10]"
-          style={{ background: "radial-gradient(circle,rgba(139,92,246,0.35) 0%,transparent 70%)", bottom: "12%", left: "5%" }} />
+        <div data-glow-parallax className="absolute w-[80vw] h-[80vw] rounded-full blur-[160px] opacity-[0.25]"
+          style={{ background: "radial-gradient(circle,rgba(255,255,255,0.4) 0%,transparent 70%)", top: "2%", left: "10%" }} />
+        <div data-glow-parallax className="absolute w-[65vw] h-[65vw] rounded-full blur-[140px] opacity-[0.20]"
+          style={{ background: "radial-gradient(circle,rgba(220,230,255,0.3) 0%,transparent 70%)", top: "42%", right: "0%" }} />
+        <div data-glow-parallax className="absolute w-[75vw] h-[75vw] rounded-full blur-[170px] opacity-[0.22]"
+          style={{ background: "radial-gradient(circle,rgba(240,240,245,0.35) 0%,transparent 70%)", bottom: "12%", left: "5%" }} />
       </div>
 
       {/* ── Ticker ────────────────────────────── */}
@@ -269,8 +287,6 @@ export default function MainContent() {
           1) HERO
       ═══════════════════════════════════════ */}
       <section className="relative mx-auto max-w-7xl px-6 md:px-12 lg:px-20 pt-28 pb-20 md:pt-44 md:pb-32 flex flex-col items-center text-center overflow-hidden">
-        {/* Particle canvas */}
-        <div className="absolute inset-0"><ParticleCanvas /></div>
 
         {/* Orbiting rings */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -690,7 +706,6 @@ export default function MainContent() {
           11) EMOTIONAL BRAND
       ═══════════════════════════════════════ */}
       <section className="relative py-32 md:py-48 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none"><ParticleCanvas /></div>
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-12">
           <div className="absolute w-[800px] h-[800px] rounded-full border border-violet-400/20 animate-ping" style={{ animationDuration: "7s" }} />
           <div className="absolute w-[550px] h-[550px] rounded-full border border-cyan-400/15 animate-ping" style={{ animationDuration: "9s", animationDelay: "2.5s" }} />

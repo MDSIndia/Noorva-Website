@@ -44,6 +44,12 @@ export default function CinematicIntro() {
         end: "+=4000",
         scrub: 1.5,
         pin: true,
+        snap: {
+          snapTo: [0, 0.12, 0.35, 0.56, 0.68, 0.82, 1],
+          duration: { min: 0.2, max: 1.0 },
+          delay: 0.1,
+          ease: "power2.inOut"
+        },
         onUpdate: (self) => {
           scrollProgress.value = self.progress;
         }
@@ -100,47 +106,47 @@ export default function CinematicIntro() {
       0.74
     );
 
-    /* ── Earth entry portal radial flash */
+    /* ── Earth entry portal radial flash ────────────────────────── */
     tl.fromTo("#ci-portal",
       { opacity: 0, scale: 0.55 },
-      { opacity: 1, scale: 1.35, duration: 0.06, ease: "power2.in" },
-      0.81
+      { opacity: 1, scale: 1.35, duration: 0.04, ease: "power2.in" },
+      0.72
     );
     tl.to("#ci-portal",
-      { opacity: 0, scale: 2.0, duration: 0.06, ease: "power2.out" },
-      0.87
+      { opacity: 0, scale: 2.0, duration: 0.04, ease: "power2.out" },
+      0.76
     );
 
-    /* ── Campfire Ancestors Scene Overlay (Before Noorva) */
+    /* ── Campfire Ancestors Scene Overlay (Before Noorva) ───── */
     tl.fromTo("#ci-campfire-wrap",
       { opacity: 0, filter: "blur(8px)" },
-      { opacity: 1, filter: "blur(0px)", duration: 0.05, ease: "power2.out" },
-      0.86
+      { opacity: 1, filter: "blur(0px)", duration: 0.04, ease: "power2.out" },
+      0.75
     );
     tl.fromTo("#ci-campfire-img",
       { scale: 1.0 },
-      { scale: 1.45, duration: 0.08, ease: "none" },
-      0.86
+      { scale: 1.45, duration: 0.14, ease: "none" },
+      0.75
     );
     tl.to("#ci-campfire-wrap",
       { opacity: 0, filter: "blur(12px)", duration: 0.04, ease: "power2.in" },
-      0.92
+      0.85
     );
 
-    /* ── Noorva brand reveal */
+    /* ── Noorva brand reveal ───────────────────────────────── */
     tl.fromTo("#ci-noorva-wrap",
       { opacity: 0, scale: 0.88, filter: "blur(24px)" },
-      { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.06, ease: "power3.out" },
-      0.93
+      { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.05, ease: "power3.out" },
+      0.90
     );
     tl.fromTo("#ci-noorva-line",
       { scaleX: 0, opacity: 0 },
-      { scaleX: 1, opacity: 1, duration: 0.04, ease: "power2.out" },
-      0.96
+      { scaleX: 1, opacity: 1, duration: 0.03, ease: "power2.out" },
+      0.95
     );
     tl.fromTo("#ci-noorva-tag",
       { y: 20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.03, ease: "power2.out" },
+      { y: 0, opacity: 1, duration: 0.02, ease: "power2.out" },
       0.97
     );
 
@@ -258,17 +264,17 @@ export default function CinematicIntro() {
             id="ci-campfire-img"
             src="/ancestors_campfire.png"
             alt="Ancestors sitting around a campfire"
-            className="absolute inset-0 w-full h-full object-cover origin-center opacity-75"
+            className="absolute inset-0 w-full h-full object-cover origin-center opacity-100"
             style={{ transform: "scale(1.0)" }}
           />
           {/* Subtle warm ambient lighting overlay */}
           <div className="absolute inset-0 bg-radial-gradient pointer-events-none"
             style={{
-              background: "radial-gradient(circle at center, rgba(230,82,10,0.12) 0%, transparent 80%)",
+              background: "radial-gradient(circle at center, rgba(230,82,10,0.15) 0%, transparent 80%)",
             }}
           />
-          {/* Dark vignette to blend edges and ensure readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-black/80 pointer-events-none" />
+          {/* Dark gradient only at the very bottom to ensure text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none" />
 
           {/* Centered at the bottom of the screen */}
           <div className="absolute bottom-16 md:bottom-24 left-0 right-0 px-6 flex flex-col items-center text-center">
