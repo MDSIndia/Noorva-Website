@@ -712,60 +712,8 @@ function ExplosionParticles({ live }: { live: React.MutableRefObject<number> }) 
    Large flat plane behind everything with a radial glow that
    represents the galaxy core / deep-space ambience.              */
 function SpaceBackdrop({ live }: { live: React.MutableRefObject<number> }) {
-  const ref = useRef<THREE.Mesh>(null);
-  const mat = useRef<THREE.MeshBasicMaterial>(null);
-
-  const tex = useMemo(() => {
-    if (typeof document === "undefined") return null;
-    const cv = document.createElement("canvas");
-    cv.width = cv.height = 1024;
-    const ctx = cv.getContext("2d")!;
-
-    // Multi-layer radial backdrop
-    const layers: [number, number, string, string][] = [
-      [512, 512, "rgba(60,30,160,0.55)",  "rgba(0,0,0,0)"],
-      [512, 512, "rgba(10,40,120,0.42)",  "rgba(0,0,0,0)"],
-      [512, 512, "rgba(180,80,255,0.18)", "rgba(0,0,0,0)"],
-    ];
-    layers.forEach(([cx, cy, c1, c2]) => {
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 520);
-      g.addColorStop(0, c1);
-      g.addColorStop(1, c2);
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, 1024, 1024);
-    });
-
-    const tex = new THREE.CanvasTexture(cv);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
-  }, []);
-
-  useFrame(() => {
-    const p  = live.current;
-    const FI = easeOut3(range(p, 0.10, 0.28));
-    const mid = easeOut3(range(p, 0.28, 0.50)) * 0.6;
-    const FO = easeIn2(range(p, 0.64, 0.84));
-    const op = clamp(FI + mid - FO, 0, 1) * 0.88;
-    if (ref.current) {
-      ref.current.visible = op > 0.005;
-      (ref.current.material as THREE.MeshBasicMaterial).opacity = op;
-    }
-  });
-
-  if (!tex) return null;
-  return (
-    <mesh ref={ref} position={[0, -2, -55]} visible={false}>
-      <planeGeometry args={[180, 100]} />
-      <meshBasicMaterial
-        ref={mat}
-        map={tex}
-        transparent
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        toneMapped={false}
-      />
-    </mesh>
-  );
+  // The user requested a black background, so we disable the blue space backdrop glow.
+  return null;
 }
 
 /* ─── EARTH ──────────────────────────────────────────────────────

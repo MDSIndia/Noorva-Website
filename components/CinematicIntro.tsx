@@ -40,14 +40,9 @@ export default function CinematicIntro() {
     const tl = gsap.timeline({ paused: true });
 
     /* ── Scroll hint: visible immediately, fades before first text */
-    tl.fromTo("#ci-scroll-hint",
-      { opacity: 0 },
-      { opacity: 1, duration: 0.03 },
-      0
-    );
     tl.to("#ci-scroll-hint",
-      { opacity: 0, duration: 0.03 },
-      0.06
+      { opacity: 0, duration: 0.04 },
+      0.02
     );
 
     /* ── Scene 1 → 2: "In the beginning…" */
@@ -214,7 +209,7 @@ export default function CinematicIntro() {
           id="ci-scroll-hint"
           className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20
                      flex flex-col items-center gap-2 pointer-events-none"
-          style={{ opacity: 0 }}
+          style={{ opacity: 1 }}
         >
           <span className="text-[10px] tracking-[0.42em] uppercase text-white/38">
             Scroll to begin
