@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans, Playfair_Display } from "next/font/google";
 import "./globals.css";
-
+import SmoothScroll from "@/components/SmoothScroll";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -59,7 +59,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${jakarta.variable} ${playfair.variable} antialiased`}>
-        {children}
+        <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>
   );

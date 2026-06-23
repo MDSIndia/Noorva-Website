@@ -37,7 +37,18 @@ export default function CinematicIntro() {
     const el = containerRef.current;
     if (!el) return;
 
-    const tl = gsap.timeline({ paused: true });
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: el,
+        start: "top top",
+        end: "+=4000",
+        scrub: 1.5,
+        pin: true,
+        onUpdate: (self) => {
+          scrollProgress.value = self.progress;
+        }
+      }
+    });
 
     /* ── Scroll hint: visible immediately, fades before first text */
     tl.to("#ci-scroll-hint",
@@ -92,102 +103,48 @@ export default function CinematicIntro() {
     /* ── Earth entry portal radial flash */
     tl.fromTo("#ci-portal",
       { opacity: 0, scale: 0.55 },
-      { opacity: 1, scale: 1.35, duration: 0.10, ease: "power2.in" },
-      0.83
+      { opacity: 1, scale: 1.35, duration: 0.06, ease: "power2.in" },
+      0.81
     );
     tl.to("#ci-portal",
-      { opacity: 0, scale: 2.0, duration: 0.08, ease: "power2.out" },
-      0.93
+      { opacity: 0, scale: 2.0, duration: 0.06, ease: "power2.out" },
+      0.87
+    );
+
+    /* ── Campfire Ancestors Scene Overlay (Before Noorva) */
+    tl.fromTo("#ci-campfire-wrap",
+      { opacity: 0, filter: "blur(8px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.05, ease: "power2.out" },
+      0.86
+    );
+    tl.fromTo("#ci-campfire-img",
+      { scale: 1.0 },
+      { scale: 1.45, duration: 0.08, ease: "none" },
+      0.86
+    );
+    tl.to("#ci-campfire-wrap",
+      { opacity: 0, filter: "blur(12px)", duration: 0.04, ease: "power2.in" },
+      0.92
     );
 
     /* ── Noorva brand reveal */
     tl.fromTo("#ci-noorva-wrap",
       { opacity: 0, scale: 0.88, filter: "blur(24px)" },
-      { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.10, ease: "power3.out" },
-      0.91
+      { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.06, ease: "power3.out" },
+      0.93
     );
     tl.fromTo("#ci-noorva-line",
       { scaleX: 0, opacity: 0 },
-      { scaleX: 1, opacity: 1, duration: 0.07, ease: "power2.out" },
+      { scaleX: 1, opacity: 1, duration: 0.04, ease: "power2.out" },
       0.96
     );
     tl.fromTo("#ci-noorva-tag",
       { y: 20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.06, ease: "power2.out" },
+      { y: 0, opacity: 1, duration: 0.03, ease: "power2.out" },
       0.97
     );
 
-    if (window.scrollY > 0) {
-      progressRef.current = 1;
-      scrollProgress.value = 1;
-      tl.progress(1);
-    } else {
-      progressRef.current = 0;
-      scrollProgress.value = 0;
-      tl.progress(0);
-    }
-
-    const handleWheel = (e: WheelEvent) => {
-      const isScrollingDown = e.deltaY > 0;
-      const isScrollingUp = e.deltaY < 0;
-
-      if (isScrollingDown && progressRef.current < 1) {
-        e.preventDefault();
-        progressRef.current = clamp(progressRef.current + e.deltaY * 0.0008, 0, 1);
-        scrollProgress.value = progressRef.current;
-      } else if (isScrollingUp && window.scrollY <= 0 && progressRef.current > 0) {
-        e.preventDefault();
-        progressRef.current = clamp(progressRef.current + e.deltaY * 0.0008, 0, 1);
-        scrollProgress.value = progressRef.current;
-      }
-    };
-
-    let lastTouchY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      lastTouchY = e.touches[0].clientY;
-    };
-    const handleTouchMove = (e: TouchEvent) => {
-      const touchY = e.touches[0].clientY;
-      const deltaY = lastTouchY - touchY;
-      lastTouchY = touchY;
-
-      const isScrollingDown = deltaY > 0;
-      const isScrollingUp = deltaY < 0;
-
-      if (isScrollingDown && progressRef.current < 1) {
-        e.preventDefault();
-        progressRef.current = clamp(progressRef.current + deltaY * 0.002, 0, 1);
-        scrollProgress.value = progressRef.current;
-      } else if (isScrollingUp && window.scrollY <= 0 && progressRef.current > 0) {
-        e.preventDefault();
-        progressRef.current = clamp(progressRef.current + deltaY * 0.002, 0, 1);
-        scrollProgress.value = progressRef.current;
-      }
-    };
-
-    window.addEventListener("wheel", handleWheel, { passive: false });
-    window.addEventListener("touchstart", handleTouchStart, { passive: false });
-    window.addEventListener("touchmove", handleTouchMove, { passive: false });
-
-    let rafId = 0;
-    const tick = () => {
-      const current = tl.progress();
-      const target = scrollProgress.value;
-      
-      if (Math.abs(current - target) > 0.00001) {
-        // Reduced to 0.02 for a heavy, syrupy "liquid flow" feel
-        tl.progress(current + (target - current) * 0.02);
-      }
-      
-      rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame(tick);
-
     return () => {
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-      cancelAnimationFrame(rafId);
       tl.kill();
     };
   }, []);
@@ -291,6 +248,43 @@ export default function CinematicIntro() {
           }}
         />
 
+        {/* ── Campfire Ancestors Scene Overlay (Before Noorva) ───── */}
+        <div
+          id="ci-campfire-wrap"
+          className="absolute inset-0 z-[12] w-full h-screen pointer-events-none overflow-hidden"
+          style={{ opacity: 0 }}
+        >
+          <img
+            id="ci-campfire-img"
+            src="/ancestors_campfire.png"
+            alt="Ancestors sitting around a campfire"
+            className="absolute inset-0 w-full h-full object-cover origin-center opacity-75"
+            style={{ transform: "scale(1.0)" }}
+          />
+          {/* Subtle warm ambient lighting overlay */}
+          <div className="absolute inset-0 bg-radial-gradient pointer-events-none"
+            style={{
+              background: "radial-gradient(circle at center, rgba(230,82,10,0.12) 0%, transparent 80%)",
+            }}
+          />
+          {/* Dark vignette to blend edges and ensure readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-black/80 pointer-events-none" />
+
+          {/* Centered at the bottom of the screen */}
+          <div className="absolute bottom-16 md:bottom-24 left-0 right-0 px-6 flex flex-col items-center text-center">
+            <span className="text-[10px] tracking-[0.45em] uppercase text-amber-500/90 mb-4 font-semibold">
+              Before Noorva
+            </span>
+            <h2 className="font-[var(--font-playfair)] text-3xl md:text-5xl lg:text-6xl text-white leading-tight font-extralight tracking-tight max-w-4xl mb-6">
+              We gathered around the fire, <br />
+              <span className="italic text-amber-100/90 font-light">sharing stories in the dark.</span>
+            </h2>
+            <p className="max-w-2xl text-xs md:text-sm leading-relaxed text-white/60 font-light">
+              For generations, our ancestors sat under the stars. They built fires to keep the wild at bay, connecting through the shared experience of storytelling.
+            </p>
+          </div>
+        </div>
+
         {/* ── Noorva brand reveal ───────────────────────────────── */}
         <div
           id="ci-noorva-wrap"
@@ -309,7 +303,7 @@ export default function CinematicIntro() {
             />
 
             <p className="mb-6 text-[9px] md:text-[11px] tracking-[0.56em] uppercase text-cyan-100/48">
-              Welcome to the world within
+              The Future of Connection
             </p>
 
             <h1
