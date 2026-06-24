@@ -25,8 +25,8 @@ function CosmosBackground() {
     resize();
     window.addEventListener("resize", resize);
 
-    // Generate 3 layers of stars: tiny distant, medium, and bright large
-    const makeStars = (count: number, minR: number, maxR: number, minA: number, maxA: number) =>
+    // Generate 3 layers of stars with velocity — slower for distant, faster for close
+    const makeStars = (count: number, minR: number, maxR: number, minA: number, maxA: number, speed: number) =>
       Array.from({ length: count }, () => ({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
@@ -34,22 +34,33 @@ function CosmosBackground() {
         alpha: Math.random() * (maxA - minA) + minA,
         twinkleSpeed: 0.005 + Math.random() * 0.015,
         twinkleOffset: Math.random() * Math.PI * 2,
+        vx: (Math.random() - 0.5) * speed,
+        vy: (Math.random() - 0.5) * speed,
       }));
 
-    const tinyStars   = makeStars(260, 0.2, 0.7, 0.15, 0.45);
-    const medStars    = makeStars(100, 0.7, 1.4, 0.35, 0.70);
-    const brightStars = makeStars(25,  1.4, 2.2, 0.60, 1.00);
+    const tinyStars   = makeStars(260, 0.2, 0.7, 0.15, 0.45, 0.06);  // slowest
+    const medStars    = makeStars(100, 0.7, 1.4, 0.35, 0.70, 0.14);  // medium
+    const brightStars = makeStars(25,  1.4, 2.2, 0.60, 1.00, 0.22);  // fastest (closest)
 
     let frame = 0;
     const draw = () => {
       frame++;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw all stars with twinkling
+      // Draw all stars with twinkling + movement
       [...tinyStars, ...medStars, ...brightStars].forEach((s) => {
+        // Move
+        s.x += s.vx;
+        s.y += s.vy;
+        // Wrap around edges
+        if (s.x < -2) s.x = canvas.width + 2;
+        if (s.x > canvas.width + 2) s.x = -2;
+        if (s.y < -2) s.y = canvas.height + 2;
+        if (s.y > canvas.height + 2) s.y = -2;
+
         const twinkle = Math.sin(frame * s.twinkleSpeed + s.twinkleOffset) * 0.3 + 0.7;
         const a = s.alpha * twinkle;
-        // Subtle soft glow for larger stars
+        // Soft glow for larger stars
         if (s.r > 1.2) {
           const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 4);
           grd.addColorStop(0, `rgba(255,255,255,${a * 0.4})`);
@@ -298,8 +309,8 @@ export default function MainContent() {
         </div>
 
         <div data-fade className="relative z-10 flex flex-col items-center">
-          <span data-scan className="inline-block text-[10px] tracking-[0.52em] uppercase text-cyan-300/65 mb-7 font-semibold border border-cyan-300/12 rounded-full px-5 py-2 bg-cyan-400/[0.04] shimmer">
-            ◈ Introducing Noorva
+          <span data-scan className="data-badge laser-scan mb-7">
+            ◈ System Initialized
           </span>
 
           <h1 className="font-[var(--font-playfair)] text-4xl md:text-6xl lg:text-[5.5rem] leading-[1.06] tracking-tight font-extralight max-w-5xl">
@@ -366,7 +377,7 @@ export default function MainContent() {
       </section>
 
       <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20">
-        <div data-line-grow className="h-px bg-gradient-to-r from-transparent via-white/7 to-transparent" />
+        <div data-line-grow className="fut-sep" />
       </div>
 
       {/* ═══════════════════════════════════════
@@ -374,7 +385,7 @@ export default function MainContent() {
       ═══════════════════════════════════════ */}
       <section className="relative mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24 md:py-36 grid md:grid-cols-12 gap-8 md:gap-16 items-start">
         <div data-fade className="md:col-span-5">
-          <span data-scan className="inline-block text-[10px] tracking-[0.45em] uppercase text-violet-400/70 mb-5 border border-violet-400/10 rounded-full px-4 py-1.5 bg-violet-400/[0.04] font-semibold shimmer">
+          <span data-scan className="data-badge laser-scan mb-5">
             Philosophy
           </span>
           <h2 data-chars className="mt-4 font-[var(--font-playfair)] text-3xl md:text-5xl text-white/92 leading-tight font-extralight tracking-tight">
@@ -388,7 +399,7 @@ export default function MainContent() {
       </section>
 
       <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20">
-        <div data-line-grow className="h-px bg-gradient-to-r from-transparent via-white/7 to-transparent" />
+        <div data-line-grow className="fut-sep" />
       </div>
 
       {/* ═══════════════════════════════════════
@@ -396,7 +407,7 @@ export default function MainContent() {
       ═══════════════════════════════════════ */}
       <section id="what-is-noorva" className="relative mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24 md:py-36">
         <div data-fade className="text-center max-w-3xl mx-auto mb-16 md:mb-24">
-          <span data-scan className="inline-block text-[10px] tracking-[0.45em] uppercase text-cyan-200/50 mb-5 border border-cyan-200/10 rounded-full px-4 py-1.5 bg-cyan-200/[0.04] font-semibold shimmer">
+          <span data-scan className="data-badge laser-scan mb-5">
             Overview
           </span>
           <h2 data-chars className="mt-4 font-[var(--font-playfair)] text-3xl md:text-5xl text-white/92 leading-tight font-extralight">
@@ -415,10 +426,10 @@ export default function MainContent() {
             "Find the right video at the right moment",
             "Feel guided by an intelligent companion",
           ].map((item, idx) => (
-            <div data-card key={idx} className="tilt-card group p-8 rounded-2xl border border-white/[0.05] bg-[#030208] hover:border-white/10 transition-all duration-500 cursor-default relative overflow-hidden shimmer">
+            <div data-card key={idx} className="tilt-card group p-8 rounded-2xl bg-[#030208] cursor-default holo-card hud-card transition-all duration-500">
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-                style={{ background: "radial-gradient(circle at 15% 15%,rgba(124,92,252,0.09),transparent 60%)" }} />
-              <div className="w-9 h-9 rounded-xl border border-cyan-400/20 bg-cyan-400/[0.04] flex items-center justify-center text-xs text-cyan-300/75 font-mono font-semibold mb-6 group-hover:border-cyan-400/40 group-hover:bg-cyan-400/[0.08] transition-all duration-300">
+                style={{ background: "radial-gradient(circle at 15% 15%,rgba(0,255,230,0.1),transparent 60%)" }} />
+              <div className="w-9 h-9 rounded-xl border border-cyan-400/20 bg-cyan-400/[0.04] flex items-center justify-center text-xs text-cyan-300/75 font-mono font-semibold mb-6 group-hover:border-cyan-400/80 group-hover:bg-cyan-400/[0.15] neon-cyan transition-all duration-300">
                 {String(idx + 1).padStart(2, "0")}
               </div>
               <h3 className="text-base text-white/75 font-light tracking-wide group-hover:text-white transition-colors duration-300 leading-snug">{item}</h3>
@@ -429,7 +440,7 @@ export default function MainContent() {
       </section>
 
       <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20">
-        <div data-line-grow className="h-px bg-gradient-to-r from-transparent via-white/7 to-transparent" />
+        <div data-line-grow className="fut-sep" />
       </div>
 
       {/* ═══════════════════════════════════════
@@ -438,7 +449,7 @@ export default function MainContent() {
       <section className="relative mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24 md:py-36">
         <div className="grid lg:grid-cols-12 gap-12 items-start">
           <div data-fade className="lg:col-span-4">
-            <span data-scan className="inline-block text-[10px] tracking-[0.45em] uppercase text-amber-500/70 mb-5 border border-amber-500/10 rounded-full px-4 py-1.5 bg-amber-500/[0.04] font-semibold shimmer">
+            <span data-scan className="data-badge laser-scan mb-5">
               Core Alignment
             </span>
             <h2 data-chars className="mt-4 font-[var(--font-playfair)] text-3xl md:text-5xl text-white/92 leading-tight font-extralight">
@@ -455,7 +466,7 @@ export default function MainContent() {
               { title: "Human-Interactive", icon: "◎", copy: "Natural conversations and meaningful interaction build continuity over time — the experience feels alive, familiar, and deeply tailored.", glow: "rgba(60,200,160,0.07)" },
               { title: "Trustworthy", icon: "◇", copy: "Advanced source filtering prioritizes credible experts, verified information, and meaningful knowledge over noise, clickbait, and low-value content.", glow: "rgba(245,158,11,0.07)" },
             ].map(({ title, icon, copy, glow }) => (
-              <div data-card key={title} className="tilt-card group relative p-8 rounded-2xl border border-white/[0.05] bg-[#030208] overflow-hidden cursor-default transition-all duration-500 hover:-translate-y-1 shimmer">
+              <div data-card key={title} className="tilt-card group relative p-8 rounded-2xl bg-[#030208] overflow-hidden cursor-default transition-all duration-500 holo-card hud-card">
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
                   style={{ background: `radial-gradient(circle at 10% 10%,${glow},transparent 60%)` }} />
                 <span className="text-2xl text-white/18 group-hover:text-white/50 transition-colors duration-300 block mb-4">{icon}</span>
@@ -469,7 +480,7 @@ export default function MainContent() {
       </section>
 
       <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20">
-        <div data-line-grow className="h-px bg-gradient-to-r from-transparent via-white/7 to-transparent" />
+        <div data-line-grow className="fut-sep" />
       </div>
 
       {/* ═══════════════════════════════════════
@@ -477,7 +488,7 @@ export default function MainContent() {
       ═══════════════════════════════════════ */}
       <section className="relative mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24 md:py-36">
         <div data-fade className="text-center max-w-3xl mx-auto mb-16 md:mb-24">
-          <span data-scan className="inline-block text-[10px] tracking-[0.45em] uppercase text-cyan-200/50 mb-5 border border-cyan-200/10 rounded-full px-4 py-1.5 bg-cyan-200/[0.04] font-semibold shimmer">
+          <span data-scan className="data-badge laser-scan mb-5">
             The Architecture
           </span>
           <h2 data-chars className="mt-4 font-[var(--font-playfair)] text-3xl md:text-5xl text-white/92 leading-tight font-extralight">
@@ -492,7 +503,7 @@ export default function MainContent() {
             { layer: "03 · Timing", title: "Mood Intelligence", desc: "Decides when to interact, how to interact, and when not to interrupt — so every interaction feels relevant, calm, and perfectly timed.", glow: "rgba(16,185,129,0.11)", badge: "bg-emerald-500/10 text-emerald-300/80 border-emerald-500/15" },
             { layer: "04 · Trust", title: "Source Filtering", desc: "Filters knowledge through experts, credible institutions, and high-quality sources so every answer is not only personalized — but reliable.", glow: "rgba(245,158,11,0.11)", badge: "bg-amber-500/10 text-amber-300/80 border-amber-500/15" },
           ].map(({ layer, title, desc, glow, badge }) => (
-            <div data-card key={title} className="tilt-card group relative p-8 rounded-3xl border border-white/[0.05] bg-[#030208] overflow-hidden flex flex-col justify-between min-h-[340px] hover:border-white/10 transition-all duration-500 cursor-default hover:-translate-y-1 scanlines">
+            <div data-card key={title} className="tilt-card group relative p-8 rounded-3xl bg-[#030208] overflow-hidden flex flex-col justify-between min-h-[340px] transition-all duration-500 cursor-default holo-card hud-card scanlines-hard">
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
                 style={{ background: `radial-gradient(circle at 50% 0%,${glow},transparent 70%)` }} />
               {/* Corner grid */}
@@ -512,7 +523,7 @@ export default function MainContent() {
       </section>
 
       <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20">
-        <div data-line-grow className="h-px bg-gradient-to-r from-transparent via-white/7 to-transparent" />
+        <div data-line-grow className="fut-sep" />
       </div>
 
       {/* ═══════════════════════════════════════
@@ -520,7 +531,7 @@ export default function MainContent() {
       ═══════════════════════════════════════ */}
       <section className="relative mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24 md:py-36">
         <div data-fade className="text-center max-w-3xl mx-auto mb-16 md:mb-24">
-          <span data-scan className="inline-block text-[10px] tracking-[0.45em] uppercase text-violet-400/70 mb-5 border border-violet-400/10 rounded-full px-4 py-1.5 bg-violet-400/[0.04] font-semibold shimmer">
+          <span data-scan className="data-badge laser-scan mb-5">
             Capabilities
           </span>
           <h2 data-chars className="mt-4 font-[var(--font-playfair)] text-3xl md:text-5xl text-white/92 leading-tight font-extralight">
@@ -537,7 +548,7 @@ export default function MainContent() {
             { num: "06", title: "Stay With You Via Voice", desc: "Voice-first interaction lets Noorva capture tasks, remember things, answer questions, and continue conversations naturally." },
             { num: "07", title: "Evolve With You", desc: "As your routines, preferences, goals, and life situations change, Noorva updates its understanding and adapts the experience around your new reality." },
           ].map(({ num, title, desc }) => (
-            <div data-card key={title} className="tilt-card group p-8 rounded-2xl border border-white/[0.05] bg-[#030208] hover:border-white/10 transition-all duration-500 cursor-default relative overflow-hidden hover:-translate-y-1 shimmer">
+            <div data-card key={title} className="tilt-card group p-8 rounded-2xl bg-[#030208] transition-all duration-500 cursor-default relative overflow-hidden holo-card hud-card">
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
                 style={{ background: "radial-gradient(circle at 10% 10%,rgba(124,92,252,0.07),transparent 60%)" }} />
               <div className="flex justify-between items-start mb-7">
@@ -553,7 +564,7 @@ export default function MainContent() {
       </section>
 
       <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20">
-        <div data-line-grow className="h-px bg-gradient-to-r from-transparent via-white/7 to-transparent" />
+        <div data-line-grow className="fut-sep" />
       </div>
 
       {/* ═══════════════════════════════════════
@@ -561,7 +572,7 @@ export default function MainContent() {
       ═══════════════════════════════════════ */}
       <section className="relative mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24 md:py-36">
         <div data-fade className="text-center max-w-3xl mx-auto mb-16 md:mb-24">
-          <span data-scan className="inline-block text-[10px] tracking-[0.45em] uppercase text-amber-500/70 mb-5 border border-amber-500/10 rounded-full px-4 py-1.5 bg-amber-500/[0.04] font-semibold shimmer">
+          <span data-scan className="data-badge laser-scan mb-5">
             Daily Context
           </span>
           <h2 data-chars className="mt-4 font-[var(--font-playfair)] text-3xl md:text-5xl text-white/92 leading-tight font-extralight">
@@ -580,8 +591,8 @@ export default function MainContent() {
             { time: "Wellness", label: "16 — 19", desc: "Support routines — workouts, mindfulness, self-care, and habit building.", dot: "bg-emerald-400", shadow: "shadow-emerald-400/30" },
             { time: "Evening", label: "19 — 22", desc: "Wind down with the right content and lighter interactions aligned with your mood.", dot: "bg-blue-400", shadow: "shadow-blue-400/30" },
           ].map(({ time, label, desc, dot, shadow }) => (
-            <div data-card key={time} className="tilt-card relative z-10 w-full md:w-1/5 p-6 rounded-2xl border border-white/[0.05] bg-[#030208] flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 hover:border-white/10 cursor-default group scanlines shimmer">
-              <div className={`hidden md:block w-3 h-3 rounded-full ${dot} border-2 border-black ring-4 ring-white/[0.04] absolute -top-[42px] left-1/2 -translate-x-1/2 shadow-lg ${shadow} group-hover:scale-150 transition-transform duration-300`} />
+            <div data-card key={time} className="tilt-card relative z-10 w-full md:w-1/5 p-6 rounded-2xl bg-[#030208] flex flex-col items-center text-center transition-all duration-500 cursor-default group holo-card hud-card scanlines-hard">
+              <div className={`hidden md:block w-3 h-3 rounded-full ${dot} border-2 border-black ring-4 ring-white/[0.04] absolute -top-[42px] left-1/2 -translate-x-1/2 shadow-lg ${shadow} group-hover:scale-150 neon-cyan transition-transform duration-300`} />
               <span className="text-[10px] font-mono text-white/22 tracking-wider mb-2">{label}</span>
               <h4 className="text-base font-medium text-white/82 group-hover:text-white transition-colors duration-300 mb-3">{time}</h4>
               <p className="text-xs leading-relaxed text-white/40 font-light">{desc}</p>
@@ -591,7 +602,7 @@ export default function MainContent() {
       </section>
 
       <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20">
-        <div data-line-grow className="h-px bg-gradient-to-r from-transparent via-white/7 to-transparent" />
+        <div data-line-grow className="fut-sep" />
       </div>
 
       {/* ═══════════════════════════════════════
@@ -600,7 +611,7 @@ export default function MainContent() {
       <section className="relative mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24 md:py-36">
         <div className="grid lg:grid-cols-12 gap-12 items-center">
           <div data-fade className="lg:col-span-6 space-y-6">
-            <span data-scan className="inline-block text-[10px] tracking-[0.45em] uppercase text-cyan-200/50 border border-cyan-200/10 rounded-full px-4 py-1.5 bg-cyan-200/[0.04] font-semibold shimmer">
+            <span data-scan className="data-badge laser-scan mb-5">
               Credibility First
             </span>
             <h2 data-chars className="mt-4 font-[var(--font-playfair)] text-3xl md:text-5xl text-white/92 leading-tight font-extralight">
@@ -631,7 +642,7 @@ export default function MainContent() {
       </section>
 
       <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20">
-        <div data-line-grow className="h-px bg-gradient-to-r from-transparent via-white/7 to-transparent" />
+        <div data-line-grow className="fut-sep" />
       </div>
 
       {/* ═══════════════════════════════════════
@@ -640,7 +651,7 @@ export default function MainContent() {
       <section className="relative mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24 md:py-36">
         <div className="grid lg:grid-cols-12 gap-12 items-center">
           <div data-fade className="lg:col-span-6 lg:order-2 space-y-6">
-            <span data-scan className="inline-block text-[10px] tracking-[0.45em] uppercase text-violet-400/70 border border-violet-400/10 rounded-full px-4 py-1.5 bg-violet-400/[0.04] font-semibold shimmer">
+            <span data-scan className="data-badge laser-scan mb-5">
               Ecosystem
             </span>
             <h2 data-chars className="mt-4 font-[var(--font-playfair)] text-3xl md:text-5xl text-white/92 leading-tight font-extralight">
@@ -665,7 +676,7 @@ export default function MainContent() {
       </section>
 
       <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20">
-        <div data-line-grow className="h-px bg-gradient-to-r from-transparent via-white/7 to-transparent" />
+        <div data-line-grow className="fut-sep" />
       </div>
 
       {/* ═══════════════════════════════════════
@@ -673,7 +684,7 @@ export default function MainContent() {
       ═══════════════════════════════════════ */}
       <section className="relative mx-auto max-w-7xl px-6 md:px-12 lg:px-20 py-24 md:py-36">
         <div data-fade className="text-center max-w-3xl mx-auto mb-16 md:mb-24">
-          <span data-scan className="inline-block text-[10px] tracking-[0.45em] uppercase text-cyan-200/50 mb-5 border border-cyan-200/10 rounded-full px-4 py-1.5 bg-cyan-200/[0.04] font-semibold shimmer">
+          <span data-scan className="data-badge laser-scan mb-5">
             Differentiation
           </span>
           <h2 data-chars className="mt-4 font-[var(--font-playfair)] text-3xl md:text-5xl text-white/92 leading-tight font-extralight">
@@ -691,10 +702,10 @@ export default function MainContent() {
             "Prioritizes trustworthy information and expert-backed guidance",
             "Brings together productivity, knowledge, and companionship in one experience",
           ].map((item, idx) => (
-            <div data-card key={idx} className="tilt-card group p-7 rounded-2xl border border-white/[0.05] bg-[#030208] flex flex-col justify-between min-h-[220px] cursor-default transition-all duration-500 hover:-translate-y-1 hover:border-cyan-500/18 relative overflow-hidden shimmer">
+            <div data-card key={idx} className="tilt-card group p-7 rounded-2xl bg-[#030208] flex flex-col justify-between min-h-[220px] cursor-default transition-all duration-500 holo-card hud-card scanlines-hard">
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-                style={{ background: "radial-gradient(circle at 20% 20%,rgba(8,145,178,0.07),transparent 60%)" }} />
-              <span className="text-xs font-mono text-cyan-400/40 font-semibold tracking-widest">[ 0{idx + 1} ]</span>
+                style={{ background: "radial-gradient(circle at 20% 20%,rgba(0,255,230,0.1),transparent 60%)" }} />
+              <span className="text-xs font-mono text-cyan-400/40 font-semibold tracking-widest neon-cyan">[ 0{idx + 1} ]</span>
               <p className="text-sm leading-relaxed text-white/52 font-light mt-6 group-hover:text-white/70 transition-colors duration-300">{item}</p>
               <div className="mt-5 h-px w-6 bg-gradient-to-r from-cyan-400/30 to-transparent group-hover:w-14 transition-all duration-500" />
             </div>
@@ -726,7 +737,7 @@ export default function MainContent() {
       </section>
 
       <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20">
-        <div data-line-grow className="h-px bg-gradient-to-r from-transparent via-white/7 to-transparent" />
+        <div data-line-grow className="fut-sep" />
       </div>
 
       {/* ═══════════════════════════════════════
@@ -738,7 +749,7 @@ export default function MainContent() {
           { label: "Our Aspiration", color: "text-violet-400/70 border-violet-400/10 bg-violet-400/[0.04]", title: "Our Vision", body: "We believe AI should not stop at utility. It should evolve into something more supportive, more emotionally aware, more trustworthy, and more integrated into the everyday human experience. Noorva is our step toward that future." },
         ].map(({ label, color, title, body }) => (
           <div data-fade key={title} className="space-y-6">
-            <span data-scan className={`inline-block text-[10px] tracking-[0.45em] uppercase border rounded-full px-4 py-1.5 font-semibold shimmer ${color}`}>{label}</span>
+            <span data-scan className={`data-badge laser-scan mb-5 ${color}`}>{label}</span>
             <h3 data-chars className="mt-4 font-[var(--font-playfair)] text-3xl md:text-4xl text-white/95 leading-tight font-extralight">{title}</h3>
             <p className="text-base leading-relaxed text-white/48 font-light">{body}</p>
           </div>

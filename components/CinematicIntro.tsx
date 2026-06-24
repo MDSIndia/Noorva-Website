@@ -183,24 +183,24 @@ export default function CinematicIntro() {
         {/* ── Text overlays ─────────────────────────────────────── */}
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
 
-          {/* Scene 2 */}
+          {/* Scene 2 — spark of intelligence */}
           <p
             id="ci-text-1"
             className="absolute text-center px-8
                        text-white/72 text-xl md:text-2xl font-light tracking-[0.30em] uppercase"
             style={{ opacity: 0, filter: "blur(10px)" }}
           >
-            A Star Blast
+            A spark of intelligence
           </p>
 
-          {/* Scene 3 — explosion */}
+          {/* Scene 3 — knowledge expands */}
           <div
             id="ci-text-2"
             className="absolute text-center px-8"
             style={{ opacity: 0, filter: "blur(14px)" }}
           >
             <p className="text-[9px] md:text-[11px] tracking-[0.52em] uppercase text-cyan-200/55 mb-3">
-              The universe awakens
+              Knowledge awakens
             </p>
             <h2
               className="text-5xl md:text-7xl lg:text-[5.5rem] font-extralight tracking-[-0.02em] text-white"
@@ -209,31 +209,31 @@ export default function CinematicIntro() {
                   "0 0 55px rgba(100,170,255,0.85), 0 0 110px rgba(70,110,255,0.45)",
               }}
             >
-              It becomes<br />Cosmos
+              It grows.<br />It connects.
             </h2>
           </div>
 
-          {/* Scene 4 — cosmos */}
+          {/* Scene 4 — intelligence reaches humanity */}
           <p
             id="ci-text-3"
             className="absolute text-center px-8
                        text-white/68 text-xl md:text-2xl font-light tracking-[0.24em] uppercase"
             style={{ opacity: 0, filter: "blur(8px)" }}
           >
-            And expands forever
+            And finds its purpose in people
           </p>
 
-          {/* Scene 5 — Earth */}
+          {/* Scene 5 — Earth / human world */}
           <div
             id="ci-text-4"
             className="absolute text-center px-8"
             style={{ opacity: 0, filter: "blur(6px)" }}
           >
             <p className="text-[9px] md:text-[11px] tracking-[0.52em] uppercase text-blue-200/52 mb-3">
-              Within it all
+              In a world full of noise
             </p>
             <p className="text-3xl md:text-5xl font-extralight text-white/82 tracking-[0.06em]">
-              A fragile, perfect world
+              People need a guide they can trust
             </p>
           </div>
         </div>

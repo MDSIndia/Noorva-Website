@@ -286,3 +286,249 @@ html.lenis        { height: auto; }
   inset: -8px;
   border-color: rgba(124,92,252,0.35);
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   FUTURISTIC DESIGN SYSTEM
+══════════════════════════════════════════════════════════════════ */
+
+/* ── HUD Corner brackets ─────────────────────────────────────────── */
+.hud-card {
+  position: relative;
+}
+.hud-card::before,
+.hud-card::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  transition: all 0.4s ease;
+}
+.hud-card::before {
+  top: 0; left: 0;
+  border-top: 1.5px solid rgba(0,255,230,0.6);
+  border-left: 1.5px solid rgba(0,255,230,0.6);
+}
+.hud-card::after {
+  bottom: 0; right: 0;
+  border-bottom: 1.5px solid rgba(0,255,230,0.6);
+  border-right: 1.5px solid rgba(0,255,230,0.6);
+}
+.hud-card:hover::before,
+.hud-card:hover::after {
+  width: 22px;
+  height: 22px;
+  border-color: rgba(0,255,230,1);
+  box-shadow: 0 0 8px rgba(0,255,230,0.5);
+}
+
+/* ── Holographic card shimmer ────────────────────────────────────── */
+.holo-card {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255,255,255,0.025);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.holo-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 30%,
+    rgba(0,255,230,0.04) 45%,
+    rgba(100,120,255,0.06) 50%,
+    rgba(255,100,200,0.04) 55%,
+    transparent 70%
+  );
+  background-size: 300% 300%;
+  animation: holo-shift 5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes holo-shift {
+  0%   { background-position: 0% 0%; }
+  50%  { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+.holo-card:hover::before {
+  animation-duration: 1.5s;
+}
+
+/* ── Neon cyan glow ──────────────────────────────────────────────── */
+@keyframes cyan-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(0,255,230,0.3), 0 0 18px rgba(0,255,230,0.1); }
+  50%       { box-shadow: 0 0 14px rgba(0,255,230,0.7), 0 0 40px rgba(0,255,230,0.25), 0 0 80px rgba(0,255,230,0.08); }
+}
+.neon-cyan {
+  animation: cyan-pulse 3s ease-in-out infinite;
+}
+
+/* ── Laser scan line ─────────────────────────────────────────────── */
+@keyframes laser-scan {
+  0%   { top: 0%; opacity: 0.7; }
+  80%  { top: 100%; opacity: 0.7; }
+  100% { top: 100%; opacity: 0; }
+}
+.laser-scan {
+  position: relative;
+  overflow: hidden;
+}
+.laser-scan::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,255,230,0.8), transparent);
+  animation: laser-scan 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── Data readout badge ──────────────────────────────────────────── */
+.data-badge {
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(0,255,230,0.75);
+  background: rgba(0,255,230,0.05);
+  border: 1px solid rgba(0,255,230,0.2);
+  padding: 3px 10px;
+  border-radius: 2px;
+  position: relative;
+}
+.data-badge::before {
+  content: "▶ ";
+  opacity: 0.6;
+}
+
+/* ── Hex grid background ─────────────────────────────────────────── */
+.hex-bg {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0);
+  background-size: 32px 32px;
+}
+
+/* ── Animated neon border ────────────────────────────────────────── */
+.neon-border {
+  position: relative;
+}
+.neon-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(90deg,
+    rgba(0,255,230,0.6),
+    rgba(100,100,255,0.4),
+    rgba(255,100,200,0.3),
+    rgba(0,255,230,0.6)
+  );
+  background-size: 300% 100%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: neon-border-flow 3s linear infinite;
+  pointer-events: none;
+}
+@keyframes neon-border-flow {
+  0%   { background-position: 0% 0; }
+  100% { background-position: 300% 0; }
+}
+
+/* ── Futuristic section header line ─────────────────────────────── */
+.fut-header {
+  position: relative;
+  display: inline-block;
+}
+.fut-header::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(0,255,230,0.7), transparent);
+}
+
+/* ── Radar ping ──────────────────────────────────────────────────── */
+@keyframes radar-ping {
+  0%   { transform: scale(0.3); opacity: 0.9; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.radar-ping {
+  position: relative;
+}
+.radar-ping::before,
+.radar-ping::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(0,255,230,0.5);
+  animation: radar-ping 2.4s ease-out infinite;
+  pointer-events: none;
+}
+.radar-ping::after {
+  animation-delay: 1.2s;
+}
+
+/* ── Matrix digit rain strip ─────────────────────────────────────── */
+@keyframes matrix-slide {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+
+/* ── Scanlines intensity ─────────────────────────────────────────── */
+.scanlines-hard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,0.08) 3px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Holographic text ────────────────────────────────────────────── */
+.holo-text {
+  background: linear-gradient(90deg, #00ffe6, #7c5cfc, #ff64c8, #00ffe6);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: holo-text-flow 4s linear infinite;
+}
+@keyframes holo-text-flow {
+  0%   { background-position: 0% 0; }
+  100% { background-position: 300% 0; }
+}
+
+/* ── Futuristic separator ────────────────────────────────────────── */
+.fut-sep {
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0,255,230,0.15) 20%,
+    rgba(0,255,230,0.4) 50%,
+    rgba(0,255,230,0.15) 80%,
+    transparent
+  );
+  position: relative;
+}
+.fut-sep::before {
+  content: "◆";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 6px;
+  color: rgba(0,255,230,0.6);
+}
