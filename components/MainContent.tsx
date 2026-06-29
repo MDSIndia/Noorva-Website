@@ -42,48 +42,53 @@ const SLIDES = [
    (rotationY 0→-90) into the next slide.
 ───────────────────────────────────────────────────────────────── */
 function StorySection() {
-  const cardRefs  = useRef<(HTMLDivElement | null)[]>([]);
-  const textRefs  = useRef<(HTMLDivElement | null)[]>([]);
-  const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const cardRefs     = useRef<(HTMLDivElement | null)[]>([]);
+  const textRefs     = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    const N = SLIDES.length;
-    const triggers: ScrollTrigger[] = [];
+    const N         = SLIDES.length;
+    const container = containerRef.current;
+    if (!container) return;
 
+    // ── Initial states ────────────────────────────────────────
     SLIDES.forEach((_, i) => {
-      const card  = cardRefs.current[i];
-      const text  = textRefs.current[i];
-      const slide = slideRefs.current[i];
-      if (!card || !text || !slide) return;
-
-      // Initial hidden state for all slides
-      const isFirst = i === 0;
-      gsap.set(card, { rotationY: isFirst ? 0 : 90, opacity: isFirst ? 1 : 0 });
+      const card = cardRefs.current[i];
+      const text = textRefs.current[i];
+      if (!card || !text) return;
+      gsap.set(card, { rotationY: i === 0 ? 0 : 90, opacity: i === 0 ? 1 : 0 });
       gsap.set(text, { opacity: 0, y: 36 });
+    });
 
-      const st = ScrollTrigger.create({
-        trigger: slide,
-        start: "top top",
-        end: "+=180%",
-        pin: true,
-        pinSpacing: true,
-        scrub: 0.9,
-        onUpdate: (self) => {
-          const p = self.progress; // 0→1
+    // ── Single pinned ScrollTrigger — total scroll = N × 100vh ─
+    const st = ScrollTrigger.create({
+      trigger: container,
+      start: "top top",
+      end: `+=${N * 100}%`,
+      pin: true,
+      pinSpacing: true,
+      scrub: 0.9,
+      onUpdate: (self) => {
+        // totalP goes 0 → N; slide i owns the segment [i, i+1]
+        const totalP = self.progress * N;
 
-          // ── Card rotation ───────────────────────────────────
-          // 0.00 → 0.30  rotate in  (90° → 0°)
-          // 0.30 → 0.70  hold at 0°
-          // 0.70 → 1.00  rotate out (0° → -90°)  ← skip for last slide
+        SLIDES.forEach((_, i) => {
+          const card   = cardRefs.current[i];
+          const text   = textRefs.current[i];
+          if (!card || !text) return;
+
           const isLast = i === N - 1;
+          // local progress for this slide clamped to [0, 1]
+          const p = clamp01(totalP - i);
 
+          // ── Card rotation ──────────────────────────────────
           let rotY: number;
           let cardOp: number;
 
           if (p < 0.30) {
             const t = easeOut3(p / 0.30);
-            rotY   = isFirst ? 0 : 90 * (1 - t);
-            cardOp = isFirst ? 1 : 0.15 + 0.85 * t;
+            rotY   = i === 0 ? 0 : 90 * (1 - t);
+            cardOp = i === 0 ? 1 : 0.15 + 0.85 * t;
           } else if (p < 0.70 || isLast) {
             rotY   = 0;
             cardOp = 1;
@@ -95,32 +100,30 @@ function StorySection() {
 
           gsap.set(card, { rotationY: rotY, opacity: cardOp });
 
-          // ── Text ────────────────────────────────────────────
-          // fades in 0.25→0.45, holds, fades out 0.68→0.82 (not last)
+          // ── Text ───────────────────────────────────────────
           const tIn  = clamp01((p - 0.25) / 0.20);
           const tOut = isLast ? 0 : clamp01((p - 0.68) / 0.14);
           const textOp = easeOut3(tIn) * (1 - easeIn3(tOut));
           const textY  = 36 * (1 - easeOut3(tIn)) + 18 * easeIn3(tOut);
 
           gsap.set(text, { opacity: textOp, y: textY });
-        },
-      });
-
-      triggers.push(st);
+        });
+      },
     });
 
-    return () => triggers.forEach((t) => t.kill());
+    return () => st.kill();
   }, []);
 
   return (
-    <>
+    // Single container pinned for the full scroll distance
+    <div
+      ref={containerRef}
+      className="relative w-full h-screen bg-black overflow-hidden"
+      style={{ perspective: "1400px" }}
+    >
       {SLIDES.map((slide, i) => (
-        <div
-          key={i}
-          ref={(el) => { slideRefs.current[i] = el; }}
-          className="relative w-full h-screen bg-black overflow-hidden"
-          style={{ perspective: "1400px" }}
-        >
+        // All slides stacked absolutely — no vertical gaps possible
+        <div key={i} className="absolute inset-0">
           {/* ── IMAGE CARD (rotates in/out) ─────────────────── */}
           <div
             ref={(el) => { cardRefs.current[i] = el; }}
@@ -131,11 +134,6 @@ function StorySection() {
               backfaceVisibility: "hidden",
             }}
           >
-            {/*
-              PORTRAIT  (< md): image fills full screen, text floats at bottom
-              LANDSCAPE (≥ md): split — image on right half, text on left half
-            */}
-
             {/* ── Portrait layout: full-screen image ─────── */}
             <div className="md:hidden absolute inset-0 bg-black">
               <Image
@@ -146,7 +144,6 @@ function StorySection() {
                 sizes="100vw"
                 priority={i === 0}
               />
-              {/* bottom fade for text */}
               <div
                 className="absolute inset-0"
                 style={{
@@ -158,7 +155,6 @@ function StorySection() {
 
             {/* ── Landscape layout: right-side image panel ─ */}
             <div className="hidden md:block absolute inset-0 bg-black">
-              {/* Left half — deep dark for text */}
               <div
                 className="absolute left-0 top-0 bottom-0 w-[50%]"
                 style={{
@@ -167,7 +163,6 @@ function StorySection() {
                   zIndex: 2,
                 }}
               />
-              {/* Right half — image */}
               <div className="absolute right-0 top-0 bottom-0 w-[58%]">
                 <Image
                   src={slide.src}
@@ -177,7 +172,6 @@ function StorySection() {
                   sizes="60vw"
                   priority={i === 0}
                 />
-                {/* inner shadow blending into black left side */}
                 <div
                   className="absolute inset-0"
                   style={{
@@ -194,14 +188,11 @@ function StorySection() {
             ref={(el) => { textRefs.current[i] = el; }}
             className={[
               "absolute inset-0 flex flex-col pointer-events-none",
-              // Portrait: bottom-aligned, centred
               "justify-end pb-16 px-7 items-start",
-              // Landscape: left column, vertically centred
               "md:justify-center md:pb-0 md:px-16 lg:px-24 md:items-start md:max-w-[52%]",
             ].join(" ")}
             style={{ opacity: 0 }}
           >
-            {/* Chapter label */}
             <div className="flex items-center gap-3 mb-5">
               <div className="h-px w-8 bg-white/35" />
               <span className="text-[9px] tracking-[0.65em] uppercase text-white/40 font-light">
@@ -209,7 +200,6 @@ function StorySection() {
               </span>
             </div>
 
-            {/* Heading */}
             <h2
               className="font-[var(--font-playfair)] text-4xl md:text-5xl lg:text-[3.6rem] xl:text-[4.2rem] font-extralight text-white leading-[1.08]"
               style={{ textShadow: "0 4px 60px rgba(0,0,0,1)" }}
@@ -219,15 +209,12 @@ function StorySection() {
               ))}
             </h2>
 
-            {/* Rule */}
             <div className="mt-6 w-14 h-px bg-gradient-to-r from-white/45 to-transparent" />
 
-            {/* Body */}
             <p className="mt-5 max-w-sm text-sm font-light text-white/52 leading-relaxed">
               {slide.body}
             </p>
 
-            {/* Progress pills */}
             <div className="mt-8 flex gap-2">
               {SLIDES.map((_, d) => (
                 <span
@@ -250,14 +237,14 @@ function StorySection() {
           </span>
         </div>
       ))}
-    </>
+    </div>
   );
 }
 
 /* ─── EASING HELPERS ────────────────────────────────────────────── */
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const easeOut3 = (t: number) => 1 - Math.pow(1 - t, 3);
-const easeIn3  = (t: number) => t * t * t;
+const easeIn3 = (t: number) => t * t * t;
 
 /* ─── END SCREEN ────────────────────────────────────────────────── */
 function EndScreen() {
