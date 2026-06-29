@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { scrollProgress } from "./store";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -47,38 +48,59 @@ function CosmosBackground() {
       frame++;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw all stars with twinkling + movement
-      [...tinyStars, ...medStars, ...brightStars].forEach((s) => {
-        // Move
-        s.x += s.vx;
-        s.y += s.vy;
-        // Wrap around edges
-        if (s.x < -2) s.x = canvas.width + 2;
-        if (s.x > canvas.width + 2) s.x = -2;
-        if (s.y < -2) s.y = canvas.height + 2;
-        if (s.y > canvas.height + 2) s.y = -2;
+      // Check current scroll position and scrollProgress value
+      const p = typeof scrollProgress.value === "number" && !isNaN(scrollProgress.value)
+        ? scrollProgress.value : 0;
+      
+      const scrollY = typeof window !== "undefined" ? window.scrollY : 0;
+      const threshold = typeof window !== "undefined" ? window.innerHeight : 800;
 
-        const twinkle = Math.sin(frame * s.twinkleSpeed + s.twinkleOffset) * 0.3 + 0.7;
-        const a = s.alpha * twinkle;
-        // Soft glow for larger stars
-        if (s.r > 1.2) {
-          const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 4);
-          grd.addColorStop(0, `rgba(255,255,255,${a * 0.4})`);
-          grd.addColorStop(1, "rgba(255,255,255,0)");
+      // If we are scrolled past the first screen height, or scroll progress of the intro is near completion,
+      // show the cosmos background.
+      let targetOpacity = 0;
+      if (scrollY > threshold) {
+        targetOpacity = 1;
+      } else if (p >= 0.9) {
+        targetOpacity = (p - 0.9) / 0.1; // transition from 0 to 1
+      }
+
+      canvas.style.opacity = targetOpacity.toString();
+
+      if (targetOpacity > 0) {
+        // Draw all stars with twinkling + movement
+        [...tinyStars, ...medStars, ...brightStars].forEach((s) => {
+          // Move
+          s.x += s.vx;
+          s.y += s.vy;
+          // Wrap around edges
+          if (s.x < -2) s.x = canvas.width + 2;
+          if (s.x > canvas.width + 2) s.x = -2;
+          if (s.y < -2) s.y = canvas.height + 2;
+          if (s.y > canvas.height + 2) s.y = -2;
+
+          const twinkle = Math.sin(frame * s.twinkleSpeed + s.twinkleOffset) * 0.3 + 0.7;
+          const a = s.alpha * twinkle * targetOpacity;
+          // Soft glow for larger stars
+          if (s.r > 1.2) {
+            const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 4);
+            grd.addColorStop(0, `rgba(255,255,255,${a * 0.4})`);
+            grd.addColorStop(1, "rgba(255,255,255,0)");
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r * 4, 0, Math.PI * 2);
+            ctx.fillStyle = grd;
+            ctx.fill();
+          }
           ctx.beginPath();
-          ctx.arc(s.x, s.y, s.r * 4, 0, Math.PI * 2);
-          ctx.fillStyle = grd;
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255,255,255,${a})`;
           ctx.fill();
-        }
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${a})`;
-        ctx.fill();
-      });
+        });
+      }
 
       raf = requestAnimationFrame(draw);
     };
     draw();
+
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
@@ -87,8 +109,8 @@ function CosmosBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full pointer-events-none"
-      style={{ zIndex: 0 }}
+      className="fixed inset-0 w-full h-full pointer-events-none transition-opacity duration-300"
+      style={{ zIndex: 0, opacity: 0 }}
     />
   );
 }

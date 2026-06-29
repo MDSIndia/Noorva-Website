@@ -64,11 +64,11 @@ function SceneFog({ live }: { live: React.MutableRefObject<number> }) {
     if (!fog.current) return;
     const p = live.current;
     // Gentle cosmos fog; heavy entry fog for Earth portal
-    const cosmosDensity = range(p, 0.38, 0.58) * 0.012;
-    const entryDensity  = easeIn3(range(p, 0.83, 0.95)) * 0.14;
+    const cosmosDensity = range(p, 0.32, 0.52) * 0.012;
+    const entryDensity  = easeIn3(range(p, 0.77, 0.90)) * 0.14;
     fog.current.density = cosmosDensity + entryDensity;
 
-    const portalT = range(p, 0.88, 1.0);
+    const portalT = range(p, 0.84, 1.0);
     fog.current.color.setRGB(
       lerp(0,     0.03, portalT),
       lerp(0.001, 0.02, portalT),
@@ -80,9 +80,9 @@ function SceneFog({ live }: { live: React.MutableRefObject<number> }) {
 }
 
 /* ─── CAMERA RIG ─────────────────────────────────────────────────
-   Phase 0–0.46 : static, gentle breathing sway around origin
-   Phase 0.46–0.82: fly forward through the cosmos toward Earth
-   Phase 0.82–0.96: slam into Earth (rapid Z advance)             */
+   Phase 0–0.40 : static, gentle breathing sway around origin
+   Phase 0.40–0.76: fly forward through the cosmos toward Earth
+   Phase 0.76–0.92: slam into Earth (rapid Z advance)             */
 function CameraRig({ live }: { live: React.MutableRefObject<number> }) {
   useFrame(({ camera, clock }) => {
     const p = live.current;
@@ -93,9 +93,9 @@ function CameraRig({ live }: { live: React.MutableRefObject<number> }) {
     const dy = Math.cos(t * 0.07) * 0.10;
 
     // Travel toward Earth
-    const travelT = easeInOut3(range(p, 0.46, 0.82));
+    const travelT = easeInOut3(range(p, 0.40, 0.76));
     // Final plunge into Earth
-    const plungeT = easeIn3(range(p, 0.82, 0.97));
+    const plungeT = easeIn3(range(p, 0.76, 0.92));
 
     const travelZ = lerp(8, -28, travelT);
     const plungeZ = lerp(travelZ, 5, plungeT);
@@ -133,8 +133,8 @@ function StarField({ live }: { live: React.MutableRefObject<number> }) {
 
   useFrame(() => {
     const p = live.current;
-    const fadeIn  = easeOut3(range(p, 0.28, 0.52));
-    const fadeOut = easeIn2(range(p, 0.78, 0.92));
+    const fadeIn  = easeOut3(range(p, 0.20, 0.42));
+    const fadeOut = easeIn2(range(p, 0.68, 0.84));
     const op = fadeIn * (1 - fadeOut) * 0.85;
     if (ref.current)  ref.current.visible = op > 0.005;
     if (mat.current)  mat.current.opacity = op;
@@ -214,8 +214,8 @@ function NebulaClouds({ live }: { live: React.MutableRefObject<number> }) {
   useFrame(({ clock }) => {
     const p   = live.current;
     const t   = clock.getElapsedTime();
-    const fadeIn  = easeOut3(range(p, 0.30, 0.52));
-    const fadeOut = easeIn2(range(p, 0.60, 0.76));
+    const fadeIn  = easeOut3(range(p, 0.22, 0.42));
+    const fadeOut = easeIn2(range(p, 0.54, 0.70));
     const op  = fadeIn * (1 - fadeOut) * 0.70;
 
     meshes.current.forEach((m, i) => {
@@ -254,10 +254,8 @@ function NebulaClouds({ live }: { live: React.MutableRefObject<number> }) {
 }
 
 /* ─── GLOWING STAR ───────────────────────────────────────────────
-   Phase 0.0 → 0.12 : fade in (tiny dim dot)
-   Phase 0.12 → 0.22: grow + brighten with pulsing
-   Phase 0.22 → 0.26: compress / implode (charging energy)
-   Phase 0.26 → 0.42: EXPLOSION — rapidly expands to nothing      */
+   Phase 0.00 → 0.20 : star appears, grows, and EXPLODES all as ONE continuous motion
+   Phase 0.00 → 0.28: shockwave rings radiate outward             */
 function GlowingStar({ live }: { live: React.MutableRefObject<number> }) {
   const coreRef  = useRef<THREE.Mesh>(null);
   const midRef   = useRef<THREE.Mesh>(null);
@@ -275,25 +273,27 @@ function GlowingStar({ live }: { live: React.MutableRefObject<number> }) {
     const p = live.current;
     const t = clock.getElapsedTime();
 
-    const appearT   = easeOut4(range(p, 0.0, 0.18));
-    const growT     = easeOut3(range(p, 0.08, 0.22));
-    const chargeT   = easeIn3(range(p, 0.22, 0.265));  // implode before explode
-    const explodeT  = easeOut4(range(p, 0.265, 0.42));
+    // appear, grow, and explode are ONE blended motion from the very start
+    const glowBlastT = easeOut4(range(p, 0.00, 0.12));
 
-    const alive = p < 0.46;
+    // The star grows to peak then explodes outward
+    const growPhase = Math.min(1, glowBlastT * 2.5);     // grows faster
+    const explodePhase = easeOut4(range(p, 0.045, 0.12)); // blast starts right after the first glow
+
+    const alive = p < 0.18;
 
     /* CORE */
     if (coreRef.current && coreMat.current) {
       coreRef.current.visible = alive;
       if (alive) {
         const pulse = 1 + Math.sin(t * 9.1) * 0.10 + Math.sin(t * 14.7) * 0.05;
-        const baseScale = appearT * lerp(0.4, 5.2, growT) * lerp(1, 0.35, chargeT) * pulse;
-        const scale = explodeT > 0 ? lerp(baseScale, 28, explodeT) : baseScale;
+        const baseScale = glowBlastT * lerp(0.4, 5.2, growPhase) * growPhase * pulse;
+        const scale = explodePhase > 0 ? lerp(baseScale, 28, explodePhase) : baseScale;
         coreRef.current.scale.setScalar(Math.max(0.001, scale));
 
-        const baseOp = lerp(0.3, 1.0, appearT);
+        const baseOp = glowBlastT * 1.0;
         coreMat.current.opacity = clamp(
-          explodeT > 0 ? lerp(baseOp, 0, Math.min(1, explodeT * 1.5)) : baseOp,
+          explodePhase > 0 ? lerp(baseOp, 0, Math.min(1, explodePhase * 1.5)) : baseOp,
           0, 1
         );
       }
@@ -304,11 +304,11 @@ function GlowingStar({ live }: { live: React.MutableRefObject<number> }) {
       midRef.current.visible = alive;
       if (alive) {
         const pulse = 1 + Math.sin(t * 5.3 + 1.1) * 0.16;
-        const baseScale = appearT * lerp(2.2, 1.2, chargeT) * pulse;
-        const scale = explodeT > 0 ? lerp(baseScale, 42, explodeT) : baseScale;
+        const baseScale = glowBlastT * lerp(2.2, 1.2, growPhase) * pulse;
+        const scale = explodePhase > 0 ? lerp(baseScale, 42, explodePhase) : baseScale;
         midRef.current.scale.setScalar(Math.max(0.001, scale));
         midMat.current.opacity = clamp(
-          explodeT > 0 ? lerp(0.55, 0, explodeT) : appearT * 0.55,
+          explodePhase > 0 ? lerp(0.55, 0, explodePhase) : glowBlastT * 0.55,
           0, 1
         );
       }
@@ -319,11 +319,11 @@ function GlowingStar({ live }: { live: React.MutableRefObject<number> }) {
       haloRef.current.visible = alive;
       if (alive) {
         const pulse = 1 + Math.sin(t * 2.8 + 2.4) * 0.22;
-        const baseScale = appearT * lerp(6.0, 2.5, chargeT) * pulse;
-        const scale = explodeT > 0 ? lerp(baseScale, 90, explodeT) : baseScale;
+        const baseScale = glowBlastT * lerp(6.0, 2.5, growPhase) * pulse;
+        const scale = explodePhase > 0 ? lerp(baseScale, 90, explodePhase) : baseScale;
         haloRef.current.scale.setScalar(Math.max(0.001, scale));
         haloMat.current.opacity = clamp(
-          explodeT > 0 ? lerp(0.22, 0, explodeT) : appearT * 0.22,
+          explodePhase > 0 ? lerp(0.22, 0, explodePhase) : glowBlastT * 0.22,
           0, 1
         );
       }
@@ -335,20 +335,17 @@ function GlowingStar({ live }: { live: React.MutableRefObject<number> }) {
       if (!r || !mat || i > 3) return;
       r.visible = alive;
       if (alive) {
-        const onExplode = explodeT > 0 ? lerp(1, 0, Math.min(1, explodeT * 2.2)) : 1;
-        const onCharge  = lerp(1, 0.25, chargeT);
-        
-        // Natural anamorphic flare sizing
+        const onExplode = explodePhase > 0 ? lerp(1, 0, Math.min(1, explodePhase * 2.2)) : 1;
         const baseLength = i === 0 ? 32 : (i === 1 ? 12 : 6); 
         const thickness  = i === 0 ? 0.35 : 0.15;
         
-        const scaleX = lerp(0.01, baseLength, growT * onCharge) * onExplode;
+        const scaleX = lerp(0.01, baseLength, Math.min(1, growPhase * 1.8)) * onExplode;
         r.scale.set(Math.max(0.001, scaleX), thickness, 1);
         
         const angles = [0, Math.PI / 2, Math.PI / 4, -Math.PI / 4];
         r.rotation.z = angles[i] + t * 0.015;
         
-        mat.opacity = appearT * (i === 0 ? 0.85 : 0.45) * onExplode;
+        mat.opacity = glowBlastT * (i === 0 ? 0.85 : 0.45) * onExplode;
       }
     });
   });
@@ -426,98 +423,32 @@ function GlowingStar({ live }: { live: React.MutableRefObject<number> }) {
 }
 
 /* ─── SHOCKWAVE RINGS ────────────────────────────────────────────
-   Two concentric rings radiate outward as the star explodes.     */
-function ShockwaveRings({ live }: { live: React.MutableRefObject<number> }) {
-  const refs = useRef<(THREE.Mesh | null)[]>([]);
-  const mats = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
-
-  const offsets = [0, 0.024, 0.052]; // staggered ring delays
-
-  useFrame(() => {
-    const p = live.current;
-    const visible = p > 0.255 && p < 0.48;
-
-    refs.current.forEach((r, i) => {
-      const mat = mats.current[i];
-      if (!r || !mat) return;
-      r.visible = visible;
-      if (visible) {
-        const t = easeOut4(range(p, 0.26 + offsets[i], 0.44 + offsets[i]));
-        r.scale.setScalar(lerp(0.05, 55 - i * 8, t));
-        mat.opacity = lerp(1, 0, t) * (1 - i * 0.2);
-      }
-    });
-  });
-
-  return (
-    <group position={[0, 0, -14]}>
-      {offsets.map((_, i) => (
-        <mesh key={i} ref={el => { refs.current[i] = el; }} visible={false}>
-          <ringGeometry args={[1.0, 1.12 - i * 0.02, 96]} />
-          <meshBasicMaterial
-            ref={el => { mats.current[i] = el; }}
-            transparent
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            toneMapped={false}
-            side={THREE.DoubleSide}
-          >
-            <color attach="color" args={i === 0 ? [6, 4.5, 1.5] : [2, 3.5, 7]} />
-          </meshBasicMaterial>
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-/* ─── EXPLOSION BURST PARTICLES ──────────────────────────────────
-   The star literally shatters into particles that then become the
-   background starfield / cosmos. Three layers:
-   • burstFast  — shoot outward quickly (explosion feel)
-   • burstSlow  — drift more gently  (stardust feel)
-   • cosmosRing — orbital disk that forms the galaxy             */
+/* ─── EXPLOSION PARTICLES ────────────────────────────────────────
+   After the star explodes (handled by GlowingStar), these particles
+   One clear particle blast spreads from the glowing star.          */
 function ExplosionParticles({ live }: { live: React.MutableRefObject<number> }) {
-  const FAST  = 2200;
-  const SLOW  = 1800;
+  const FAST  = 3600;
   const DISK  = 4000;
   const BG    = 5500;
 
   const dotTex = useMemo(() => makeSoftDotTexture(64), []);
 
-  /* Fast burst — outward sphere */
   const { fastOrigin, fastTarget } = useMemo(() => {
     const origin = new Float32Array(FAST * 3);
     const target = new Float32Array(FAST * 3);
     for (let i = 0; i < FAST; i++) {
-      origin[i * 3]     = (prng(i * 9 + 0) - 0.5) * 0.2;
-      origin[i * 3 + 1] = (prng(i * 9 + 1) - 0.5) * 0.2;
-      origin[i * 3 + 2] = (prng(i * 9 + 2) - 0.5) * 0.2;
+      origin[i * 3]     = (prng(i * 9 + 0) - 0.5) * 0.18;
+      origin[i * 3 + 1] = (prng(i * 9 + 1) - 0.5) * 0.18;
+      origin[i * 3 + 2] = (prng(i * 9 + 2) - 0.5) * 0.18;
+
       const phi   = Math.acos(2 * prng(i * 9 + 3) - 1);
       const theta = prng(i * 9 + 4) * Math.PI * 2;
-      const r     = 28 + prng(i * 9 + 5) * 65;
-      target[i * 3]     = Math.sin(phi) * Math.cos(theta) * r;
-      target[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * r;
-      target[i * 3 + 2] = Math.cos(phi) * r;
+      const r     = 18 + prng(i * 9 + 5) * 82;
+      target[i * 3]     = Math.sin(phi) * Math.cos(theta) * r * 1.35;
+      target[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * r * 0.82;
+      target[i * 3 + 2] = Math.cos(phi) * r * 0.45;
     }
     return { fastOrigin: origin, fastTarget: target };
-  }, []);
-
-  /* Slow drift — smaller sphere, stays visible longer */
-  const { slowOrigin, slowTarget } = useMemo(() => {
-    const origin = new Float32Array(SLOW * 3);
-    const target = new Float32Array(SLOW * 3);
-    for (let i = 0; i < SLOW; i++) {
-      origin[i * 3]     = (prng(i * 7 + 100) - 0.5) * 0.3;
-      origin[i * 3 + 1] = (prng(i * 7 + 101) - 0.5) * 0.3;
-      origin[i * 3 + 2] = (prng(i * 7 + 102) - 0.5) * 0.3;
-      const phi   = Math.acos(2 * prng(i * 7 + 103) - 1);
-      const theta = prng(i * 7 + 104) * Math.PI * 2;
-      const r     = 15 + prng(i * 7 + 105) * 45;
-      target[i * 3]     = Math.sin(phi) * Math.cos(theta) * r;
-      target[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * r * 0.5;
-      target[i * 3 + 2] = Math.cos(phi) * r;
-    }
-    return { slowOrigin: origin, slowTarget: target };
   }, []);
 
   /* Galaxy disk  */
@@ -547,8 +478,6 @@ function ExplosionParticles({ live }: { live: React.MutableRefObject<number> }) 
 
   const fastRef = useRef<THREE.Points>(null);
   const fastMat = useRef<THREE.PointsMaterial>(null);
-  const slowRef = useRef<THREE.Points>(null);
-  const slowMat = useRef<THREE.PointsMaterial>(null);
   const diskRef = useRef<THREE.Points>(null);
   const diskMat = useRef<THREE.PointsMaterial>(null);
   const bgRef   = useRef<THREE.Points>(null);
@@ -557,11 +486,10 @@ function ExplosionParticles({ live }: { live: React.MutableRefObject<number> }) 
   useFrame(() => {
     const p = live.current;
 
-    /* Fast burst */
-    const fastT    = easeOut4(range(p, 0.24, 0.58));
-    const fastFI   = easeOut3(range(p, 0.24, 0.40));
-    const fastFO   = easeIn2(range(p, 0.48, 0.66));
-    const fastOp   = clamp(fastFI * (1 - fastFO), 0, 1);
+    const fastT  = easeOut4(range(p, 0.065, 0.30));
+    const fastFI = easeOut3(range(p, 0.058, 0.095));
+    const fastFO = easeIn2(range(p, 0.30, 0.42));
+    const fastOp = clamp(fastFI * (1 - fastFO), 0, 1);
 
     if (fastRef.current && fastMat.current) {
       const attr = fastRef.current.geometry.attributes.position;
@@ -571,47 +499,28 @@ function ExplosionParticles({ live }: { live: React.MutableRefObject<number> }) 
         arr[i * 3 + 1] = lerp(fastOrigin[i * 3 + 1], fastTarget[i * 3 + 1], fastT);
         arr[i * 3 + 2] = lerp(fastOrigin[i * 3 + 2], fastTarget[i * 3 + 2], fastT);
       }
-      attr.needsUpdate   = true;
-      fastMat.current.opacity = fastOp;
+      attr.needsUpdate = true;
+      fastMat.current.opacity = fastOp * 1.15;
       fastRef.current.visible = fastOp > 0.008;
     }
 
-    /* Slow drift */
-    const slowT  = easeInOut3(range(p, 0.28, 0.65));
-    const slowFI = easeOut3(range(p, 0.28, 0.46));
-    const slowFO = easeIn2(range(p, 0.56, 0.72));
-    const slowOp = clamp(slowFI * (1 - slowFO), 0, 1) * 0.85;
-
-    if (slowRef.current && slowMat.current) {
-      const attr = slowRef.current.geometry.attributes.position;
-      const arr  = attr.array as Float32Array;
-      for (let i = 0; i < SLOW; i++) {
-        arr[i * 3]     = lerp(slowOrigin[i * 3],     slowTarget[i * 3],     slowT);
-        arr[i * 3 + 1] = lerp(slowOrigin[i * 3 + 1], slowTarget[i * 3 + 1], slowT);
-        arr[i * 3 + 2] = lerp(slowOrigin[i * 3 + 2], slowTarget[i * 3 + 2], slowT);
-      }
-      attr.needsUpdate = true;
-      slowMat.current.opacity = slowOp;
-      slowRef.current.visible = slowOp > 0.008;
-    }
-
-    /* Galaxy disk */
-    const diskFI = easeOut3(range(p, 0.34, 0.58));
-    const diskFO = easeIn2(range(p, 0.65, 0.80));
+    /* Galaxy disk - forms after explosion */
+    const diskFI = easeOut3(range(p, 0.36, 0.52));
+    const diskFO = easeIn2(range(p, 0.48, 0.64));
     const diskOp = diskFI * (1 - diskFO) * 0.78;
     if (diskRef.current && diskMat.current) {
       diskRef.current.rotation.y = p * 0.30;
-      diskRef.current.position.z = lerp(0, 58, easeInOut3(range(p, 0.48, 0.74)));
+      diskRef.current.position.z = lerp(0, 58, easeInOut3(range(p, 0.34, 0.58)));
       diskMat.current.opacity    = diskOp;
       diskRef.current.visible    = diskOp > 0.008;
     }
 
-    /* BG stars */
-    const bgFI = easeOut3(range(p, 0.30, 0.55));
-    const bgFO = easeIn2(range(p, 0.72, 0.88));
+    /* BG stars - appear after explosion */
+    const bgFI = easeOut3(range(p, 0.34, 0.52));
+    const bgFO = easeIn2(range(p, 0.58, 0.74));
     const bgOp = bgFI * (1 - bgFO) * 0.92;
     if (bgRef.current && bgMat.current) {
-      bgRef.current.position.z = lerp(0, 68, easeInOut3(range(p, 0.48, 0.74)));
+      bgRef.current.position.z = lerp(0, 68, easeInOut3(range(p, 0.34, 0.58)));
       bgMat.current.opacity    = bgOp;
       bgRef.current.visible    = bgOp > 0.008;
     }
@@ -621,14 +530,14 @@ function ExplosionParticles({ live }: { live: React.MutableRefObject<number> }) 
 
   return (
     <>
-      {/* Fast burst particles */}
-      <points ref={fastRef} visible={false} position={[0, 0, -20]}>
+      {/* Bright core burst from the starting glow */}
+      <points ref={fastRef} visible={false} position={[0, 0, -14]}>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" args={[new Float32Array(fastOrigin), 3]} />
         </bufferGeometry>
         <pointsMaterial
           ref={fastMat}
-          size={0.85}
+          size={0.52}
           transparent
           opacity={0}
           depthWrite={false}
@@ -638,28 +547,7 @@ function ExplosionParticles({ live }: { live: React.MutableRefObject<number> }) 
           alphaTest={0.005}
           sizeAttenuation
         >
-          <color attach="color" args={[4, 3.5, 6]} />
-        </pointsMaterial>
-      </points>
-
-      {/* Slow drift particles */}
-      <points ref={slowRef} visible={false} position={[0, 0, -20]}>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[new Float32Array(slowOrigin), 3]} />
-        </bufferGeometry>
-        <pointsMaterial
-          ref={slowMat}
-          size={0.55}
-          transparent
-          opacity={0}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          toneMapped={false}
-          map={dotTex}
-          alphaTest={0.005}
-          sizeAttenuation
-        >
-          <color attach="color" args={[2, 2.8, 5.5]} />
+          <color attach="color" args={[5.5, 5.5, 5.2]} />
         </pointsMaterial>
       </points>
 
@@ -721,18 +609,14 @@ function SpaceBackdrop({ live }: { live: React.MutableRefObject<number> }) {
    Phase 0.82–0.97: enter (scale up → engulfs camera)            */
 function Earth({ live }: { live: React.MutableRefObject<number> }) {
   const group  = useRef<THREE.Group>(null);
-  const atmoMat = useRef<THREE.MeshBasicMaterial>(null);
 
   const earthTex = useTexture("/earth.png");
 
-  /* Atmospheric glow texture */
-  const atmoTex = useMemo(() => makeSoftDotTexture(256, 100, 180, 255), []);
-
   useFrame(() => {
     const p = live.current;
-    const approachT = easeOut4(range(p, 0.58, 0.83));
-    const enterT    = easeIn3(range(p, 0.83, 0.97));
-    const vis = p > 0.55 && p < 0.99;
+    const approachT = easeOut4(range(p, 0.52, 0.77));
+    const enterT    = easeIn3(range(p, 0.77, 0.92));
+    const vis = p > 0.48 && p < 0.94;
 
     if (group.current) {
       group.current.visible = vis;
@@ -752,9 +636,6 @@ function Earth({ live }: { live: React.MutableRefObject<number> }) {
       }
     }
 
-    if (atmoMat.current) {
-      atmoMat.current.opacity = lerp(0, 0.92, approachT) * lerp(1, 0, enterT * 1.3);
-    }
   });
 
   if (!earthTex) return null;
@@ -773,22 +654,6 @@ function Earth({ live }: { live: React.MutableRefObject<number> }) {
       
       {/* Inner core light to illuminate the inside of the Earth */}
       <pointLight intensity={4.0} color="#ffffff" distance={0} decay={1} />
-
-      {/* Atmospheric glow (back-face sphere slightly larger) */}
-      <mesh>
-        <sphereGeometry args={[1.08, 48, 48]} />
-        <meshBasicMaterial
-          ref={atmoMat}
-          transparent
-          opacity={0}
-          side={THREE.BackSide}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-          toneMapped={false}
-        >
-          <color attach="color" args={[0.25, 0.75, 2.8]} />
-        </meshBasicMaterial>
-      </mesh>
 
       {/* City-light inner glow on night side */}
       <mesh>
@@ -824,7 +689,6 @@ function Scene() {
       <NebulaClouds live={live} />
       <StarField live={live} />
       <GlowingStar live={live} />
-      <ShockwaveRings live={live} />
       <ExplosionParticles live={live} />
       <Suspense fallback={null}>
         <Earth live={live} />

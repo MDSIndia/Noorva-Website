@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { scrollProgress } from "./store";
+import routeImage from "../assets/images/route.png";
 
 const CosmicCanvas = dynamic(() => import("./CosmicCanvas"), { ssr: false });
 
@@ -18,14 +19,14 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
  * SCROLL MAP  (0 → 1 over the 800vh section)
  * ────────────────────────────────────────────
  * 0.00–0.04  black void + scroll hint
- * 0.04–0.18  star fades in, grows, pulses
- * 0.18–0.24  star compresses / charges
- * 0.24–0.42  star EXPLODES  → shockwave rings
- * 0.42–0.60  cosmos / galaxy forms
- * 0.60–0.74  Earth appears, rotates
- * 0.74–0.84  camera flies toward Earth
- * 0.84–0.93  Earth engulfs camera → portal flash
- * 0.93–1.00  Noorva brand reveal
+ * 0.00–0.20  star appears and BLASTS (same continuous motion)
+ * 0.20–0.50  cosmos / galaxy forms
+ * 0.50–0.64  Earth appears, rotates
+ * 0.64–0.74  camera flies toward Earth
+ * 0.74–0.84  Earth engulfs camera → portal flash
+ * 0.84–0.90  route image displays
+ * 0.90–0.94  pasted campfire scene
+ * 0.94–1.00  Noorva brand reveal
  */
 
 export default function CinematicIntro() {
@@ -45,7 +46,7 @@ export default function CinematicIntro() {
         scrub: 1.5,
         pin: true,
         snap: {
-          snapTo: [0, 0.12, 0.35, 0.56, 0.68, 0.82, 1],
+          snapTo: [0, 0.08, 0.28, 0.48, 0.60, 0.76, 1],
           duration: { min: 0.2, max: 1.0 },
           delay: 0.1,
           ease: "power2.inOut"
@@ -62,75 +63,86 @@ export default function CinematicIntro() {
       0.02
     );
 
-    /* ── Scene 1 → 2: "In the beginning…" */
+    /* ── Scene 1 → 2: "In the beginning…" — appears while star glows */
     tl.fromTo("#ci-text-1",
       { opacity: 0, y: 20, filter: "blur(10px)" },
       { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.06, ease: "power2.out" },
-      0.07
+      0.05
     );
     tl.to("#ci-text-1",
-      { opacity: 0, y: -16, filter: "blur(6px)", duration: 0.05, ease: "power2.in" },
-      0.17
+      { opacity: 0, y: -16, filter: "blur(6px)", duration: 0.04, ease: "power2.in" },
+      0.12
     );
 
-    /* ── Scene 3 → 4: Explosion text */
+    /* ── Scene 3 → 4: Star blast text — appears as star explodes */
     tl.fromTo("#ci-text-2",
       { opacity: 0, scale: 0.85, filter: "blur(14px)" },
-      { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.07, ease: "power3.out" },
-      0.28
+      { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.06, ease: "power3.out" },
+      0.26
     );
     tl.to("#ci-text-2",
       { opacity: 0, scale: 1.08, duration: 0.06, ease: "power2.in" },
-      0.43
+      0.38
     );
 
     /* ── Scene 4 → 5: "A universe unfolds" */
     tl.fromTo("#ci-text-3",
       { opacity: 0, y: 22, filter: "blur(8px)" },
       { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.06, ease: "power2.out" },
-      0.50
+      0.40
     );
     tl.to("#ci-text-3",
       { opacity: 0, y: -16, duration: 0.05, ease: "power2.in" },
-      0.62
+      0.50
     );
 
     /* ── Scene 5: Earth / "A fragile, perfect world" */
     tl.fromTo("#ci-text-4",
       { opacity: 0, y: 18, filter: "blur(6px)" },
       { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.07, ease: "power2.out" },
-      0.63
+      0.50
     );
     tl.to("#ci-text-4",
       { opacity: 0, y: -14, duration: 0.05, ease: "power2.in" },
-      0.74
+      0.62
     );
 
     /* ── Earth entry portal radial flash ────────────────────────── */
     tl.fromTo("#ci-portal",
       { opacity: 0, scale: 0.55 },
       { opacity: 1, scale: 1.35, duration: 0.04, ease: "power2.in" },
-      0.72
+      0.62
     );
     tl.to("#ci-portal",
       { opacity: 0, scale: 2.0, duration: 0.04, ease: "power2.out" },
-      0.76
+      0.66
+    );
+
+    /* ── Route image: display, then directly switch to campfire ───── */
+    tl.fromTo("#ci-route-wrap",
+      { opacity: 0, filter: "blur(6px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.04, ease: "power2.out" },
+      0.66
+    );
+    tl.to("#ci-route-wrap",
+      { opacity: 0, filter: "blur(6px) brightness(0.9)", duration: 0.055, ease: "power2.inOut" },
+      0.82
     );
 
     /* ── Campfire Ancestors Scene Overlay (Before Noorva) ───── */
     tl.fromTo("#ci-campfire-wrap",
-      { opacity: 0, filter: "blur(8px)" },
-      { opacity: 1, filter: "blur(0px)", duration: 0.04, ease: "power2.out" },
-      0.75
+      { opacity: 0, filter: "blur(8px) brightness(0.9)" },
+      { opacity: 1, filter: "blur(0px) brightness(1)", duration: 0.06, ease: "power2.out" },
+      0.78
     );
     tl.fromTo("#ci-campfire-img",
       { scale: 1.0 },
-      { scale: 1.45, duration: 0.14, ease: "none" },
-      0.75
+      { scale: 1.0, duration: 0.10, ease: "none" },
+      0.78
     );
     tl.to("#ci-campfire-wrap",
-      { opacity: 0, filter: "blur(12px)", duration: 0.04, ease: "power2.in" },
-      0.85
+      { opacity: 0, filter: "blur(10px)", duration: 0.05, ease: "power2.in" },
+      0.92
     );
 
     /* ── Noorva brand reveal ───────────────────────────────── */
@@ -142,12 +154,12 @@ export default function CinematicIntro() {
     tl.fromTo("#ci-noorva-line",
       { scaleX: 0, opacity: 0 },
       { scaleX: 1, opacity: 1, duration: 0.03, ease: "power2.out" },
-      0.95
+      0.96
     );
     tl.fromTo("#ci-noorva-tag",
       { y: 20, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.02, ease: "power2.out" },
-      0.97
+      0.98
     );
 
     return () => {
@@ -256,8 +268,22 @@ export default function CinematicIntro() {
 
         {/* ── Campfire Ancestors Scene Overlay (Before Noorva) ───── */}
         <div
+          id="ci-route-wrap"
+          className="absolute inset-0 z-[11] w-full h-screen pointer-events-none overflow-hidden bg-black"
+          style={{ opacity: 0 }}
+        >
+          <img
+            id="ci-route-img"
+            src={routeImage.src}
+            alt="Human progress route from campfire to modern intelligence"
+            className="absolute inset-0 w-full h-full object-cover opacity-100"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/20 pointer-events-none" />
+        </div>
+
+        <div
           id="ci-campfire-wrap"
-          className="absolute inset-0 z-[12] w-full h-screen pointer-events-none overflow-hidden"
+          className="absolute inset-0 z-[13] w-full h-screen pointer-events-none overflow-hidden"
           style={{ opacity: 0 }}
         >
           <img
