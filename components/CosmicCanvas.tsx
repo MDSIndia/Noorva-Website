@@ -63,26 +63,18 @@ function SceneFog({ live }: { live: React.MutableRefObject<number> }) {
   useFrame(() => {
     if (!fog.current) return;
     const p = live.current;
-    // Gentle cosmos fog; heavy entry fog for Earth portal
-    const cosmosDensity = range(p, 0.32, 0.52) * 0.012;
-    const entryDensity  = easeIn3(range(p, 0.77, 0.90)) * 0.14;
-    fog.current.density = cosmosDensity + entryDensity;
-
-    const portalT = range(p, 0.84, 1.0);
-    fog.current.color.setRGB(
-      lerp(0,     0.03, portalT),
-      lerp(0.001, 0.02, portalT),
-      lerp(0.015, 0.08, portalT)
-    );
+    // Gentle cosmos fog
+    const cosmosDensity = range(p, 0.08, 0.25) * 0.008;
+    fog.current.density = cosmosDensity;
   });
 
   return <fogExp2 ref={fog} attach="fog" args={[0x000005, 0]} />;
 }
 
 /* ─── CAMERA RIG ─────────────────────────────────────────────────
-   Phase 0–0.40 : static, gentle breathing sway around origin
-   Phase 0.40–0.76: fly forward through the cosmos toward Earth
-   Phase 0.76–0.92: slam into Earth (rapid Z advance)             */
+   Phase 0–0.18 : static, gentle breathing sway around origin
+   Phase 0.18–0.38: fly forward through the cosmos toward Earth
+   Phase 0.38–0.50: slam into Earth (rapid Z advance)             */
 function CameraRig({ live }: { live: React.MutableRefObject<number> }) {
   useFrame(({ camera, clock }) => {
     const p = live.current;
@@ -93,9 +85,9 @@ function CameraRig({ live }: { live: React.MutableRefObject<number> }) {
     const dy = Math.cos(t * 0.07) * 0.10;
 
     // Travel toward Earth
-    const travelT = easeInOut3(range(p, 0.40, 0.76));
+    const travelT = easeInOut3(range(p, 0.18, 0.38));
     // Final plunge into Earth
-    const plungeT = easeIn3(range(p, 0.76, 0.92));
+    const plungeT = easeIn3(range(p, 0.38, 0.50));
 
     const travelZ = lerp(8, -28, travelT);
     const plungeZ = lerp(travelZ, 5, plungeT);
@@ -133,8 +125,8 @@ function StarField({ live }: { live: React.MutableRefObject<number> }) {
 
   useFrame(() => {
     const p = live.current;
-    const fadeIn  = easeOut3(range(p, 0.20, 0.42));
-    const fadeOut = easeIn2(range(p, 0.68, 0.84));
+    const fadeIn  = easeOut3(range(p, 0.08, 0.22));
+    const fadeOut = easeIn2(range(p, 0.30, 0.45));
     const op = fadeIn * (1 - fadeOut) * 0.85;
     if (ref.current)  ref.current.visible = op > 0.005;
     if (mat.current)  mat.current.opacity = op;
@@ -161,95 +153,6 @@ function StarField({ live }: { live: React.MutableRefObject<number> }) {
         <color attach="color" args={[1.1, 1.2, 2.0]} />
       </pointsMaterial>
     </points>
-  );
-}
-
-/* ─── NEBULA CLOUDS ──────────────────────────────────────────────*/
-function NebulaClouds({ live }: { live: React.MutableRefObject<number> }) {
-  const COUNT = 10;
-  const meshes = useRef<(THREE.Mesh | null)[]>([]);
-
-  const textures = useMemo(() => {
-    if (typeof document === "undefined") return [];
-    const palettes: [string, string][] = [
-      ["rgba(40,15,130,0.45)",  "rgba(20,8,70,0.25)"],
-      ["rgba(10,30,110,0.42)",  "rgba(5,18,65,0.22)"],
-      ["rgba(90,10,60,0.38)",   "rgba(50,6,35,0.20)"],
-      ["rgba(10,60,100,0.40)",  "rgba(5,32,60,0.22)"],
-      ["rgba(55,8,100,0.42)",   "rgba(28,5,55,0.22)"],
-    ];
-    return Array.from({ length: COUNT }, (_, i) => {
-      const [c1, c2] = palettes[i % palettes.length];
-      const cv = document.createElement("canvas");
-      cv.width = cv.height = 512;
-      const ctx = cv.getContext("2d")!;
-      for (let b = 0; b < 7; b++) {
-        const bx = 128 + Math.cos(b * 1.7 + i) * 120;
-        const by = 128 + Math.sin(b * 1.3 + i * 0.8) * 100;
-        const br = 80 + b * 20;
-        const gc = ctx.createRadialGradient(bx, by, 0, bx, by, br);
-        gc.addColorStop(0, b % 2 === 0 ? c1 : c2);
-        gc.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = gc;
-        ctx.fillRect(0, 0, 512, 512);
-      }
-      const tex = new THREE.CanvasTexture(cv);
-      return tex;
-    });
-  }, []);
-
-  const configs = useMemo(() => [
-    { x: -42, y:  12, z: -60, s: 32 },
-    { x:  38, y:  -9, z: -68, s: 36 },
-    { x: -18, y:  22, z: -75, s: 28 },
-    { x:  54, y:   6, z: -52, s: 34 },
-    { x: -58, y:  -6, z: -85, s: 40 },
-    { x:  22, y: -20, z: -78, s: 26 },
-    { x: -32, y:  16, z: -95, s: 44 },
-    { x:  12, y: -28, z: -54, s: 24 },
-    { x: -10, y:  30, z: -110, s: 48 },
-    { x:  60, y:  18, z: -62, s: 30 },
-  ], []);
-
-  useFrame(({ clock }) => {
-    const p   = live.current;
-    const t   = clock.getElapsedTime();
-    const fadeIn  = easeOut3(range(p, 0.22, 0.42));
-    const fadeOut = easeIn2(range(p, 0.54, 0.70));
-    const op  = fadeIn * (1 - fadeOut) * 0.70;
-
-    meshes.current.forEach((m, i) => {
-      if (!m) return;
-      m.visible = op > 0.004;
-      if (m.visible) {
-        (m.material as THREE.MeshBasicMaterial).opacity = op;
-        m.position.x = configs[i].x + Math.sin(t * 0.06 + i * 0.9) * 1.0;
-        m.position.z = configs[i].z + live.current * 55;
-      }
-    });
-  });
-
-  if (textures.length === 0) return null;
-  return (
-    <>
-      {configs.map((cfg, i) => (
-        <mesh
-          key={i}
-          ref={el => { meshes.current[i] = el; }}
-          position={[cfg.x, cfg.y, cfg.z]}
-          visible={false}
-        >
-          <planeGeometry args={[cfg.s, cfg.s]} />
-          <meshBasicMaterial
-            map={textures[i]}
-            transparent
-            opacity={0}
-            blending={THREE.AdditiveBlending}
-            depthWrite={false}
-          />
-        </mesh>
-      ))}
-    </>
   );
 }
 
@@ -422,14 +325,10 @@ function GlowingStar({ live }: { live: React.MutableRefObject<number> }) {
   );
 }
 
-/* ─── SHOCKWAVE RINGS ────────────────────────────────────────────
 /* ─── EXPLOSION PARTICLES ────────────────────────────────────────
-   After the star explodes (handled by GlowingStar), these particles
-   One clear particle blast spreads from the glowing star.          */
+   Particles burst from the star explosion, then fade out for Earth. */
 function ExplosionParticles({ live }: { live: React.MutableRefObject<number> }) {
   const FAST  = 3600;
-  const DISK  = 4000;
-  const BG    = 5500;
 
   const dotTex = useMemo(() => makeSoftDotTexture(64), []);
 
@@ -451,44 +350,15 @@ function ExplosionParticles({ live }: { live: React.MutableRefObject<number> }) 
     return { fastOrigin: origin, fastTarget: target };
   }, []);
 
-  /* Galaxy disk  */
-  const diskPositions = useMemo(() => {
-    const arr = new Float32Array(DISK * 3);
-    for (let i = 0; i < DISK; i++) {
-      const radius = 18 + prng(i * 5 + 0) * 80;
-      const theta  = prng(i * 5 + 1) * Math.PI * 2;
-      const twist  = theta + radius * 0.012;
-      arr[i * 3]     = Math.cos(twist) * radius;
-      arr[i * 3 + 1] = (prng(i * 5 + 2) - 0.5) * radius * 0.25;
-      arr[i * 3 + 2] = Math.sin(twist) * radius - 22;
-    }
-    return arr;
-  }, []);
-
-  /* Deep background star field */
-  const bgPositions = useMemo(() => {
-    const arr = new Float32Array(BG * 3);
-    for (let i = 0; i < BG; i++) {
-      arr[i * 3]     = (prng(i * 3 + 0) - 0.5) * 300;
-      arr[i * 3 + 1] = (prng(i * 3 + 1) - 0.5) * 300;
-      arr[i * 3 + 2] = (prng(i * 3 + 2) - 0.5) * 300 - 70;
-    }
-    return arr;
-  }, []);
-
   const fastRef = useRef<THREE.Points>(null);
   const fastMat = useRef<THREE.PointsMaterial>(null);
-  const diskRef = useRef<THREE.Points>(null);
-  const diskMat = useRef<THREE.PointsMaterial>(null);
-  const bgRef   = useRef<THREE.Points>(null);
-  const bgMat   = useRef<THREE.PointsMaterial>(null);
 
   useFrame(() => {
     const p = live.current;
 
     const fastT  = easeOut4(range(p, 0.065, 0.30));
     const fastFI = easeOut3(range(p, 0.058, 0.095));
-    const fastFO = easeIn2(range(p, 0.30, 0.42));
+    const fastFO = easeIn2(range(p, 0.25, 0.35));
     const fastOp = clamp(fastFI * (1 - fastFO), 0, 1);
 
     if (fastRef.current && fastMat.current) {
@@ -502,27 +372,6 @@ function ExplosionParticles({ live }: { live: React.MutableRefObject<number> }) 
       attr.needsUpdate = true;
       fastMat.current.opacity = fastOp * 1.15;
       fastRef.current.visible = fastOp > 0.008;
-    }
-
-    /* Galaxy disk - forms after explosion */
-    const diskFI = easeOut3(range(p, 0.36, 0.52));
-    const diskFO = easeIn2(range(p, 0.48, 0.64));
-    const diskOp = diskFI * (1 - diskFO) * 0.78;
-    if (diskRef.current && diskMat.current) {
-      diskRef.current.rotation.y = p * 0.30;
-      diskRef.current.position.z = lerp(0, 58, easeInOut3(range(p, 0.34, 0.58)));
-      diskMat.current.opacity    = diskOp;
-      diskRef.current.visible    = diskOp > 0.008;
-    }
-
-    /* BG stars - appear after explosion */
-    const bgFI = easeOut3(range(p, 0.34, 0.52));
-    const bgFO = easeIn2(range(p, 0.58, 0.74));
-    const bgOp = bgFI * (1 - bgFO) * 0.92;
-    if (bgRef.current && bgMat.current) {
-      bgRef.current.position.z = lerp(0, 68, easeInOut3(range(p, 0.34, 0.58)));
-      bgMat.current.opacity    = bgOp;
-      bgRef.current.visible    = bgOp > 0.008;
     }
   });
 
@@ -550,48 +399,6 @@ function ExplosionParticles({ live }: { live: React.MutableRefObject<number> }) 
           <color attach="color" args={[5.5, 5.5, 5.2]} />
         </pointsMaterial>
       </points>
-
-      {/* Galaxy disk */}
-      <points ref={diskRef} visible={false}>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[diskPositions, 3]} />
-        </bufferGeometry>
-        <pointsMaterial
-          ref={diskMat}
-          size={0.40}
-          transparent
-          opacity={0}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          toneMapped={false}
-          map={dotTex}
-          alphaTest={0.005}
-          sizeAttenuation
-        >
-          <color attach="color" args={[1.4, 1.9, 3.6]} />
-        </pointsMaterial>
-      </points>
-
-      {/* Deep background stars */}
-      <points ref={bgRef} visible={false}>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[bgPositions, 3]} />
-        </bufferGeometry>
-        <pointsMaterial
-          ref={bgMat}
-          size={0.16}
-          transparent
-          opacity={0}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          toneMapped={false}
-          map={dotTex}
-          alphaTest={0.005}
-          sizeAttenuation
-        >
-          <color attach="color" args={[1.0, 1.1, 1.9]} />
-        </pointsMaterial>
-      </points>
     </>
   );
 }
@@ -605,8 +412,9 @@ function SpaceBackdrop({ live }: { live: React.MutableRefObject<number> }) {
 }
 
 /* ─── EARTH ──────────────────────────────────────────────────────
-   Phase 0.58–0.82: approach (zoom in from far)
-   Phase 0.82–0.97: enter (scale up → engulfs camera)            */
+   Phase 0.16–0.35: approach (zoom in from far → close)
+   Phase 0.35–0.50: enter (scale up → engulfs camera)
+   Hidden after 0.50 so it never replays                         */
 function Earth({ live }: { live: React.MutableRefObject<number> }) {
   const group  = useRef<THREE.Group>(null);
 
@@ -614,25 +422,29 @@ function Earth({ live }: { live: React.MutableRefObject<number> }) {
 
   useFrame(() => {
     const p = live.current;
-    const approachT = easeOut4(range(p, 0.52, 0.77));
-    const enterT    = easeIn3(range(p, 0.77, 0.92));
-    const vis = p > 0.48 && p < 0.94;
+    // Earth appears right after the blast, clearly visible
+    const approachT = easeOut4(range(p, 0.18, 0.35));
+    const enterT    = easeIn3(range(p, 0.35, 0.50));
+    const vis = p > 0.16 && p < 0.52;
 
     if (group.current) {
       group.current.visible = vis;
       if (vis) {
-        group.current.rotation.y += 0.0006;
-        const zApproach = lerp(-95, -13, approachT);
-        const zEnter    = lerp(zApproach, 7, enterT);
+        group.current.rotation.y += 0.004;
+        const zApproach = lerp(-35, -8, approachT);
+        const zEnter    = lerp(zApproach, 5, enterT);
         group.current.position.z = zEnter;
 
-        const sApproach = lerp(0.25, 8.8, approachT);
-        const sEnter    = lerp(sApproach, 100, enterT);
+        const sApproach = lerp(1.5, 10, approachT);
+        const sEnter    = lerp(sApproach, 80, enterT);
         group.current.scale.setScalar(sEnter);
 
         // Slight drift so Earth isn't centered — more cinematic
-        group.current.position.x = lerp(2.5, 0, approachT);
-        group.current.position.y = lerp(-1.0, 0, approachT);
+        group.current.position.x = lerp(2.0, 0, approachT);
+        group.current.position.y = lerp(-0.8, 0, approachT);
+
+        // Freeze rotation once fully entered so it stays hidden cleanly
+        if (enterT >= 1) group.current.visible = false;
       }
     }
 
@@ -648,31 +460,15 @@ function Earth({ live }: { live: React.MutableRefObject<number> }) {
           map={earthTex}
           roughness={0.65}
           metalness={0.05}
-          side={THREE.DoubleSide}
+          side={THREE.FrontSide}
         />
       </mesh>
       
-      {/* Inner core light to illuminate the inside of the Earth */}
-      <pointLight intensity={4.0} color="#ffffff" distance={0} decay={1} />
-
-      {/* City-light inner glow on night side */}
-      <mesh>
-        <sphereGeometry args={[1.02, 32, 32]} />
-        <meshBasicMaterial
-          transparent
-          opacity={0.06}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-          toneMapped={false}
-        >
-          <color attach="color" args={[1.0, 0.9, 0.5]} />
-        </meshBasicMaterial>
-      </mesh>
-
-      {/* Lighting */}
-      <ambientLight intensity={0.25} />
-      <directionalLight position={[8, 4, 10]} intensity={2.8} color="#ffeedd" />
-      <directionalLight position={[-5, 2, -8]} intensity={0.4} color="#4488ff" />
+      {/* Lighting - strong to make Earth clearly visible */}
+      <ambientLight intensity={0.6} />
+      <directionalLight position={[8, 4, 10]} intensity={4.5} color="#ffeedd" />
+      <directionalLight position={[-5, 2, -8]} intensity={0.8} color="#4488ff" />
+      <pointLight position={[0, 0, 5]} intensity={1.5} color="#ffffff" />
     </group>
   );
 }
@@ -686,7 +482,6 @@ function Scene() {
       <SceneFog live={live} />
       <CameraRig live={live} />
       <SpaceBackdrop live={live} />
-      <NebulaClouds live={live} />
       <StarField live={live} />
       <GlowingStar live={live} />
       <ExplosionParticles live={live} />

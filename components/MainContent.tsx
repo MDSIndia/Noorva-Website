@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { scrollProgress } from "./store";
+
+import bg1 from "../assets/images/background image 1.png";
+import bg2 from "../assets/images/background image 2.png";
+import bg3 from "../assets/images/background image 3.png";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -153,6 +158,151 @@ function useTypewriter(texts: string[], speed = 60, pause = 2000) {
   return ref;
 }
 
+/* ─── SCROLL BACKGROUND SECTION ─────────────────────────────────
+   3 full-screen panels, each pinned while scrolling.
+   Background image slowly rotates; text fades in per panel.      */
+const BG_SLIDES = [
+  {
+    src: bg1,
+    label: "Chapter I",
+    heading: "Where Every Journey Begins",
+    body: "Before guidance, there is curiosity. Noorva is born from the belief that every person deserves an intelligent companion that truly listens, learns, and leads the way forward.",
+  },
+  {
+    src: bg2,
+    label: "Chapter II",
+    heading: "Intelligence Shaped Around You",
+    body: "Noorva learns your rhythms — your mornings, your goals, your moments of doubt and ambition — and shapes its intelligence around the life you actually live.",
+  },
+  {
+    src: bg3,
+    label: "Chapter III",
+    heading: "A Smarter Path Ahead",
+    body: "With every interaction, Noorva deepens its understanding. Trusted knowledge, timely guidance, and human-like conversation — all working together so you move forward with clarity.",
+  },
+];
+
+function ScrollBackgroundSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const slidesRef  = useRef<(HTMLDivElement | null)[]>([]);
+  const imagesRef  = useRef<(HTMLDivElement | null)[]>([]);
+  const textsRef   = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const triggers: ScrollTrigger[] = [];
+
+    BG_SLIDES.forEach((_, i) => {
+      const slide = slidesRef.current[i];
+      const img   = imagesRef.current[i];
+      const text  = textsRef.current[i];
+      if (!slide || !img || !text) return;
+
+      // Pin each slide for 100vh of scroll travel
+      const st = ScrollTrigger.create({
+        trigger: slide,
+        start: "top top",
+        end: "+=100%",
+        pin: true,
+        pinSpacing: true,
+        scrub: 1.2,
+        onUpdate: (self) => {
+          const p = self.progress;
+          // Rotate image from -4deg to +4deg across the pin
+          gsap.set(img, { rotation: -4 + p * 8, scale: 1.08 - p * 0.04 });
+          // Fade + lift text in during first 40%, hold, fade out last 20%
+          const fadeIn  = Math.min(1, p / 0.4);
+          const fadeOut = p > 0.8 ? (p - 0.8) / 0.2 : 0;
+          const op = fadeIn * (1 - fadeOut);
+          const y  = 40 - fadeIn * 40 + fadeOut * 20;
+          gsap.set(text, { opacity: op, y });
+        },
+      });
+
+      triggers.push(st);
+    });
+
+    return () => triggers.forEach((t) => t.kill());
+  }, []);
+
+  return (
+    <div ref={sectionRef}>
+      {BG_SLIDES.map((slide, i) => (
+        <div
+          key={i}
+          ref={(el) => { slidesRef.current[i] = el; }}
+          className="relative w-full h-screen overflow-hidden"
+        >
+          {/* Background image with rotation */}
+          <div
+            ref={(el) => { imagesRef.current[i] = el; }}
+            className="absolute inset-0 will-change-transform bg-black flex items-center justify-center"
+            style={{ transformOrigin: "center center" }}
+          >
+            <Image
+              src={slide.src}
+              alt={slide.label}
+              fill
+              className="object-contain"
+              sizes="100vw"
+              priority={i === 0}
+            />
+            {/* Dark overlay so text is always readable */}
+            <div className="absolute inset-0 bg-black/45" />
+          </div>
+
+          {/* Centered text overlay */}
+          <div
+            ref={(el) => { textsRef.current[i] = el; }}
+            className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center pointer-events-none"
+            style={{ opacity: 0 }}
+          >
+            <span className="text-[10px] tracking-[0.5em] uppercase text-white/45 mb-5 font-light">
+              {slide.label}
+            </span>
+            <h2
+              className="font-[var(--font-playfair)] text-4xl md:text-6xl lg:text-7xl font-extralight text-white leading-tight max-w-4xl"
+              style={{
+                textShadow: "0 2px 40px rgba(0,0,0,0.7)",
+              }}
+            >
+              {slide.heading}
+            </h2>
+            <div className="mt-6 w-16 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+            <p className="mt-6 max-w-2xl text-base md:text-lg font-light text-white/65 leading-relaxed">
+              {slide.body}
+            </p>
+            {/* Progress dots */}
+            <div className="mt-10 flex gap-2.5">
+              {BG_SLIDES.map((_, d) => (
+                <div
+                  key={d}
+                  className="w-1.5 h-1.5 rounded-full transition-all duration-300"
+                  style={{
+                    background: d === i ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.2)",
+                    transform: d === i ? "scale(1.4)" : "scale(1)",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Subtle vignette */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%)",
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function MainContent() {
   const containerRef = useRef<HTMLDivElement>(null);
   const typeRef = useTypewriter(["Guide Your Goals", "Understand Your Routine", "Deliver Trusted Knowledge", "Evolve With You"], 65, 1800);
@@ -285,6 +435,9 @@ export default function MainContent() {
       className="relative text-white w-full grain"
       style={{ background: "#000000", zIndex: 1 }}
     >
+      {/* ── Scroll Background Image Panels (3 scenes) ── */}
+      <ScrollBackgroundSection />
+
       {/* ── Fixed cosmos starfield behind all content ── */}
       <CosmosBackground />
       <GridLines />
