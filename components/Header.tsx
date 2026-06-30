@@ -252,19 +252,28 @@ export default function Header() {
             justifyContent: "space-between",
             gap: 16,
             background: scrolled
-              ? "linear-gradient(135deg, rgba(6,5,14,0.90), rgba(3,3,8,0.94))"
-              : "linear-gradient(135deg, rgba(6,5,14,0.65), rgba(3,3,8,0.55))",
-            backdropFilter: "blur(28px) saturate(180%)",
-            WebkitBackdropFilter: "blur(28px) saturate(180%)",
-            border: scrolled
-              ? "1px solid rgba(255,255,255,0.08)"
-              : "1px solid rgba(255,255,255,0.06)",
+              ? "linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)"
+              : "linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.06) 100%)",
+            backdropFilter: "blur(40px) saturate(200%) brightness(1.1)",
+            WebkitBackdropFilter: "blur(40px) saturate(200%) brightness(1.1)",
+            border: "1px solid rgba(255,255,255,0.18)",
             boxShadow: scrolled
-              ? "0 8px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)"
-              : "0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)",
+              ? "0 8px 32px rgba(0,0,0,0.50), 0 2px 8px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.20), inset 0 -1px 0 rgba(0,0,0,0.10)"
+              : "0 4px 24px rgba(0,0,0,0.30), 0 1px 4px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.08)",
             transition: "all 0.4s ease",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
+          {/* Glass sheen overlay — top highlight */}
+          <div style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0,
+            height: "50%",
+            background: "linear-gradient(to bottom, rgba(255,255,255,0.12) 0%, transparent 100%)",
+            borderRadius: "inherit",
+            pointerEvents: "none",
+          }} />
           {/* ── LEFT: Logo ─────────────────────────────────────────── */}
           <a href="#" style={{ textDecoration: "none", flexShrink: 0, lineHeight: 0 }}>
             <Image
