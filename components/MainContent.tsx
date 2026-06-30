@@ -18,6 +18,13 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
+/* ─── EASING ───────────────────────────────────────────────────── */
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+const easeOut3 = (t: number) => 1 - Math.pow(1 - t, 3);
+const easeIn3  = (t: number) => t * t * t;
+const smooth   = (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+/* ─── SLIDES ───────────────────────────────────────────────────── */
 const SLIDES = [
   {
     src: bg1,
@@ -69,232 +76,236 @@ const SLIDES = [
   },
 ];
 
-/* ─────────────────────────────────────────────────────────────────
-   STORY SECTION
-   Each slide is independently pinned. When a slide's ScrollTrigger
-   starts, the image card rotates in from the right (rotationY 90→0),
-   holds while the text is visible, then rotates out to the left
-   (rotationY 0→-90) into the next slide.
-───────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════
+   STORY SECTION — single pinned container, all slides stacked.
+   One ScrollTrigger drives everything. Each slide occupies an equal
+   band of the total progress. Image + text are synced so they appear
+   together with zero gap between transitions.
+   ═══════════════════════════════════════════════════════════════════ */
 function StorySection() {
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const textRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const cardRefs   = useRef<(HTMLDivElement | null)[]>([]);
+  const textRefs   = useRef<(HTMLDivElement | null)[]>([]);
+  const dotRefs    = useRef<(HTMLSpanElement | null)[]>([]);
 
   useEffect(() => {
     const N = SLIDES.length;
-    const triggers: ScrollTrigger[] = [];
 
-    SLIDES.forEach((_, i) => {
-      const card = cardRefs.current[i];
-      const text = textRefs.current[i];
-      const slide = slideRefs.current[i];
-      if (!card || !text || !slide) return;
+    // ── Initial state ──────────────────────────────────────────
+    cardRefs.current.forEach((card, i) => {
+      if (!card) return;
+      gsap.set(card, {
+        rotationY: i === 0 ? 0 : 90,
+        opacity:   i === 0 ? 1 : 0,
+        transformPerspective: 1400,
+        transformOrigin: "center center",
+      });
+    });
+    textRefs.current.forEach((t) => { if (t) gsap.set(t, { opacity: 0, y: 30 }); });
 
-      // Initial hidden state for all slides
-      const isFirst = i === 0;
-      gsap.set(card, { rotationY: isFirst ? 0 : 90, opacity: isFirst ? 1 : 0 });
-      gsap.set(text, { opacity: 0, y: 36 });
+    // ── Single pinned ScrollTrigger spanning all slides ────────
+    const st = ScrollTrigger.create({
+      trigger: sectionRef.current,
+      start: "top top",
+      end: `+=${N * 100}%`,
+      pin: true,
+      pinSpacing: true,
+      scrub: 0.6,                       // fast, responsive scrub
+      onUpdate: (self) => {
+        const p = self.progress;        // 0 → 1 across all slides
 
-      const st = ScrollTrigger.create({
-        trigger: slide,
-        start: "top top",
-        end: "+=180%",
-        pin: true,
-        pinSpacing: true,
-        scrub: 0.9,
-        onUpdate: (self) => {
-          const p = self.progress; // 0→1
+        SLIDES.forEach((_, i) => {
+          const card = cardRefs.current[i];
+          const text = textRefs.current[i];
+          const dot  = dotRefs.current[i];
+          if (!card || !text) return;
+
+          // Each slide occupies band [i/N … (i+1)/N]
+          const lo   = i / N;
+          const hi   = (i + 1) / N;
+          const band = hi - lo;
+          const lp   = clamp01((p - lo) / band);   // 0→1 within this slide's band
 
           // ── Card rotation ───────────────────────────────────
-          // 0.00 → 0.30  rotate in  (90° → 0°)
-          // 0.30 → 0.70  hold at 0°
-          // 0.70 → 1.00  rotate out (0° → -90°)  ← skip for last slide
+          // 0.00 → 0.25 : rotate in  (90° → 0°)  — fast entry
+          // 0.25 → 0.75 : hold at 0°
+          // 0.75 → 1.00 : rotate out (0° → -90°) — fast exit
+          // Last slide never rotates out.
           const isLast = i === N - 1;
+          const isFirst = i === 0;
 
           let rotY: number;
           let cardOp: number;
 
-          if (p < 0.30) {
-            const t = easeOut3(p / 0.30);
-            rotY = isFirst ? 0 : 90 * (1 - t);
-            cardOp = isFirst ? 1 : 0.15 + 0.85 * t;
-          } else if (p < 0.70 || isLast) {
-            rotY = 0;
+          if (lp < 0.25) {
+            const t = smooth(lp / 0.25);
+            rotY   = isFirst ? 0 : 90 * (1 - t);
+            cardOp = isFirst ? 1 : 0.2 + 0.8 * t;
+          } else if (lp < 0.75 || isLast) {
+            rotY   = 0;
             cardOp = 1;
           } else {
-            const t = easeIn3((p - 0.70) / 0.30);
-            rotY = -90 * t;
+            const t = smooth((lp - 0.75) / 0.25);
+            rotY   = -90 * t;
             cardOp = 1 - t * 0.5;
           }
 
           gsap.set(card, { rotationY: rotY, opacity: cardOp });
 
-          // ── Text ────────────────────────────────────────────
-          // fades in 0.25→0.45, holds, fades out 0.68→0.82 (not last)
-          const tIn = clamp01((p - 0.25) / 0.20);
-          const tOut = isLast ? 0 : clamp01((p - 0.68) / 0.14);
+          // ── Text — synced with card ─────────────────────────
+          // Text fades in during the SAME window as card rotate-in (0.05→0.30)
+          // and fades out during card rotate-out (0.75→0.90)
+          const tIn  = clamp01((lp - 0.05) / 0.25);   // synced with card entry
+          const tOut = isLast ? 0 : clamp01((lp - 0.75) / 0.15);
           const textOp = easeOut3(tIn) * (1 - easeIn3(tOut));
-          const textY = 36 * (1 - easeOut3(tIn)) + 18 * easeIn3(tOut);
+          const textY  = 30 * (1 - easeOut3(tIn)) + 15 * easeIn3(tOut);
 
           gsap.set(text, { opacity: textOp, y: textY });
-        },
-      });
 
-      triggers.push(st);
+          // ── Active dot ──────────────────────────────────────
+          if (dot) {
+            const isActive = lp > 0.1 && lp < 0.95;
+            dot.style.width      = isActive ? "26px" : "7px";
+            dot.style.background = isActive
+              ? "rgba(255,255,255,0.85)"
+              : "rgba(255,255,255,0.18)";
+          }
+        });
+      },
     });
 
-    return () => triggers.forEach((t) => t.kill());
+    return () => st.kill();
   }, []);
 
   return (
-    <>
+    <div
+      ref={sectionRef}
+      className="relative w-full h-screen bg-black overflow-hidden"
+      style={{ perspective: "1400px" }}
+    >
+      {/* ── Image cards — all stacked, one visible at a time ──── */}
       {SLIDES.map((slide, i) => (
         <div
           key={i}
-          ref={(el) => { slideRefs.current[i] = el; }}
-          className="relative w-full h-screen bg-black overflow-hidden"
-          style={{ perspective: "1400px" }}
+          ref={(el) => { cardRefs.current[i] = el; }}
+          className="absolute inset-0 will-change-transform"
+          style={{
+            transformOrigin: "center center",
+            transformStyle: "preserve-3d",
+            backfaceVisibility: "hidden",
+          }}
         >
-          {/* ── IMAGE CARD (rotates in/out) ─────────────────── */}
-          <div
-            ref={(el) => { cardRefs.current[i] = el; }}
-            className="absolute inset-0 will-change-transform"
-            style={{
-              transformOrigin: "center center",
-              transformStyle: "preserve-3d",
-              backfaceVisibility: "hidden",
-            }}
-          >
-            {/*
-              PORTRAIT  (< md): image fills full screen, text floats at bottom
-              LANDSCAPE (≥ md): split — image on right half, text on left half
-            */}
+          {/* Portrait: full-screen image */}
+          <div className="md:hidden absolute inset-0 bg-black">
+            <Image
+              src={slide.src}
+              alt={`Chapter ${slide.chapter}`}
+              fill
+              className="object-cover object-top"
+              sizes="100vw"
+              priority={i === 0}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(to top, rgba(0,0,0,0.90) 0%, rgba(0,0,0,0.45) 40%, transparent 70%)",
+              }}
+            />
+          </div>
 
-            {/* ── Portrait layout: full-screen image ─────── */}
-            <div className="md:hidden absolute inset-0 bg-black">
+          {/* Landscape: split layout */}
+          <div className="hidden md:block absolute inset-0 bg-black">
+            <div
+              className="absolute left-0 top-0 bottom-0 w-[50%]"
+              style={{
+                background: "linear-gradient(to right, #000 0%, rgba(0,0,0,0.95) 70%, rgba(0,0,0,0.78) 100%)",
+                zIndex: 2,
+              }}
+            />
+            <div className="absolute right-0 top-0 bottom-0 w-[58%]">
               <Image
                 src={slide.src}
                 alt={`Chapter ${slide.chapter}`}
                 fill
-                className="object-cover object-top"
-                sizes="100vw"
+                className="object-cover object-center"
+                sizes="60vw"
                 priority={i === 0}
               />
-              {/* bottom fade for text */}
               <div
                 className="absolute inset-0"
                 style={{
-                  background:
-                    "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.50) 38%, transparent 70%)",
+                  background: "linear-gradient(to right, rgba(0,0,0,0.70) 0%, transparent 40%)",
                 }}
               />
             </div>
-
-            {/* ── Landscape layout: right-side image panel ─ */}
-            <div className="hidden md:block absolute inset-0 bg-black">
-              {/* Left half — deep dark for text */}
-              <div
-                className="absolute left-0 top-0 bottom-0 w-[50%]"
-                style={{
-                  background:
-                    "linear-gradient(to right, #000000 0%, rgba(0,0,0,0.96) 70%, rgba(0,0,0,0.80) 100%)",
-                  zIndex: 2,
-                }}
-              />
-              {/* Right half — image */}
-              <div className="absolute right-0 top-0 bottom-0 w-[58%]">
-                <Image
-                  src={slide.src}
-                  alt={`Chapter ${slide.chapter}`}
-                  fill
-                  className="object-cover object-center"
-                  sizes="60vw"
-                  priority={i === 0}
-                />
-                {/* inner shadow blending into black left side */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "linear-gradient(to right, rgba(0,0,0,0.75) 0%, transparent 40%)",
-                  }}
-                />
-              </div>
-            </div>
           </div>
-
-          {/* ── TEXT OVERLAY ────────────────────────────────── */}
-          <div
-            ref={(el) => { textRefs.current[i] = el; }}
-            className={[
-              "absolute inset-0 flex flex-col pointer-events-none",
-              // Portrait: bottom-aligned, centred
-              "justify-end pb-16 px-7 items-start",
-              // Landscape: left column, vertically centred
-              "md:justify-center md:pb-0 md:px-16 lg:px-24 md:items-start md:max-w-[52%]",
-            ].join(" ")}
-            style={{ opacity: 0 }}
-          >
-            {/* Chapter label */}
-            <div className="flex items-center gap-3 mb-5">
-              <div className="h-px w-8 bg-white/35" />
-              <span className="text-[9px] tracking-[0.65em] uppercase text-white/40 font-light">
-                Chapter {slide.chapter}
-              </span>
-            </div>
-
-            {/* Heading */}
-            <h2
-              className="font-[var(--font-playfair)] text-4xl md:text-5xl lg:text-[3.6rem] xl:text-[4.2rem] font-extralight text-white leading-[1.08]"
-              style={{ textShadow: "0 4px 60px rgba(0,0,0,1)" }}
-            >
-              {slide.heading.split("\n").map((line, l) => (
-                <span key={l} className="block">{line}</span>
-              ))}
-            </h2>
-
-            {/* Rule */}
-            <div className="mt-6 w-14 h-px bg-gradient-to-r from-white/45 to-transparent" />
-
-            {/* Body */}
-            <p className="mt-5 max-w-sm text-sm font-light text-white/52 leading-relaxed">
-              {slide.body}
-            </p>
-
-            {/* Progress pills */}
-            <div className="mt-8 flex gap-2">
-              {SLIDES.map((_, d) => (
-                <span
-                  key={d}
-                  className="block h-[3px] rounded-full"
-                  style={{
-                    width: d === i ? "26px" : "7px",
-                    background:
-                      d === i ? "rgba(255,255,255,0.80)" : "rgba(255,255,255,0.18)",
-                    transition: "width 0.4s ease",
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* ── Corner index ──────────────────────────────── */}
-          <span className="absolute top-8 right-8 font-mono text-[10px] tracking-widest text-white/12 pointer-events-none select-none z-20">
-            0{i + 1} / 0{SLIDES.length}
-          </span>
         </div>
       ))}
-    </>
+
+      {/* ── Text overlays — one per slide ─────────────────────── */}
+      {SLIDES.map((slide, i) => (
+        <div
+          key={i}
+          ref={(el) => { textRefs.current[i] = el; }}
+          className={[
+            "absolute inset-0 flex flex-col pointer-events-none",
+            "justify-end pb-16 px-7 items-start",
+            "md:justify-center md:pb-0 md:px-16 lg:px-24 md:items-start md:max-w-[52%]",
+          ].join(" ")}
+          style={{ opacity: 0 }}
+        >
+          <div className="flex items-center gap-3 mb-5">
+            <div className="h-px w-8 bg-white/35" />
+            <span className="text-[9px] tracking-[0.65em] uppercase text-white/40 font-light">
+              Chapter {slide.chapter}
+            </span>
+          </div>
+
+          <h2
+            className="font-[var(--font-playfair)] text-4xl md:text-5xl lg:text-[3.6rem] xl:text-[4.2rem] font-extralight text-white leading-[1.08]"
+            style={{ textShadow: "0 4px 60px rgba(0,0,0,1)" }}
+          >
+            {slide.heading.split("\n").map((line, l) => (
+              <span key={l} className="block">{line}</span>
+            ))}
+          </h2>
+
+          <div className="mt-6 w-14 h-px bg-gradient-to-r from-white/45 to-transparent" />
+
+          <p className="mt-5 max-w-sm text-sm font-light text-white/52 leading-relaxed">
+            {slide.body}
+          </p>
+        </div>
+      ))}
+
+      {/* ── Progress dots (fixed) ─────────────────────────────── */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-30 pointer-events-none">
+        {SLIDES.map((_, d) => (
+          <span
+            key={d}
+            ref={(el) => { dotRefs.current[d] = el; }}
+            className="block h-[3px] rounded-full"
+            style={{
+              width: d === 0 ? "26px" : "7px",
+              background: d === 0 ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.18)",
+              transition: "width 0.4s ease, background 0.4s ease",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* ── Corner counter ────────────────────────────────────── */}
+      <span className="absolute top-8 right-8 font-mono text-[10px] tracking-widest text-white/12 pointer-events-none select-none z-30">
+        0{SLIDES.length} panels
+      </span>
+    </div>
   );
 }
 
-/* ─── EASING HELPERS ────────────────────────────────────────────── */
-const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-const easeOut3 = (t: number) => 1 - Math.pow(1 - t, 3);
-const easeIn3 = (t: number) => t * t * t;
-
-/* ─── END SCREEN ────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════
+   END SCREEN
+   ═══════════════════════════════════════════════════════════════════ */
 function EndScreen() {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -321,14 +332,12 @@ function EndScreen() {
       ref={ref}
       className="relative w-full min-h-screen flex flex-col items-center justify-center text-center px-6 bg-black overflow-hidden"
     >
-      {/* Ambient purple glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background: "radial-gradient(ellipse at 50% 60%, rgba(110,60,230,0.14) 0%, transparent 60%)",
         }}
       />
-      {/* Concentric rings */}
       {[560, 380, 220].map((size) => (
         <div
           key={size}
@@ -376,16 +385,18 @@ function EndScreen() {
             color: "rgba(255,255,255,0.70)",
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLAnchorElement).style.background =
-              "linear-gradient(135deg, rgba(120,80,255,0.35), rgba(70,140,255,0.28))";
-            (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.22)";
-            (e.currentTarget as HTMLAnchorElement).style.color = "#fff";
+            Object.assign((e.currentTarget as HTMLElement).style, {
+              background: "linear-gradient(135deg, rgba(120,80,255,0.35), rgba(70,140,255,0.28))",
+              border: "1px solid rgba(255,255,255,0.22)",
+              color: "#fff",
+            });
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLAnchorElement).style.background =
-              "linear-gradient(135deg, rgba(120,80,255,0.18), rgba(70,140,255,0.14))";
-            (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.10)";
-            (e.currentTarget as HTMLAnchorElement).style.color = "rgba(255,255,255,0.70)";
+            Object.assign((e.currentTarget as HTMLElement).style, {
+              background: "linear-gradient(135deg, rgba(120,80,255,0.18), rgba(70,140,255,0.14))",
+              border: "1px solid rgba(255,255,255,0.10)",
+              color: "rgba(255,255,255,0.70)",
+            });
           }}
         >
           Enter Noorva
