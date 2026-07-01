@@ -19,7 +19,7 @@
 
 /* ── HTML / BODY ────────────────────────────────────────────────── */
 html {
-  scroll-behavior: auto;
+  scroll-behavior: smooth;
   overflow-x: hidden;
 }
 
@@ -237,6 +237,31 @@ html.lenis        { height: auto; }
 @keyframes orbit {
   from { transform: rotate(0deg) translateX(160px) rotate(0deg); }
   to   { transform: rotate(360deg) translateX(160px) rotate(-360deg); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float-slow {
+  animation: float-slow 14s ease-in-out infinite;
+}
+
+.floating-ring {
+  position: absolute;
+  border-radius: 9999px;
+  border: 1px solid rgba(96, 182, 255, 0.18);
+  box-shadow: 0 0 40px rgba(96, 182, 255, 0.1);
+  opacity: 0.85;
+}
+
+.orbit-ring {
+  position: absolute;
+  border-radius: 9999px;
+  border: 1px dashed rgba(255,255,255,0.12);
+  opacity: 0.24;
+  animation: orbit 28s linear infinite;
 }
 
 /* ── COUNTER SPIN ────────────────────────────────────────────────── */

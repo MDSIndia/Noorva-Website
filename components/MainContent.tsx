@@ -18,12 +18,6 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-/* ─── EASING ───────────────────────────────────────────────────── */
-const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-const easeOut3 = (t: number) => 1 - Math.pow(1 - t, 3);
-const easeIn3  = (t: number) => t * t * t;
-const smooth   = (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-
 /* ─── SLIDES ───────────────────────────────────────────────────── */
 const SLIDES = [
   {
@@ -77,231 +71,192 @@ const SLIDES = [
 ];
 
 /* ═══════════════════════════════════════════════════════════════════
-   STORY SECTION — single pinned container, all slides stacked.
-   One ScrollTrigger drives everything. Each slide occupies an equal
-   band of the total progress. Image + text are synced so they appear
-   together with zero gap between transitions.
+   STORY SECTION — sequential chapter flow.
+   Each slide is displayed one at a time as the user scrolls.
+   Subtle reveal animation keeps the layout premium and uncluttered.
    ═══════════════════════════════════════════════════════════════════ */
 function StorySection() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const cardRefs   = useRef<(HTMLDivElement | null)[]>([]);
-  const textRefs   = useRef<(HTMLDivElement | null)[]>([]);
-  const dotRefs    = useRef<(HTMLSpanElement | null)[]>([]);
+  const slideRefs = useRef<(HTMLElement | null)[]>([]);
+  const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    const N = SLIDES.length;
+    const el = sectionRef.current;
+    if (!el) return;
 
-    // ── Initial state ──────────────────────────────────────────
-    cardRefs.current.forEach((card, i) => {
-      if (!card) return;
-      gsap.set(card, {
-        rotationY: i === 0 ? 0 : 90,
-        opacity:   i === 0 ? 1 : 0,
-        transformPerspective: 1400,
-        transformOrigin: "center center",
+    const slides = slideRefs.current.filter(Boolean) as HTMLElement[];
+    const panels = panelRefs.current.filter(Boolean) as HTMLDivElement[];
+
+    slides.forEach((slide, index) => {
+      const isFirst = index === 0;
+      gsap.set(slide, {
+        autoAlpha: isFirst ? 1 : 0,
+        y: isFirst ? 0 : 40,
+        scale: isFirst ? 1 : 0.98,
+        pointerEvents: isFirst ? 'auto' : 'none',
       });
     });
-    textRefs.current.forEach((t) => { if (t) gsap.set(t, { opacity: 0, y: 30 }); });
+    panels.forEach((panel, index) => {
+      const isFirst = index === 0;
+      gsap.set(panel, {
+        autoAlpha: isFirst ? 1 : 0,
+        y: isFirst ? 0 : 20,
+        scale: isFirst ? 1 : 0.98,
+      });
+    });
 
-    // ── Single pinned ScrollTrigger spanning all slides ────────
-    const st = ScrollTrigger.create({
-      trigger: sectionRef.current,
-      start: "top top",
-      end: `+=${N * 100}%`,
-      pin: true,
-      pinSpacing: true,
-      scrub: 0.6,                       // fast, responsive scrub
-      onUpdate: (self) => {
-        const p = self.progress;        // 0 → 1 across all slides
-
-        SLIDES.forEach((_, i) => {
-          const card = cardRefs.current[i];
-          const text = textRefs.current[i];
-          const dot  = dotRefs.current[i];
-          if (!card || !text) return;
-
-          // Each slide occupies band [i/N … (i+1)/N]
-          const lo   = i / N;
-          const hi   = (i + 1) / N;
-          const band = hi - lo;
-          const lp   = clamp01((p - lo) / band);   // 0→1 within this slide's band
-
-          // ── Card rotation ───────────────────────────────────
-          // 0.00 → 0.25 : rotate in  (90° → 0°)  — fast entry
-          // 0.25 → 0.75 : hold at 0°
-          // 0.75 → 1.00 : rotate out (0° → -90°) — fast exit
-          // Last slide never rotates out.
-          const isLast = i === N - 1;
-          const isFirst = i === 0;
-
-          let rotY: number;
-          let cardOp: number;
-
-          if (lp < 0.25) {
-            const t = smooth(lp / 0.25);
-            rotY   = isFirst ? 0 : 90 * (1 - t);
-            cardOp = isFirst ? 1 : 0.2 + 0.8 * t;
-          } else if (lp < 0.75 || isLast) {
-            rotY   = 0;
-            cardOp = 1;
-          } else {
-            const t = smooth((lp - 0.75) / 0.25);
-            rotY   = -90 * t;
-            cardOp = 1 - t * 0.5;
-          }
-
-          gsap.set(card, { rotationY: rotY, opacity: cardOp });
-
-          // ── Text — synced with card ─────────────────────────
-          // Text fades in during the SAME window as card rotate-in (0.05→0.30)
-          // and fades out during card rotate-out (0.75→0.90)
-          const tIn  = clamp01((lp - 0.05) / 0.25);   // synced with card entry
-          const tOut = isLast ? 0 : clamp01((lp - 0.75) / 0.15);
-          const textOp = easeOut3(tIn) * (1 - easeIn3(tOut));
-          const textY  = 30 * (1 - easeOut3(tIn)) + 15 * easeIn3(tOut);
-
-          gsap.set(text, { opacity: textOp, y: textY });
-
-          // ── Active dot ──────────────────────────────────────
-          if (dot) {
-            const isActive = lp > 0.1 && lp < 0.95;
-            dot.style.width      = isActive ? "26px" : "7px";
-            dot.style.background = isActive
-              ? "rgba(255,255,255,0.85)"
-              : "rgba(255,255,255,0.18)";
-          }
-        });
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: el,
+        start: 'top top',
+        end: `+=${SLIDES.length * 100}%`,
+        pin: true,
+        pinSpacing: true,
+        scrub: 0.8,
+        snap: 1 / (SLIDES.length - 1),
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
       },
     });
 
-    return () => st.kill();
+    slides.forEach((slide, index) => {
+      const panel = panels[index];
+      const showTime = index * 1.4;
+      const hideTime = showTime + 1.4;
+
+      tl.to(slide, {
+        autoAlpha: 1,
+        y: 0,
+        scale: 1,
+        duration: 1,
+        ease: 'power2.out',
+      }, showTime);
+
+      if (panel) {
+        tl.to(panel, {
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
+          duration: 1,
+          ease: 'power2.out',
+        }, showTime);
+      }
+
+      if (index < slides.length - 1) {
+        tl.to([
+          slide,
+          panel,
+        ].filter(Boolean), {
+          autoAlpha: 0,
+          y: 0,
+          scale: 1.02,
+          duration: 1,
+          ease: 'power1.inOut',
+        }, hideTime);
+      }
+    });
+
+    return () => {
+      tl.kill();
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    };
   }, []);
 
   return (
     <div
       ref={sectionRef}
-      className="relative w-full h-screen bg-black overflow-hidden"
-      style={{ perspective: "1400px" }}
+      className="relative bg-[#050c17]"
     >
-      {/* ── Image cards — all stacked, one visible at a time ──── */}
-      {SLIDES.map((slide, i) => (
-        <div
-          key={i}
-          ref={(el) => { cardRefs.current[i] = el; }}
-          className="absolute inset-0 will-change-transform"
-          style={{
-            transformOrigin: "center center",
-            transformStyle: "preserve-3d",
-            backfaceVisibility: "hidden",
-          }}
-        >
-          {/* Portrait: full-screen image */}
-          <div className="md:hidden absolute inset-0 bg-black">
-            <Image
-              src={slide.src}
-              alt={`Chapter ${slide.chapter}`}
-              fill
-              className="object-cover object-top"
-              sizes="100vw"
-              priority={i === 0}
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  "linear-gradient(to top, rgba(0,0,0,0.90) 0%, rgba(0,0,0,0.45) 40%, transparent 70%)",
-              }}
-            />
-          </div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(79,211,255,0.18),transparent_18%),radial-gradient(circle_at_88%_18%,rgba(194,87,255,0.14),transparent_18%)]" />
+        <div className="absolute inset-x-16 top-16 hidden h-16 rounded-full bg-cyan-400/10 blur-3xl lg:block" />
+        <div className="absolute right-12 top-1/4 hidden h-24 w-24 rounded-full border border-cyan-300/15 bg-cyan-300/5 blur-3xl opacity-60 lg:block" />
+      </div>
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(180deg,rgba(3,5,12,0.96)_0%,rgba(9,12,24,0.93)_40%,rgba(6,8,20,0.98)_100%)]" />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            'repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 28px), repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 28px)',
+          opacity: 0.1,
+        }}
+      />
 
-          {/* Landscape: split layout */}
-          <div className="hidden md:block absolute inset-0 bg-black">
-            <div
-              className="absolute left-0 top-0 bottom-0 w-[50%]"
-              style={{
-                background: "linear-gradient(to right, #000 0%, rgba(0,0,0,0.95) 70%, rgba(0,0,0,0.78) 100%)",
-                zIndex: 2,
-              }}
-            />
-            <div className="absolute right-0 top-0 bottom-0 w-[58%]">
-              <Image
-                src={slide.src}
-                alt={`Chapter ${slide.chapter}`}
-                fill
-                className="object-cover object-center"
-                sizes="60vw"
-                priority={i === 0}
-              />
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: "linear-gradient(to right, rgba(0,0,0,0.70) 0%, transparent 40%)",
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      ))}
+      <div className="relative mx-auto max-w-[1480px] px-6 py-16 lg:pt-28 lg:pb-8">
+        <div className="relative z-10" style={{ minHeight: `${SLIDES.length * 100}vh` }}>
+          <div className="relative h-screen lg:h-[90vh] flex items-center justify-center">
+            {SLIDES.map((slide, i) => (
+              <section
+                key={i}
+                ref={(el) => { slideRefs.current[i] = el; }}
+                className="story-slide absolute inset-0"
+                style={{ zIndex: i + 1 }}
+              >
+                <div className="relative mx-auto w-full max-w-full sm:max-w-[980px] lg:max-w-[1280px] overflow-hidden rounded-[2.5rem] border border-white/15 bg-white/5 shadow-[0_55px_120px_rgba(8,15,36,0.48)] backdrop-blur-[14px]">
+                  <div className="slide-frame relative h-[92vh] sm:h-[86vh] lg:h-[80vh] overflow-hidden">
+                    <Image
+                      src={slide.src}
+                      alt={`Chapter ${slide.chapter}`}
+                      fill
+                      className="object-cover object-center brightness-[1.12] contrast-[1.18] saturate-[1.08]"
+                      sizes="(max-width: 768px) 90vw, 1180px"
+                      priority={i === 0}
+                    />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.06),transparent_50%)] pointer-events-none" />
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.01)_0%,transparent_45%)] pointer-events-none" />
+                    <div className="absolute left-8 top-8 hidden h-24 w-24 rounded-full border border-cyan-300/20 blur-3xl opacity-50 lg:block" />
+                    <div className="absolute right-8 bottom-20 hidden h-16 w-16 rounded-full border border-violet-300/20 blur-3xl opacity-50 lg:block" />
+                    <div className="absolute left-4 top-4 h-16 w-16 rounded-full border border-cyan-300/15 blur-xl opacity-70 sm:left-10 sm:top-10 sm:h-24 sm:w-24" />
+                    <div className="absolute right-4 bottom-16 hidden h-12 w-12 rounded-full border border-violet-300/15 opacity-70 md:block md:right-10 md:bottom-24 md:h-16 md:w-16" />
+                    <div className="absolute left-0 top-1/2 h-px w-full bg-cyan-300/10" />
+                    <div className="absolute inset-x-4 top-20 hidden grid-cols-3 gap-4 lg:grid lg:inset-x-6 lg:top-24">
+                      <div className="h-px w-full bg-cyan-300/10" />
+                      <div className="h-px w-full bg-violet-300/10" />
+                      <div className="h-px w-full bg-white/10" />
+                    </div>
 
-      {/* ── Text overlays — one per slide ─────────────────────── */}
-      {SLIDES.map((slide, i) => (
-        <div
-          key={i}
-          ref={(el) => { textRefs.current[i] = el; }}
-          className={[
-            "absolute inset-0 flex flex-col pointer-events-none",
-            "justify-end pb-16 px-7 items-start",
-            "md:justify-center md:pb-0 md:px-16 lg:px-24 md:items-start md:max-w-[52%]",
-          ].join(" ")}
-          style={{ opacity: 0 }}
-        >
-          <div className="flex items-center gap-3 mb-5">
-            <div className="h-px w-8 bg-white/35" />
-            <span className="text-[9px] tracking-[0.65em] uppercase text-white/40 font-light">
-              Chapter {slide.chapter}
-            </span>
-          </div>
+                    <div className="absolute left-4 top-4 flex items-center justify-between gap-3 rounded-[1.75rem] border border-white/10 bg-black/30 px-3 py-2 text-[10px] uppercase tracking-[0.24em] text-white/75 shadow-[0_16px_40px_rgba(0,0,0,0.22)] sm:left-6 sm:top-6 sm:gap-4 sm:px-4 sm:py-3">
+                      <span>Chapter {slide.chapter}</span>
+                      <span className="rounded-full bg-cyan-300/10 px-2 py-1 text-[10px] text-cyan-200">Live</span>
+                    </div>
 
-          <h2
-            className="font-[var(--font-playfair)] text-4xl md:text-5xl lg:text-[3.6rem] xl:text-[4.2rem] font-extralight text-white leading-[1.08]"
-            style={{ textShadow: "0 4px 60px rgba(0,0,0,1)" }}
-          >
-            {slide.heading.split("\n").map((line, l) => (
-              <span key={l} className="block">{line}</span>
+                    <div
+                      ref={(el) => { panelRefs.current[i] = el; }}
+                      className="absolute inset-x-4 bottom-4 slide-panel rounded-[2rem] border border-white/10 bg-black/20 p-5 backdrop-blur-xl shadow-[0_22px_70px_rgba(0,0,0,0.24)] sm:inset-x-6 sm:bottom-6 sm:p-8"
+                    >
+                      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-[10px] uppercase tracking-[0.35em] text-cyan-100">
+                        <span>Noorva insight</span>
+                        <span className="rounded-full bg-white/5 px-3 py-1 text-[10px] text-white/70">Insight</span>
+                      </div>
+                      <div className="mb-4 flex items-center gap-3 text-[10px] uppercase tracking-[0.32em] text-white/40">
+                        <span className="inline-flex h-2 w-2 rounded-full bg-cyan-300" />
+                        <span>System node active</span>
+                      </div>
+                      <h3 className="text-3xl font-semibold leading-tight text-white sm:text-4xl">
+                        {slide.heading}
+                      </h3>
+                      <p className="mt-3 text-sm leading-7 text-white/70 sm:text-base">
+                        {slide.body}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </section>
             ))}
-          </h2>
-
-          <div className="mt-6 w-14 h-px bg-gradient-to-r from-white/45 to-transparent" />
-
-          <p className="mt-5 max-w-sm text-sm font-light text-white/52 leading-relaxed">
-            {slide.body}
-          </p>
+          </div>
         </div>
-      ))}
-
-      {/* ── Progress dots (fixed) ─────────────────────────────── */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-30 pointer-events-none">
-        {SLIDES.map((_, d) => (
-          <span
-            key={d}
-            ref={(el) => { dotRefs.current[d] = el; }}
-            className="block h-[3px] rounded-full"
-            style={{
-              width: d === 0 ? "26px" : "7px",
-              background: d === 0 ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.18)",
-              transition: "width 0.4s ease, background 0.4s ease",
-            }}
-          />
-        ))}
       </div>
 
-      {/* ── Corner counter ────────────────────────────────────── */}
-      <span className="absolute top-8 right-8 font-mono text-[10px] tracking-widest text-white/12 pointer-events-none select-none z-30">
-        0{SLIDES.length} panels
-      </span>
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 text-[10px] uppercase tracking-[0.35em] text-white/40">
+        <div className="h-[1px] w-24 bg-white/10" />
+        <span>scroll for each chapter</span>
+        <div className="h-[1px] w-24 bg-white/10" />
+      </div>
     </div>
   );
 }
+
 
 /* ═══════════════════════════════════════════════════════════════════
    END SCREEN
@@ -330,35 +285,40 @@ function EndScreen() {
   return (
     <div
       ref={ref}
-      className="relative w-full min-h-screen flex flex-col items-center justify-center text-center px-6 bg-black overflow-hidden"
+      className="relative w-full min-h-screen flex items-center justify-center px-6 bg-[#02050c] overflow-hidden"
     >
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse at 50% 60%, rgba(110,60,230,0.14) 0%, transparent 60%)",
+          background: "radial-gradient(circle at 50% 40%, rgba(84,168,255,0.16), transparent 24%), radial-gradient(circle at 30% 15%, rgba(120,80,255,0.12), transparent 18%)",
         }}
       />
-      {[560, 380, 220].map((size) => (
+      {[520, 360].map((size) => (
         <div
           key={size}
-          className="absolute rounded-full border border-white/[0.035] pointer-events-none"
+          className="absolute rounded-full border border-white/[0.03] pointer-events-none"
           style={{
-            width: size, height: size,
-            top: "50%", left: "50%",
+            width: size,
+            height: size,
+            top: "50%",
+            left: "50%",
             transform: "translate(-50%, -50%)",
           }}
         />
       ))}
+      <div className="absolute inset-0 flex items-end justify-center pb-24 pointer-events-none">
+        <div className="h-1 w-[260px] rounded-full bg-white/5 backdrop-blur-xl" />
+      </div>
 
-      <div className="relative z-10 flex flex-col items-center">
-        <span className="ei block text-[9px] tracking-[0.65em] uppercase text-white/30 mb-10 font-light">
-          The Future is Personal
+      <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-col items-center gap-10 text-center">
+        <span className="ei block text-[9px] tracking-[0.65em] uppercase text-white/30 font-light">
+          Elegant intelligence
         </span>
 
         <h1
-          className="ei font-[var(--font-playfair)] text-6xl md:text-8xl lg:text-[6.5rem] font-extralight leading-none tracking-[-0.04em]"
+          className="ei font-[var(--font-playfair)] text-6xl md:text-7xl lg:text-[5.5rem] font-extralight leading-none tracking-[-0.04em]"
           style={{
-            background: "linear-gradient(148deg, #ffffff 0%, #c4b5fd 38%, #93c5fd 68%, #ffffff 100%)",
+            background: "linear-gradient(150deg, #ffffff 0%, #c4b5fd 34%, #91c5ff 72%, #ffffff 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
           }}
@@ -366,42 +326,22 @@ function EndScreen() {
           Noorva
         </h1>
 
-        <div className="ei mt-8 flex items-center gap-5">
-          <div className="h-px w-16 bg-gradient-to-r from-transparent to-white/25" />
-          <div className="w-1 h-1 rounded-full bg-white/30" />
-          <div className="h-px w-16 bg-gradient-to-l from-transparent to-white/25" />
-        </div>
-
-        <p className="ei mt-8 max-w-sm text-sm font-light text-white/40 leading-relaxed tracking-wide">
-          Intelligence that understands the human journey.
+        <p className="ei mx-auto max-w-xl text-sm leading-relaxed text-white/50 tracking-wide sm:text-base">
+          A premium companion that is calm, precise, and beautifully tailored for every moment.
         </p>
 
-        <a
-          href="#"
-          className="ei mt-14 group inline-flex items-center gap-4 rounded-full px-12 py-4 font-light text-sm tracking-[0.22em] uppercase transition-all duration-500"
-          style={{
-            background: "linear-gradient(135deg, rgba(120,80,255,0.18), rgba(70,140,255,0.14))",
-            border: "1px solid rgba(255,255,255,0.10)",
-            color: "rgba(255,255,255,0.70)",
-          }}
-          onMouseEnter={(e) => {
-            Object.assign((e.currentTarget as HTMLElement).style, {
-              background: "linear-gradient(135deg, rgba(120,80,255,0.35), rgba(70,140,255,0.28))",
-              border: "1px solid rgba(255,255,255,0.22)",
-              color: "#fff",
-            });
-          }}
-          onMouseLeave={(e) => {
-            Object.assign((e.currentTarget as HTMLElement).style, {
-              background: "linear-gradient(135deg, rgba(120,80,255,0.18), rgba(70,140,255,0.14))",
-              border: "1px solid rgba(255,255,255,0.10)",
-              color: "rgba(255,255,255,0.70)",
-            });
-          }}
-        >
-          Enter Noorva
-          <span className="text-white/35 group-hover:text-white/70 transition-colors duration-300 text-base">→</span>
-        </a>
+        <div className="ei mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+          <a
+            href="#"
+            className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-12 py-4 text-sm uppercase tracking-[0.22em] text-white/80 transition duration-300 hover:border-white/20 hover:bg-white/10"
+          >
+            Begin the journey
+          </a>
+
+          <span className="text-[10px] uppercase tracking-[0.35em] text-white/40">
+            refined · responsive · ready
+          </span>
+        </div>
       </div>
     </div>
   );

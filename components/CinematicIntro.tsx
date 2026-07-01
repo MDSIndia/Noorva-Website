@@ -84,7 +84,7 @@ export default function CinematicIntro() {
           style={{ opacity: 1 }}
         >
           <span className="text-[10px] tracking-[0.44em] uppercase text-white/35 font-light">
-            Scroll to begin
+            Scroll to continue
           </span>
           <div className="w-px h-8 bg-gradient-to-b from-white/25 to-transparent animate-pulse" />
         </div>
@@ -104,11 +104,11 @@ export default function CinematicIntro() {
             className="absolute text-center px-8"
             style={{ opacity: 0, filter: "blur(8px)" }}
           >
-            <p className="text-[9px] md:text-[11px] tracking-[0.52em] uppercase text-blue-200/45 mb-3">
-              In a world full of noise
+            <p className="text-[9px] md:text-[11px] tracking-[0.52em] uppercase text-cyan-100/45 mb-3">
+              Precision in every moment
             </p>
             <p className="text-3xl md:text-5xl font-extralight text-white/78 tracking-[0.04em]">
-              People need a guide they can trust
+              People deserve an intelligence that feels intentional
             </p>
           </div>
         </div>
@@ -127,12 +127,12 @@ export default function CinematicIntro() {
               }}
             />
             <p className="mb-5 text-[9px] tracking-[0.58em] uppercase text-cyan-100/40 font-light">
-              The Future of Connection
+              Precision, presence, polish
             </p>
             <h1
               className="font-[var(--font-playfair)] text-[3.8rem] md:text-[7rem] lg:text-[9rem] leading-none tracking-[-0.06em] text-transparent bg-clip-text"
               style={{
-                backgroundImage: "linear-gradient(148deg, #ffffff 10%, #b6dbff 44%, #d2bcff 72%, #ffffff 92%)",
+                backgroundImage: "linear-gradient(148deg, #ffffff 10%, #c4b5fd 40%, #8cc5ff 68%, #ffffff 92%)",
               }}
             >
               Noorva
@@ -147,7 +147,7 @@ export default function CinematicIntro() {
               className="text-sm md:text-base tracking-[0.20em] uppercase text-white/45 font-light"
               style={{ opacity: 0 }}
             >
-              Intelligence that understands the human journey
+              Luxury intelligence, simply stated
             </p>
           </div>
         </div>
