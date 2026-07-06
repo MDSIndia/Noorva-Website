@@ -4,10 +4,11 @@
 
 /* ── DESIGN TOKENS ─────────────────────────────────────────────── */
 :root {
-  --bg:       #000000;
-  --text:     #ffffff;
-  --accent-1: #7c5cfc;
-  --accent-2: #4fa8d5;
+  --bg:          #050505;
+  --text:        #ffffff;
+  --accent-1:    #7c5cfc;
+  --accent-2:    #4fa8d5;
+  --accent-warm: #e8b478;
 }
 
 /* ── RESET ─────────────────────────────────────────────────────── */
@@ -30,24 +31,22 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Ensure no white flash on first paint */
-  background-color: #000000;
 }
 
 /* ── LENIS SMOOTH SCROLL ────────────────────────────────────────── */
-html.lenis        { height: auto; }
-.lenis.lenis-smooth { scroll-behavior: auto; }
+html.lenis          { height: auto; }
+.lenis.lenis-smooth  { scroll-behavior: auto; }
 .lenis.lenis-stopped { overflow: hidden; }
 
 /* ── SCROLLBAR ──────────────────────────────────────────────────── */
 ::-webkit-scrollbar       { width: 3px; }
 ::-webkit-scrollbar-track { background: #000000; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(120, 100, 255, 0.35);
+  background: rgba(232, 180, 120, 0.35);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(120, 100, 255, 0.65);
+  background: rgba(232, 180, 120, 0.6);
 }
 
 /* ── GSAP PINNED SPACER FIX ─────────────────────────────────────── */
@@ -60,7 +59,6 @@ html.lenis        { height: auto; }
 
 /* ── COSMIC INTRO SPECIFIC ──────────────────────────────────────── */
 #cosmic-intro canvas {
-  /* Ensure the Three.js canvas always fills the sticky viewport */
   position: absolute !important;
   inset: 0 !important;
   width: 100% !important;
@@ -69,16 +67,13 @@ html.lenis        { height: auto; }
 
 /* ── SELECTION ──────────────────────────────────────────────────── */
 ::selection {
-  background: rgba(124, 92, 252, 0.35);
+  background: rgba(232, 180, 120, 0.35);
   color: #ffffff;
 }
 
 /* ── TYPOGRAPHY UTILITIES ───────────────────────────────────────── */
 .font-playfair { font-family: var(--font-playfair); }
 .font-jakarta  { font-family: var(--font-jakarta); }
-
-/* ── UTILITY: NO OVERFLOW ───────────────────────────────────────── */
-.clip-x { overflow-x: hidden; }
 
 /* ── PREMIUM GLOW BUTTON ────────────────────────────────────────── */
 .btn-glow {
@@ -90,7 +85,7 @@ html.lenis        { height: auto; }
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(130, 100, 255, 0.25), transparent 65%);
+  background: radial-gradient(circle at center, rgba(232, 180, 120, 0.25), transparent 65%);
   opacity: 0;
   transition: opacity 0.4s ease;
 }
@@ -99,461 +94,47 @@ html.lenis        { height: auto; }
 }
 
 /* ── NOISE GRAIN OVERLAY ─────────────────────────────────────────── */
+/* Single shared instance mounted once at the page root (see GrainOverlay.tsx) —
+   9 separate animated SVG-turbulence layers (one per section) was a real CPU cost. */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  /* Must stay above every section's stacking z-index (intro=30, chapters=22-29)
+     or the grain texture silently renders underneath them and disappears. */
+  z-index: 35;
+}
 .grain::before {
   content: "";
-  position: fixed;
+  position: absolute;
   inset: -200%;
   width: 400%;
   height: 400%;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
   opacity: 0.022;
   pointer-events: none;
-  z-index: 9999;
   animation: grain-shift 0.5s steps(2) infinite;
 }
 
 @keyframes grain-shift {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(-2%, 2%); }
-  50% { transform: translate(2%, -2%); }
-  75% { transform: translate(-1%, 1%); }
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-2%, 2%); }
+  50%  { transform: translate(2%, -2%); }
+  75%  { transform: translate(-1%, 1%); }
   100% { transform: translate(0, 0); }
 }
 
-/* ── GLITCH TEXT ─────────────────────────────────────────────────── */
-.glitch {
-  position: relative;
-}
-.glitch::before,
-.glitch::after {
-  content: attr(data-text);
-  position: absolute;
-  inset: 0;
-  background: inherit;
-  clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
-}
-.glitch::before {
-  left: 2px;
-  text-shadow: -2px 0 rgba(0,255,255,0.7);
-  animation: glitch-top 3s infinite linear alternate-reverse;
-}
-.glitch::after {
-  left: -2px;
-  text-shadow: 2px 0 rgba(255,0,255,0.5);
-  clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
-  animation: glitch-bot 2.5s infinite linear alternate-reverse;
-}
-@keyframes glitch-top {
-  0%   { transform: translate(0, 0); opacity: 0; }
-  92%  { transform: translate(0, 0); opacity: 0; }
-  93%  { transform: translate(-2px, -1px); opacity: 0.85; }
-  94%  { transform: translate(2px, 0); opacity: 0.85; }
-  95%  { transform: translate(0, 0); opacity: 0; }
-  100% { transform: translate(0, 0); opacity: 0; }
-}
-@keyframes glitch-bot {
-  0%   { transform: translate(0, 0); opacity: 0; }
-  88%  { transform: translate(0, 0); opacity: 0; }
-  89%  { transform: translate(3px, 1px); opacity: 0.7; }
-  90%  { transform: translate(-3px, 0); opacity: 0.7; }
-  91%  { transform: translate(0, 0); opacity: 0; }
-  100% { transform: translate(0, 0); opacity: 0; }
+/* ── VIGNETTE ────────────────────────────────────────────────────── */
+.vignette-edge {
+  box-shadow: inset 0 0 220px rgba(0, 0, 0, 0.75);
 }
 
-/* ── TYPEWRITER CURSOR ───────────────────────────────────────────── */
-.typewriter-cursor::after {
-  content: "|";
-  animation: blink 1s step-end infinite;
-  color: rgba(124,92,252,0.8);
-  margin-left: 2px;
-}
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-/* ── SHIMMER SWEEP ───────────────────────────────────────────────── */
-.shimmer {
-  position: relative;
-  overflow: hidden;
-}
-.shimmer::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
-  animation: shimmer-sweep 4s ease-in-out infinite;
-}
-@keyframes shimmer-sweep {
-  0%   { left: -60%; }
-  100% { left: 160%; }
-}
-
-/* ── MORPHING GRADIENT BORDER ────────────────────────────────────── */
-.gradient-border {
-  position: relative;
-  background: #030208;
-  border-radius: 1rem;
-}
-.gradient-border::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(124,92,252,0.4), rgba(79,168,213,0.2), rgba(124,92,252,0.15));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: border-rotate 4s linear infinite;
-  background-size: 200% 200%;
-}
-@keyframes border-rotate {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* ── FLOATING PARTICLE DOT ───────────────────────────────────────── */
-@keyframes float-particle {
-  0%, 100% { transform: translateY(0px) scale(1); opacity: 0.4; }
-  33%  { transform: translateY(-18px) scale(1.15); opacity: 0.7; }
-  66%  { transform: translateY(8px) scale(0.9); opacity: 0.35; }
-}
-
-/* ── NEON PULSE ──────────────────────────────────────────────────── */
-@keyframes neon-pulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(124,92,252,0.4), 0 0 20px rgba(124,92,252,0.15); }
-  50%       { box-shadow: 0 0 16px rgba(124,92,252,0.7), 0 0 40px rgba(124,92,252,0.3), 0 0 80px rgba(124,92,252,0.1); }
-}
-.neon-glow {
-  animation: neon-pulse 2.5s ease-in-out infinite;
-}
-
-/* ── ORBIT RING ──────────────────────────────────────────────────── */
-@keyframes orbit {
-  from { transform: rotate(0deg) translateX(160px) rotate(0deg); }
-  to   { transform: rotate(360deg) translateX(160px) rotate(-360deg); }
-}
-
+/* ── SOFT FLOATING DRIFT ─────────────────────────────────────────── */
 @keyframes float-slow {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50%      { transform: translateY(-14px); }
 }
 
 .animate-float-slow {
   animation: float-slow 14s ease-in-out infinite;
-}
-
-.floating-ring {
-  position: absolute;
-  border-radius: 9999px;
-  border: 1px solid rgba(96, 182, 255, 0.18);
-  box-shadow: 0 0 40px rgba(96, 182, 255, 0.1);
-  opacity: 0.85;
-}
-
-.orbit-ring {
-  position: absolute;
-  border-radius: 9999px;
-  border: 1px dashed rgba(255,255,255,0.12);
-  opacity: 0.24;
-  animation: orbit 28s linear infinite;
-}
-
-/* ── COUNTER SPIN ────────────────────────────────────────────────── */
-@keyframes count-up {
-  from { transform: translateY(100%); opacity: 0; }
-  to   { transform: translateY(0); opacity: 1; }
-}
-
-/* ── 3D CARD TILT BASE ───────────────────────────────────────────── */
-.tilt-card {
-  transform-style: preserve-3d;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  will-change: transform;
-}
-
-/* ── SCAN LINE OVERLAY ───────────────────────────────────────────── */
-.scanlines::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,0,0,0.03) 2px,
-    rgba(0,0,0,0.03) 4px
-  );
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* ── MAGNETIC BUTTON RING ────────────────────────────────────────── */
-.mag-btn {
-  position: relative;
-  transition: transform 0.2s ease;
-}
-.mag-btn::before {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  border-radius: inherit;
-  border: 1px solid rgba(124,92,252,0);
-  transition: border-color 0.3s ease, inset 0.3s ease;
-  pointer-events: none;
-}
-.mag-btn:hover::before {
-  inset: -8px;
-  border-color: rgba(124,92,252,0.35);
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   FUTURISTIC DESIGN SYSTEM
-══════════════════════════════════════════════════════════════════ */
-
-/* ── HUD Corner brackets ─────────────────────────────────────────── */
-.hud-card {
-  position: relative;
-}
-.hud-card::before,
-.hud-card::after {
-  content: "";
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  pointer-events: none;
-  transition: all 0.4s ease;
-}
-.hud-card::before {
-  top: 0; left: 0;
-  border-top: 1.5px solid rgba(0,255,230,0.6);
-  border-left: 1.5px solid rgba(0,255,230,0.6);
-}
-.hud-card::after {
-  bottom: 0; right: 0;
-  border-bottom: 1.5px solid rgba(0,255,230,0.6);
-  border-right: 1.5px solid rgba(0,255,230,0.6);
-}
-.hud-card:hover::before,
-.hud-card:hover::after {
-  width: 22px;
-  height: 22px;
-  border-color: rgba(0,255,230,1);
-  box-shadow: 0 0 8px rgba(0,255,230,0.5);
-}
-
-/* ── Holographic card shimmer ────────────────────────────────────── */
-.holo-card {
-  position: relative;
-  overflow: hidden;
-  background: rgba(255,255,255,0.025);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.06);
-}
-.holo-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    135deg,
-    transparent 30%,
-    rgba(0,255,230,0.04) 45%,
-    rgba(100,120,255,0.06) 50%,
-    rgba(255,100,200,0.04) 55%,
-    transparent 70%
-  );
-  background-size: 300% 300%;
-  animation: holo-shift 5s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes holo-shift {
-  0%   { background-position: 0% 0%; }
-  50%  { background-position: 100% 100%; }
-  100% { background-position: 0% 0%; }
-}
-.holo-card:hover::before {
-  animation-duration: 1.5s;
-}
-
-/* ── Neon cyan glow ──────────────────────────────────────────────── */
-@keyframes cyan-pulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(0,255,230,0.3), 0 0 18px rgba(0,255,230,0.1); }
-  50%       { box-shadow: 0 0 14px rgba(0,255,230,0.7), 0 0 40px rgba(0,255,230,0.25), 0 0 80px rgba(0,255,230,0.08); }
-}
-.neon-cyan {
-  animation: cyan-pulse 3s ease-in-out infinite;
-}
-
-/* ── Laser scan line ─────────────────────────────────────────────── */
-@keyframes laser-scan {
-  0%   { top: 0%; opacity: 0.7; }
-  80%  { top: 100%; opacity: 0.7; }
-  100% { top: 100%; opacity: 0; }
-}
-.laser-scan {
-  position: relative;
-  overflow: hidden;
-}
-.laser-scan::after {
-  content: "";
-  position: absolute;
-  left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,255,230,0.8), transparent);
-  animation: laser-scan 4s ease-in-out infinite;
-  pointer-events: none;
-  z-index: 2;
-}
-
-/* ── Data readout badge ──────────────────────────────────────────── */
-.data-badge {
-  font-family: 'Courier New', monospace;
-  font-size: 9px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: rgba(0,255,230,0.75);
-  background: rgba(0,255,230,0.05);
-  border: 1px solid rgba(0,255,230,0.2);
-  padding: 3px 10px;
-  border-radius: 2px;
-  position: relative;
-}
-.data-badge::before {
-  content: "▶ ";
-  opacity: 0.6;
-}
-
-/* ── Hex grid background ─────────────────────────────────────────── */
-.hex-bg {
-  background-image:
-    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0);
-  background-size: 32px 32px;
-}
-
-/* ── Animated neon border ────────────────────────────────────────── */
-.neon-border {
-  position: relative;
-}
-.neon-border::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(90deg,
-    rgba(0,255,230,0.6),
-    rgba(100,100,255,0.4),
-    rgba(255,100,200,0.3),
-    rgba(0,255,230,0.6)
-  );
-  background-size: 300% 100%;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: neon-border-flow 3s linear infinite;
-  pointer-events: none;
-}
-@keyframes neon-border-flow {
-  0%   { background-position: 0% 0; }
-  100% { background-position: 300% 0; }
-}
-
-/* ── Futuristic section header line ─────────────────────────────── */
-.fut-header {
-  position: relative;
-  display: inline-block;
-}
-.fut-header::after {
-  content: "";
-  position: absolute;
-  bottom: -4px;
-  left: 0;
-  width: 100%;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(0,255,230,0.7), transparent);
-}
-
-/* ── Radar ping ──────────────────────────────────────────────────── */
-@keyframes radar-ping {
-  0%   { transform: scale(0.3); opacity: 0.9; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-.radar-ping {
-  position: relative;
-}
-.radar-ping::before,
-.radar-ping::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 1px solid rgba(0,255,230,0.5);
-  animation: radar-ping 2.4s ease-out infinite;
-  pointer-events: none;
-}
-.radar-ping::after {
-  animation-delay: 1.2s;
-}
-
-/* ── Matrix digit rain strip ─────────────────────────────────────── */
-@keyframes matrix-slide {
-  0%   { background-position: 0 0; }
-  100% { background-position: 0 100%; }
-}
-
-/* ── Scanlines intensity ─────────────────────────────────────────── */
-.scanlines-hard::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 3px,
-    rgba(0,0,0,0.08) 3px,
-    rgba(0,0,0,0.08) 4px
-  );
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* ── Holographic text ────────────────────────────────────────────── */
-.holo-text {
-  background: linear-gradient(90deg, #00ffe6, #7c5cfc, #ff64c8, #00ffe6);
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: holo-text-flow 4s linear infinite;
-}
-@keyframes holo-text-flow {
-  0%   { background-position: 0% 0; }
-  100% { background-position: 300% 0; }
-}
-
-/* ── Futuristic separator ────────────────────────────────────────── */
-.fut-sep {
-  height: 1px;
-  background: linear-gradient(90deg,
-    transparent,
-    rgba(0,255,230,0.15) 20%,
-    rgba(0,255,230,0.4) 50%,
-    rgba(0,255,230,0.15) 80%,
-    transparent
-  );
-  position: relative;
-}
-.fut-sep::before {
-  content: "◆";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 6px;
-  color: rgba(0,255,230,0.6);
 }

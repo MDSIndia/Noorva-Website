@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -14,6 +14,21 @@ if (typeof window !== "undefined") {
 
 export default function CinematicIntro() {
   const containerRef = useRef<HTMLDivElement>(null);
+  // The WebGL scene is expensive to keep rendering forever — pause its render
+  // loop once the section scrolls out of view (it's the biggest lag source
+  // once the user is deep into the story chapters below).
+  const [inView, setInView] = useState(true);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { rootMargin: "200px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -49,20 +64,9 @@ export default function CinematicIntro() {
     tl.to("#ci-text-4",
       { opacity: 0, y: -16, filter: "blur(6px)", duration: 0.06, ease: "power2.in" }, 0.36);
 
-    // 0.50-0.72  Noorva brand
-    tl.fromTo("#ci-noorva-wrap",
-      { opacity: 0, scale: 0.90, filter: "blur(28px)" },
-      { opacity: 1, scale: 1,    filter: "blur(0px)", duration: 0.07, ease: "power3.out" }, 0.50);
-    tl.fromTo("#ci-noorva-line",
-      { scaleX: 0, opacity: 0 },
-      { scaleX: 1, opacity: 1, duration: 0.05, ease: "power2.out" }, 0.58);
-    tl.fromTo("#ci-noorva-tag",
-      { y: 18, opacity: 0 },
-      { y: 0,  opacity: 1, duration: 0.04, ease: "power2.out" }, 0.63);
-
-    // 0.84-1.00  fade entire intro to black before story section appears
+    // 0.48-0.90  fade entire intro to black before story section appears
     tl.to("#ci-fade-out",
-      { opacity: 1, duration: 0.16, ease: "power2.inOut" }, 0.84);
+      { opacity: 1, duration: 0.42, ease: "power2.inOut" }, 0.48);
 
     return () => { tl.kill(); };
   }, []);
@@ -72,10 +76,11 @@ export default function CinematicIntro() {
       id="cosmic-intro"
       ref={containerRef}
       className="relative w-full h-screen overflow-hidden bg-black"
+      style={{ zIndex: 30 }}
     >
       <div className="absolute inset-0 overflow-hidden bg-black">
 
-        <CosmicCanvas />
+        <CosmicCanvas frameloop={inView ? "always" : "never"} />
 
         {/* Scroll hint */}
         <div
@@ -109,45 +114,6 @@ export default function CinematicIntro() {
             </p>
             <p className="text-3xl md:text-5xl font-extralight text-white/78 tracking-[0.04em]">
               People deserve an intelligence that feels intentional
-            </p>
-          </div>
-        </div>
-
-        {/* Noorva reveal */}
-        <div
-          id="ci-noorva-wrap"
-          className="absolute inset-0 z-20 flex items-center justify-center px-6 pointer-events-none"
-          style={{ opacity: 0, filter: "blur(28px)" }}
-        >
-          <div className="relative text-center max-w-5xl">
-            <div
-              className="absolute inset-[-180px] -z-10 rounded-full"
-              style={{
-                background: "radial-gradient(circle, rgba(80,50,200,0.20) 0%, transparent 62%)",
-              }}
-            />
-            <p className="mb-5 text-[9px] tracking-[0.58em] uppercase text-cyan-100/40 font-light">
-              Precision, presence, polish
-            </p>
-            <h1
-              className="font-[var(--font-playfair)] text-[3.8rem] md:text-[7rem] lg:text-[9rem] leading-none tracking-[-0.06em] text-transparent bg-clip-text"
-              style={{
-                backgroundImage: "linear-gradient(148deg, #ffffff 10%, #c4b5fd 40%, #8cc5ff 68%, #ffffff 92%)",
-              }}
-            >
-              Noorva
-            </h1>
-            <div
-              id="ci-noorva-line"
-              className="mx-auto my-6 h-px w-48 origin-center bg-gradient-to-r from-transparent via-cyan-200/65 to-transparent"
-              style={{ opacity: 0 }}
-            />
-            <p
-              id="ci-noorva-tag"
-              className="text-sm md:text-base tracking-[0.20em] uppercase text-white/45 font-light"
-              style={{ opacity: 0 }}
-            >
-              Luxury intelligence, simply stated
             </p>
           </div>
         </div>

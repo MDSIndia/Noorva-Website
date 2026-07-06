@@ -493,9 +493,14 @@ function Scene() {
 }
 
 /* ─── EXPORTED CANVAS ────────────────────────────────────────────*/
-export default function CosmicCanvas() {
+export default function CosmicCanvas({
+  frameloop = "always",
+}: {
+  frameloop?: "always" | "never" | "demand";
+}) {
   return (
     <Canvas
+      frameloop={frameloop}
       camera={{ position: [0, 0, 8], fov: 50, near: 0.1, far: 2000 }}
       style={{ background: "transparent", position: "absolute", inset: 0 }}
       gl={{
