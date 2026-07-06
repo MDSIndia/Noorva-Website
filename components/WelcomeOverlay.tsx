@@ -12,16 +12,27 @@ const FEMALE_NAME_HINTS = ["female", "zira", "samantha", "aria", "heera", "victo
 
 function pickVoice(voices: SpeechSynthesisVoice[]) {
   const preferredNames = [
-    "Microsoft David - English (United States)",
-    "Microsoft Mark - English (United States)",
+    // Windows 11's neural "Natural"/"Online" voices sound dramatically less
+    // robotic than the classic SAPI ones below, when installed.
+    "Microsoft Guy Online (Natural) - English (United States)",
+    "Microsoft Ryan Online (Natural) - English (United Kingdom)",
+    "Microsoft Andrew Online (Natural) - English (United States)",
     "Google UK English Male",
     "Daniel",
     "Alex",
+    "Microsoft David - English (United States)",
+    "Microsoft Mark - English (United States)",
   ];
   for (const name of preferredNames) {
     const match = voices.find((v) => v.name === name);
     if (match) return match;
   }
+  // Any other natural/neural/online voice takes priority over classic ones.
+  const naturalMatch = voices.find(
+    (v) => v.lang.startsWith("en") && /natural|neural|online/i.test(v.name)
+  );
+  if (naturalMatch) return naturalMatch;
+
   const englishVoices = voices.filter((v) => v.lang.startsWith("en"));
   const maleGuess = englishVoices.find(
     (v) => !FEMALE_NAME_HINTS.some((hint) => v.name.toLowerCase().includes(hint))
@@ -65,9 +76,11 @@ export default function WelcomeOverlay() {
   }, [revealCount, phase]);
 
   // Speech — best effort, started alongside the typing so the two roughly
-  // track together. Chromium silently drops a speak() call fired in the
-  // exact instant after a reload, so nudge it with cancel()+resume() and a
-  // short delay, and retry if it never actually starts.
+  // track together. Browsers block speechSynthesis without a real user
+  // gesture (confirmed: repeated gesture-less attempts fail 100% of the
+  // time with a "not-allowed" error — retrying without a gesture cannot
+  // help), so this also arms every interaction as a trigger to actually
+  // start it the moment the user first clicks/scrolls/presses a key.
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
@@ -75,7 +88,6 @@ export default function WelcomeOverlay() {
     const startedRef = { current: false };
     const attemptedRef = { current: false };
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
-    let initialTimer: ReturnType<typeof setTimeout> | undefined;
 
     function attemptSpeak() {
       if (startedRef.current || attemptedRef.current) return;
@@ -87,8 +99,8 @@ export default function WelcomeOverlay() {
       const utterance = new SpeechSynthesisUtterance(TEXT);
       const voice = pickVoice(synth.getVoices());
       if (voice) utterance.voice = voice;
-      utterance.rate = 0.95;
-      utterance.pitch = 0.92;
+      utterance.rate = 1;
+      utterance.pitch = 1;
       utterance.volume = 1;
 
       utterance.onstart = () => {
@@ -106,7 +118,9 @@ export default function WelcomeOverlay() {
     }
 
     function scheduleInitialAttempt() {
-      initialTimer = setTimeout(attemptSpeak, 300);
+      // No artificial delay — call as soon as this effect runs so speech
+      // starts the moment the browser will actually allow it.
+      attemptSpeak();
     }
 
     if (synth.getVoices().length > 0) {
@@ -115,16 +129,11 @@ export default function WelcomeOverlay() {
       synth.addEventListener("voiceschanged", scheduleInitialAttempt, { once: true });
     }
 
-    // Chrome sometimes rejects the gesture-less attempt outright with a
-    // "not-allowed" error (autoplay policy) instead of just staying silent.
-    // attemptSpeak() is a no-op once speech has actually started, so it's
-    // safe to hang this off every interaction as a retry net.
     const interactionEvents = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
     interactionEvents.forEach((evt) => window.addEventListener(evt, attemptSpeak, { passive: true }));
 
     return () => {
       clearTimeout(retryTimer);
-      clearTimeout(initialTimer);
       synth.removeEventListener("voiceschanged", scheduleInitialAttempt);
       interactionEvents.forEach((evt) => window.removeEventListener(evt, attemptSpeak));
       synth.cancel();
