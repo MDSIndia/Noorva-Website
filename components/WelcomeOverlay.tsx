@@ -1,24 +1,32 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { lenisRef } from "./store";
 
 const TEXT = "Welcome to Noorva.";
 const TYPE_INTERVAL_MS = 85;
 
+const FEMALE_NAME_HINTS = ["female", "zira", "samantha", "aria", "heera", "victoria", "karen", "susan", "tessa", "moira"];
+
 function pickVoice(voices: SpeechSynthesisVoice[]) {
   const preferredNames = [
-    "Google UK English Female",
-    "Samantha",
-    "Microsoft Aria Online (Natural) - English (United States)",
-    "Microsoft Zira - English (United States)",
+    "Microsoft David - English (United States)",
+    "Microsoft Mark - English (United States)",
+    "Google UK English Male",
+    "Daniel",
+    "Alex",
   ];
   for (const name of preferredNames) {
     const match = voices.find((v) => v.name === name);
     if (match) return match;
   }
-  return voices.find((v) => v.lang.startsWith("en")) ?? voices[0];
+  const englishVoices = voices.filter((v) => v.lang.startsWith("en"));
+  const maleGuess = englishVoices.find(
+    (v) => !FEMALE_NAME_HINTS.some((hint) => v.name.toLowerCase().includes(hint))
+  );
+  return maleGuess ?? englishVoices[0] ?? voices[0];
 }
 
 type Phase = "typing" | "ready" | "dismissed";
@@ -80,7 +88,7 @@ export default function WelcomeOverlay() {
       const voice = pickVoice(synth.getVoices());
       if (voice) utterance.voice = voice;
       utterance.rate = 0.95;
-      utterance.pitch = 1.02;
+      utterance.pitch = 0.92;
       utterance.volume = 1;
 
       utterance.onstart = () => {
@@ -152,6 +160,24 @@ export default function WelcomeOverlay() {
             className="pointer-events-none absolute inset-0"
             style={{ background: "radial-gradient(ellipse at center, rgba(124,92,252,0.12), transparent 60%)" }}
           />
+
+          <div className="relative mb-8 flex h-20 w-20 items-center justify-center md:h-24 md:w-24">
+            <motion.div
+              className="pointer-events-none absolute inset-0 -z-10 rounded-full"
+              style={{ background: "radial-gradient(circle, rgba(124,92,252,0.55), transparent 70%)" }}
+              animate={{ opacity: [0.45, 1, 0.45], scale: [1, 1.55, 1] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.div
+              animate={{ rotate: 360, scale: [1, 1.35, 1] }}
+              transition={{
+                rotate: { duration: 3, repeat: Infinity, ease: "linear" },
+                scale: { duration: 1.6, repeat: Infinity, ease: "easeInOut" },
+              }}
+            >
+              <Image src="/NoorvaLogo.png" alt="Noorva" width={40} height={40} className="opacity-95" />
+            </motion.div>
+          </div>
 
           <p className="relative px-8 text-center font-playfair text-3xl font-light tracking-[0.05em] text-white/90 md:text-5xl">
             {TEXT.slice(0, revealCount)}
