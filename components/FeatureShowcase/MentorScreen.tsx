@@ -6,13 +6,17 @@ import PhoneScreen, { ScreenHeader, TypingDots } from "./PhoneScreen";
 
 interface ScreenProps {
   active?: boolean;
+  initiallyVisible?: boolean;
 }
 
 const WAVE_HEIGHTS = [6, 14, 9, 18, 11, 16, 7];
 
-const MentorScreen = forwardRef<HTMLDivElement, ScreenProps>(function MentorScreen({ active = false }, ref) {
+const MentorScreen = forwardRef<HTMLDivElement, ScreenProps>(function MentorScreen(
+  { active = false, initiallyVisible = false },
+  ref
+) {
   return (
-    <PhoneScreen ref={ref} active={active}>
+    <PhoneScreen ref={ref} active={active} initiallyVisible={initiallyVisible}>
       <ScreenHeader icon={MessageCircle} label="Mentor · Chat" accent="var(--accent-1)" />
 
       <div className="flex flex-col gap-2.5">

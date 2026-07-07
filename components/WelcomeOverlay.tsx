@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { lenisRef } from "./store";
+import { acquireScrollLock, releaseScrollLock } from "./store";
 
 const TEXT = "Welcome to Noorva.";
 const TYPE_INTERVAL_MS = 85;
@@ -48,17 +48,16 @@ export default function WelcomeOverlay() {
   const phaseRef = useRef<Phase>(phase);
   phaseRef.current = phase;
 
-  // Lock page scroll while the overlay is up — body overflow is the reliable
-  // blocker (doesn't depend on Lenis having initialized yet), lenis.stop()/
-  // start() is kept in sync alongside it so Lenis's own state doesn't drift.
+  // Lock page scroll while the overlay is up — shared with CinematicIntro's
+  // own gate via a reference-counted lock, since either one dismissing
+  // shouldn't re-enable scroll while the other still wants it frozen.
   useEffect(() => {
     if (phase === "dismissed") {
-      document.body.style.overflow = "";
-      lenisRef.current?.start();
+      releaseScrollLock("welcome-overlay");
     } else {
-      document.body.style.overflow = "hidden";
-      lenisRef.current?.stop();
+      acquireScrollLock("welcome-overlay");
     }
+    return () => releaseScrollLock("welcome-overlay");
   }, [phase]);
 
   // Typewriter reveal — runs on a fixed pace independent of whether speech

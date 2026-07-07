@@ -6,6 +6,7 @@ import PhoneScreen, { ScreenHeader } from "./PhoneScreen";
 
 interface ScreenProps {
   active?: boolean;
+  initiallyVisible?: boolean;
 }
 
 const ENTRIES = [
@@ -14,9 +15,12 @@ const ENTRIES = [
   { label: "Weekly insight", tag: "Insight" },
 ];
 
-const CompanionScreen = forwardRef<HTMLDivElement, ScreenProps>(function CompanionScreen({ active = false }, ref) {
+const CompanionScreen = forwardRef<HTMLDivElement, ScreenProps>(function CompanionScreen(
+  { active = false, initiallyVisible = false },
+  ref
+) {
   return (
-    <PhoneScreen ref={ref} active={active}>
+    <PhoneScreen ref={ref} active={active} initiallyVisible={initiallyVisible}>
       <ScreenHeader icon={HeartHandshake} label="Companion · Memories" accent="var(--accent-warm)" />
 
       {/* photo tiles */}

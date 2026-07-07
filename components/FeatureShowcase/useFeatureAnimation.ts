@@ -40,7 +40,7 @@ const PHONE_X = [X_OFFSET, -X_OFFSET, X_OFFSET, -X_OFFSET];
 // chrome's background image through frames lifted from the source SVG's own
 // turntable render, which reads as a genuine perspective rotation instead of
 // the flat skew a CSS rotateY() on a single frontal image would produce.
-const DIP_Y = 96;
+const DIP_Y_MAX = 96;
 const FLY_SCALE = 0.85;
 const LAST_FRAME = ROTATION_FRAME_COUNT - 1;
 
@@ -87,6 +87,14 @@ export function useFeatureAnimation(
     const screens = screenRefs.current;
     const contents = contentRefs.current;
     if (!section || !phone || !screenWrap || screens.some((s) => !s) || contents.some((t) => !t)) return;
+
+    // On shorter viewports (e.g. 720p laptops), a fixed 96px dip plus the
+    // phone's own height at FLY_SCALE could push it past the bottom edge
+    // mid-transition. Cap the dip to whatever vertical room is actually
+    // available around the phone's resting center, with a small safety margin.
+    const phoneHalfHeightAtPeak = (phone.offsetHeight * FLY_SCALE) / 2;
+    const availableHalf = window.innerHeight / 2 - phoneHalfHeightAtPeak - 24;
+    const dipY = Math.max(32, Math.min(DIP_Y_MAX, availableHalf));
 
     let lastActive = -1;
     function setActive(i: number) {
@@ -143,7 +151,7 @@ export function useFeatureAnimation(
           phone,
           {
             x: 0,
-            y: DIP_Y,
+            y: dipY,
             scale: FLY_SCALE,
             ease: "power2.inOut",
             duration: mid - start,

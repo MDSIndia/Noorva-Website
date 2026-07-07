@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { lenisRef, galleryCaptureControl } from "./store";
 
 const NAV_ITEMS = [
@@ -12,11 +11,6 @@ const NAV_ITEMS = [
   { label: "About MDS", target: "https://mdsindia.in", external: true },
 ] as const;
 
-// "Home" lands partway into the cosmic intro's scrub (blast settled, hero
-// text already visible) rather than the very top, which is just a blank
-// black frame before anything has faded in.
-const HOME_PROGRESS = 0.32;
-
 export default function Header() {
   function goTo(target: string, external?: boolean) {
     if (external) {
@@ -25,9 +19,9 @@ export default function Header() {
     }
     galleryCaptureControl.release?.(target === "#story-gallery" ? 0 : 1600);
     if (target === "home") {
-      const trigger = ScrollTrigger.getById("cosmic-intro");
-      const y = trigger ? trigger.start + HOME_PROGRESS * (trigger.end - trigger.start) : 0;
-      lenisRef.current?.scrollTo(y, { duration: 1.4 });
+      // The intro is click-revealed, not scroll-scrubbed, so "Home" is just
+      // the top of the page — whatever state the intro is already in.
+      lenisRef.current?.scrollTo(0, { duration: 1.4 });
       return;
     }
     lenisRef.current?.scrollTo(target, { duration: 1.4 });

@@ -20,3 +20,26 @@ export const galleryCaptureControl: { release: ((suppressMs?: number) => void) |
   release: null,
   suppressedUntil: 0,
 };
+
+// Reference-counted scroll lock, keyed by owner id. WelcomeOverlay and
+// CinematicIntro both need page scroll frozen during their own gated phase,
+// and their phases can overlap/outlive each other (e.g. the overlay can
+// dismiss on the same interaction that's still mid-way through the intro's
+// own gate). A plain `document.body.style.overflow = ""` from either one
+// alone would clobber the other's lock — tracking owners in a set means
+// scroll only re-enables once *every* owner has released it.
+const scrollLockOwners = new Set<string>();
+
+export function acquireScrollLock(owner: string) {
+  scrollLockOwners.add(owner);
+  document.body.style.overflow = "hidden";
+  lenisRef.current?.stop();
+}
+
+export function releaseScrollLock(owner: string) {
+  scrollLockOwners.delete(owner);
+  if (scrollLockOwners.size === 0) {
+    document.body.style.overflow = "";
+    lenisRef.current?.start();
+  }
+}

@@ -6,6 +6,7 @@ import PhoneScreen, { ScreenHeader } from "./PhoneScreen";
 
 interface ScreenProps {
   active?: boolean;
+  initiallyVisible?: boolean;
 }
 
 const RING_R = 16;
@@ -18,11 +19,14 @@ const ROWS = [
   { label: "Call with mentor", done: false },
 ];
 
-const PlannerScreen = forwardRef<HTMLDivElement, ScreenProps>(function PlannerScreen({ active = false }, ref) {
+const PlannerScreen = forwardRef<HTMLDivElement, ScreenProps>(function PlannerScreen(
+  { active = false, initiallyVisible = false },
+  ref
+) {
   const cells = Array.from({ length: 21 }, (_, i) => i === 11);
 
   return (
-    <PhoneScreen ref={ref} active={active}>
+    <PhoneScreen ref={ref} active={active} initiallyVisible={initiallyVisible}>
       <ScreenHeader icon={CalendarCheck} label="Planner · Tasks" accent="var(--accent-warm)" />
 
       <div className="flex items-center gap-4">

@@ -4,27 +4,24 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
 import { BookOpen, Sparkles } from "lucide-react";
-import { scrollProgress, lenisRef, galleryCaptureControl } from "./store";
+import { scrollProgress, lenisRef, galleryCaptureControl, acquireScrollLock, releaseScrollLock } from "./store";
 import phoneInHand from "@/assets/images/phone-in-hand-trimmed.png";
 
 const CosmicCanvas = dynamic(() => import("./CosmicCanvas"), { ssr: false });
 
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
-}
-
 // CosmicCanvas's own star-blast resolves into a calm resting field by its
-// internal progress ~0.45 (see CosmicCanvas.tsx). Scaling scroll progress
-// into that range means the pin can be any length we like while always
-// finishing on the same settled, calm frame — no dead scroll padding, no
-// mid-explosion cutoff.
+// internal progress ~0.45 (see CosmicCanvas.tsx). Scaling our 0-1 reveal
+// progress into that range means the reveal can take however long feels
+// right while always finishing on the same settled, calm frame.
 const BLAST_SETTLE_P = 0.45;
+const REVEAL_DURATION = 3.4; // seconds, click -> fully settled
 
 export default function CinematicIntro() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasPlayedRef = useRef(false);
+  const tlRef = useRef<gsap.core.Timeline | null>(null);
 
   function goTo(target: string) {
     galleryCaptureControl.release?.(target === "#story-gallery" ? 0 : 1600);
@@ -46,61 +43,82 @@ export default function CinematicIntro() {
     return () => observer.disconnect();
   }, []);
 
+  // The intro is a fixed gate, not a scrollable section — nothing below it
+  // should be reachable until the click reveal has actually played out.
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
+    acquireScrollLock("cosmic-intro");
+    return () => releaseScrollLock("cosmic-intro");
+  }, []);
 
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: el,
-        start: "top top",
-        end: "+=350",
-        scrub: 0.6,
-        pin: true,
-        id: "cosmic-intro",
-        onUpdate: (self) => {
-          scrollProgress.value = self.progress * BLAST_SETTLE_P;
+  useEffect(() => {
+    // Built paused — a click anywhere on the intro plays it once, replacing
+    // the old scroll-scrubbed reveal with a click-triggered one. The
+    // underlying CosmicCanvas is agnostic to what drives `scrollProgress`,
+    // so swapping the trigger is just a matter of who calls tl.play().
+    const tl = gsap.timeline({ paused: true });
+    tlRef.current = tl;
+
+    tl.to(
+      { v: 0 },
+      {
+        v: 1,
+        duration: REVEAL_DURATION,
+        ease: "power1.out",
+        onUpdate: function () {
+          scrollProgress.value = this.targets()[0].v * BLAST_SETTLE_P;
         },
       },
-    });
+      0
+    );
 
-    // 0.00-0.05  scroll hint fades
-    tl.to("#ci-scroll-hint", { opacity: 0, duration: 0.05 }, 0);
-
-    // 0.12-0.30  hero text + phone fade in, then hold — this becomes the
-    // static landing content once the pin releases, so it never fades out.
-    tl.fromTo("#ci-text-1",
+    // hero text + phone fade in partway through the blast, then hold —
+    // this becomes the static landing content once the reveal finishes.
+    tl.fromTo(
+      "#ci-text-1",
       { opacity: 0, y: 24, filter: "blur(12px)" },
-      { opacity: 1, y: 0,  filter: "blur(0px)", duration: 0.18, ease: "power2.out" }, 0.12);
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: REVEAL_DURATION * 0.5, ease: "power2.out" },
+      REVEAL_DURATION * 0.35
+    );
 
-    return () => { tl.kill(); };
+    return () => {
+      tl.kill();
+    };
   }, []);
+
+  function handleReveal() {
+    if (hasPlayedRef.current) return;
+    hasPlayedRef.current = true;
+    gsap.to("#ci-click-hint", { opacity: 0, duration: 0.3 });
+    tlRef.current?.eventCallback("onComplete", () => releaseScrollLock("cosmic-intro"));
+    tlRef.current?.play();
+  }
 
   return (
     <section
       id="cosmic-intro"
       ref={containerRef}
-      className="relative w-full h-screen overflow-hidden"
+      onClick={handleReveal}
+      className="relative w-full h-screen overflow-hidden cursor-pointer"
       style={{ zIndex: 30 }}
     >
       <div className="absolute inset-0 overflow-hidden">
 
         <CosmicCanvas frameloop={inView ? "always" : "never"} />
 
-        {/* Scroll hint */}
+        {/* Click hint */}
         <div
-          id="ci-scroll-hint"
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none"
+          id="ci-click-hint"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3 pointer-events-none"
           style={{ opacity: 1 }}
         >
           <span className="text-[10px] tracking-[0.44em] uppercase text-white/35 font-light">
-            Scroll to continue
+            Click anywhere to begin
           </span>
-          <div className="w-px h-8 bg-gradient-to-b from-white/25 to-transparent animate-pulse" />
+          <div className="h-2 w-2 rounded-full border border-white/40 animate-ping" />
         </div>
 
         {/* Hero content — fades in as the star blast settles, then stays put
-            as the page's static landing once the pin releases. */}
+            as the page's static landing once the reveal finishes. */}
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
           <div
             id="ci-text-1"

@@ -3,8 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import BookPage from "./BookPage";
+import BookCover from "./BookCover";
 import { lenisRef, galleryCaptureControl } from "./store";
 import { storyChapters } from "./storyData";
+
+// Page 0 is the cover; pages 1..N are the chapters.
+const TOTAL_PAGES = storyChapters.length + 1;
 
 const FLIP_DURATION = 1.1; // seconds, one full page-turn
 const WHEEL_THRESHOLD = 2; // ignore near-zero wheel noise
@@ -30,8 +34,8 @@ export default function StoryGallerySection() {
   const underRef = useRef<HTMLDivElement>(null);
   const overRef = useRef<HTMLDivElement>(null);
   const overShadeRef = useRef<HTMLDivElement>(null);
-  const [underChapterIdx, setUnderChapterIdx] = useState(0);
-  const [overChapterIdx, setOverChapterIdx] = useState(0);
+  const [underPageIdx, setUnderPageIdx] = useState(0);
+  const [overPageIdx, setOverPageIdx] = useState(0);
 
   const currentIndexRef = useRef(0);
   const isAnimatingRef = useRef(false);
@@ -99,7 +103,7 @@ export default function StoryGallerySection() {
       const endRotation = forward ? -180 : 180;
 
       isAnimatingRef.current = true;
-      setUnderChapterIdx(targetIndex); // hidden swap — `under` sits flat beneath `over`
+      setUnderPageIdx(targetIndex); // hidden swap — `under` sits flat beneath `over`
 
       gsap.set(over, { transformOrigin: origin, rotateY: 0 });
 
@@ -113,7 +117,7 @@ export default function StoryGallerySection() {
         },
         onComplete: () => {
           currentIndexRef.current = targetIndex;
-          setOverChapterIdx(targetIndex); // now identical to `under` — invisible swap
+          setOverPageIdx(targetIndex); // now identical to `under` — invisible swap
           gsap.set(over, { rotateY: 0 });
           gsap.set(shade, { opacity: 0 });
           isAnimatingRef.current = false;
@@ -124,7 +128,7 @@ export default function StoryGallerySection() {
     function handleDirection(delta: number) {
       if (!capturedRef.current || isAnimatingRef.current) return;
       if (delta > 0) {
-        if (currentIndexRef.current < storyChapters.length - 1) {
+        if (currentIndexRef.current < TOTAL_PAGES - 1) {
           goTo(currentIndexRef.current + 1);
         } else {
           exitCapture("down");
@@ -207,6 +211,11 @@ export default function StoryGallerySection() {
     };
   }, []);
 
+  function renderPage(pageIdx: number, pageRef: React.Ref<HTMLDivElement>, shadeRef?: React.Ref<HTMLDivElement>) {
+    if (pageIdx === 0) return <BookCover ref={pageRef} shadeRef={shadeRef} />;
+    return <BookPage ref={pageRef} chapter={storyChapters[pageIdx - 1]} shadeRef={shadeRef} />;
+  }
+
   return (
     <section
       id="story-gallery"
@@ -219,8 +228,8 @@ export default function StoryGallerySection() {
       <div className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color:var(--accent-warm)]/6 blur-[160px]" />
 
       <div className="relative h-screen w-full" style={{ perspective: 2600 }}>
-        <BookPage ref={underRef} chapter={storyChapters[underChapterIdx]} />
-        <BookPage ref={overRef} chapter={storyChapters[overChapterIdx]} shadeRef={overShadeRef} />
+        {renderPage(underPageIdx, underRef)}
+        {renderPage(overPageIdx, overRef, overShadeRef)}
       </div>
     </section>
   );

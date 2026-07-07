@@ -43,9 +43,9 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(function BookPage({ c
       <div className="pointer-events-none absolute inset-3 rounded-[6px] border border-[color:var(--accent-warm)]/25" />
       <div className="pointer-events-none absolute inset-[18px] rounded-[3px] border border-[color:var(--accent-warm)]/10" />
 
-      <div className="relative flex h-full min-h-0 flex-col p-3 md:flex-row md:p-4">
-        {/* Illustration plate — left half on desktop, top of the stack on mobile */}
-        <div className="relative h-[54%] shrink-0 overflow-hidden rounded-[4px] border border-white/10 md:h-full md:w-[54%]">
+      <div className="relative h-full min-h-0 p-3 md:flex md:flex-row md:p-4">
+        {/* Illustration plate — full-bleed behind the caption on mobile, left half on desktop */}
+        <div className="absolute inset-3 overflow-hidden rounded-[4px] border border-white/10 md:relative md:inset-0 md:h-full md:w-[54%]">
           {/* eslint-disable-next-line @next/next/no-img-element -- fixed set of public/story assets, plain img avoids next/image fill-inside-flex sizing friction */}
           <img
             src={chapter.imageSrc}
@@ -55,12 +55,12 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(function BookPage({ c
             draggable={false}
           />
           <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/50" />
-          {/* Fades toward the text so an overlapping mobile caption stays legible against the photo. */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:via-transparent md:to-black/25" />
+          {/* Fades toward the bottom so the overlapping mobile caption stays legible against the photo. */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent md:bg-gradient-to-r md:from-transparent md:via-transparent md:to-black/25" />
         </div>
 
-        {/* Text column — overlaps the bottom of the image on mobile, sits beside it on desktop */}
-        <div className="relative z-10 -mt-14 flex min-h-0 flex-1 flex-col rounded-t-[8px] bg-gradient-to-b from-[#0d0a06] to-[#0d0a06]/98 px-5 pt-5 pb-4 md:mt-0 md:rounded-none md:bg-none md:pt-24 md:pr-8 md:pb-2 md:pl-7 lg:pt-28 lg:pl-9">
+        {/* Caption — floats over the bottom of the full-bleed image on mobile, sits beside it in its own column on desktop */}
+        <div className="absolute inset-x-3 bottom-3 z-10 flex max-h-[68%] min-h-0 flex-col overflow-hidden rounded-b-[4px] px-4 pt-10 pb-4 md:static md:inset-auto md:max-h-none md:min-h-0 md:flex-1 md:overflow-visible md:rounded-none md:px-0 md:pt-24 md:pr-8 md:pb-2 md:pl-7 lg:pt-28 lg:pl-9">
           <p className="text-[10px] font-light tracking-[0.4em] text-[color:var(--accent-warm)]/80 uppercase md:text-xs">
             {chapter.eyebrow}
           </p>
@@ -68,13 +68,13 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(function BookPage({ c
           <h2 className="font-playfair mt-3 text-xl leading-[1.2] font-light text-white/92 md:mt-5 md:text-3xl lg:text-4xl">
             {chapter.headline}
           </h2>
-          <p className="first-letter:font-playfair mt-3 text-xs leading-relaxed font-light text-white/55 first-letter:float-left first-letter:mr-1 first-letter:text-4xl first-letter:leading-[0.75] first-letter:text-[color:var(--accent-warm)] md:mt-4 md:text-sm lg:text-base">
+          <p className="first-letter:font-playfair mt-3 text-xs leading-relaxed font-light text-white/70 first-letter:float-left first-letter:mr-1 first-letter:text-4xl first-letter:leading-[0.75] first-letter:text-[color:var(--accent-warm)] md:text-white/55 md:mt-4 md:text-sm lg:text-base">
             {chapter.body}
           </p>
 
-          <div className="mt-auto flex items-center justify-between border-t border-white/10 pt-4">
-            <span className="text-[9px] font-light tracking-[0.3em] text-white/30 uppercase">The Noorva Story</span>
-            <span className="text-[9px] font-light tracking-[0.3em] text-white/30">
+          <div className="mt-auto flex items-center justify-between border-t border-white/15 pt-3 md:border-white/10 md:pt-4">
+            <span className="text-[9px] font-light tracking-[0.3em] text-white/40 uppercase md:text-white/30">The Noorva Story</span>
+            <span className="text-[9px] font-light tracking-[0.3em] text-white/40 md:text-white/30">
               {String(chapter.index).padStart(2, "0")} / {String(TOTAL).padStart(2, "0")}
             </span>
           </div>
