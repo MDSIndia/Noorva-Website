@@ -95,35 +95,52 @@ export default function StoryGallerySection() {
       const from = currentIndexRef.current;
       if (targetIndex === from) return;
       const over = overRef.current;
+      const under = underRef.current;
       const shade = overShadeRef.current;
-      if (!over || !shade) return;
+      if (!over || !under || !shade) return;
 
       const forward = targetIndex > from;
       const origin = forward ? "left center" : "right center";
-      const endRotation = forward ? -180 : 180;
+      // The flipping leaf's back face is never drawn (backfaceVisibility:
+      // hidden), so nothing it does past 90deg is visible — rotating it all
+      // the way to 180 just burns half the tween doing nothing, which is
+      // why the old version looked like it "popped" to the next page at the
+      // halfway mark. Stopping just past edge-on (92deg) means the full
+      // duration is spent on motion that actually reads on screen.
+      const endRotation = forward ? -92 : 92;
 
       isAnimatingRef.current = true;
       setUnderPageIdx(targetIndex); // hidden swap — `under` sits flat beneath `over`
+      gsap.set(under, { opacity: 0 }); // faded in below, not just instantly exposed
 
       gsap.set(over, { transformOrigin: origin, rotateY: 0, y: 0, scaleX: 1 });
 
       gsap.to(over, {
         rotateY: endRotation,
         duration: FLIP_DURATION,
+        // inOut eases gently into the turn and, just as importantly, gently
+        // out of it — power2.in accelerated the whole way and then stopped
+        // dead at full speed, which read as an abrupt snap rather than a
+        // smooth turn settling into place.
         ease: "power2.inOut",
         onUpdate: function () {
           const progress = this.progress();
-          // A real page doesn't rotate perfectly rigid — it lifts slightly
-          // off the stack and narrows a touch as it goes edge-on, then
-          // settles back flat. `arc` peaks at the midpoint of the turn.
-          const arc = Math.sin(progress * Math.PI);
-          gsap.set(over, { y: -arc * 16, scaleX: 1 - arc * 0.06 });
-          gsap.set(shade, { opacity: arc * 0.6 });
+          // A real page doesn't rotate perfectly rigid — it lifts off the
+          // stack and narrows as it swings edge-on, peaking right at the
+          // end of the turn (rather than at the midpoint of a 180 spin).
+          const arc = Math.sin(progress * (Math.PI / 2));
+          gsap.set(over, { y: -arc * 16, scaleX: 1 - arc * 0.08 });
+          gsap.set(shade, { opacity: arc * 0.65 });
+          // Crossfade the destination page in over the closing stretch of
+          // the turn, timed to finish exactly as the flipping leaf goes
+          // edge-on — a smooth reveal instead of an instant pop.
+          gsap.set(under, { opacity: Math.max(0, (progress - 0.6) / 0.4) });
         },
         onComplete: () => {
           currentIndexRef.current = targetIndex;
           setOverPageIdx(targetIndex); // now identical to `under` — invisible swap
           gsap.set(over, { rotateY: 0, y: 0, scaleX: 1 });
+          gsap.set(under, { opacity: 1 });
           gsap.set(shade, { opacity: 0 });
           isAnimatingRef.current = false;
         },
@@ -133,19 +150,32 @@ export default function StoryGallerySection() {
     function handleDirection(delta: number) {
       if (!capturedRef.current || isAnimatingRef.current) return;
       if (delta > 0) {
+        // The cover only opens on a deliberate click, never on scroll —
+        // scrolling past it inconsistently was the source of the "book
+        // sometimes doesn't open" flakiness.
+        if (currentIndexRef.current === 0) return;
         if (currentIndexRef.current < TOTAL_PAGES - 1) {
           goTo(currentIndexRef.current + 1);
         } else {
           exitCapture("down");
         }
       } else {
-        if (currentIndexRef.current > 0) {
+        // Scrolling back up from chapter one exits the gallery rather than
+        // re-closing the cover — reopening it is a click gesture, not scroll.
+        if (currentIndexRef.current > 1) {
           goTo(currentIndexRef.current - 1);
         } else {
           exitCapture("up");
         }
       }
     }
+
+    function onCoverClick() {
+      if (capturedRef.current && !isAnimatingRef.current && currentIndexRef.current === 0) {
+        goTo(1);
+      }
+    }
+    el.addEventListener("click", onCoverClick);
 
     function onWheel(e: WheelEvent) {
       if (!capturedRef.current) return;
@@ -207,6 +237,7 @@ export default function StoryGallerySection() {
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("click", onCoverClick);
       galleryCaptureControl.release = null;
       if (capturedRef.current) {
         capturedRef.current = false;
