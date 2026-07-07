@@ -7,7 +7,7 @@ import SpiralGallery from "./SpiralGallery";
 import { galleryTransition, lenisRef, galleryCaptureControl } from "./store";
 import { storyChapters } from "./storyData";
 
-const FLIP_DURATION = 1.05; // seconds, one full roll-to-next-photo animation
+const FLIP_DURATION = 1.35; // seconds, one full roll-to-next-photo animation
 const WHEEL_THRESHOLD = 2; // ignore near-zero wheel noise
 const SWIPE_THRESHOLD = 30; // px, minimum touch swipe to count as a gesture
 
@@ -94,7 +94,7 @@ export default function StoryGallerySection() {
       gsap.to(obj, {
         v: 1,
         duration: FLIP_DURATION,
-        ease: "power2.inOut",
+        ease: "power3.inOut",
         onUpdate: () => {
           galleryTransition.fromIndex = from;
           galleryTransition.toIndex = targetIndex;

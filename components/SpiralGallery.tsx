@@ -10,63 +10,55 @@ import { storyChapters } from "./storyData";
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 /* ─── SHADER ──────────────────────────────────────────────────────
-   A single plane, finely subdivided along X, deforms from a flat
-   sheet into an open cylindrical spiral as `uProgress` goes 0 → 1.
-   The center-to-edge sweep is genuine 3D geometry (mix of a flat
-   position and a wrapped-around-a-cylinder position) — not a CSS
-   scale trick — so the image plane actually curls, with real
-   perspective and per-vertex lighting. Geometry stays a fixed unit
-   square (-0.5..0.5); actual on-screen size comes from mesh.scale,
-   so the curl math never has to care about viewport size.          */
+   A real cylindrical roll — not a full-plane curl — travels once
+   across the plane, left to right, as `uProgress` goes 0 → 1. Only
+   the narrow band at the tube itself is wrapped into a half-cylinder
+   cross-section (same sin/cos tube math as a full curl, just
+   localized to a moving band); everything ahead of it stays flat on
+   the old photo and everything behind it is already flat on the new
+   one. Because the sweep never reverses, the roll happens exactly
+   once per transition instead of curling shut and back open.        */
 const VERTEX_SHADER = /* glsl */ `
-  uniform float uProgress; // 0 = flat sheet, 1 = fully rolled tube
-  uniform float uRadius;   // tube radius, in the same unit-square space as position.x
-  uniform float uTurns;    // how many times the sheet wraps around itself
+  uniform float uProgress;  // 0 = tube before the left edge, 1 = tube past the right edge
+  uniform float uRadius;    // tube radius, in the same unit-square space as position.x
+  uniform float uBandWidth; // width of the tube's footprint as it travels
   varying vec2 vUv;
-  varying float vLight;
+  varying float vLocalT; // 0 = ahead of the tube (old photo), 1 = behind it (new photo)
+  varying vec3 vViewPos;
 
-  const float TAU = 6.28318530718;
+  const float PI = 3.14159265;
 
   void main() {
     vUv = uv;
 
-    float xNorm = position.x + 0.5; // 0 (anchored edge) .. 1 (rolling edge)
-    float fullAngle = xNorm * uTurns * TAU;
-    float turnIndex = floor(fullAngle / TAU);
-    float radiusAtTurn = uRadius / (1.0 + turnIndex * 0.45);
+    float xNorm = position.x + 0.5; // 0 (left edge) .. 1 (right edge)
+    float center = mix(-uBandWidth * 0.5, 1.0 + uBandWidth * 0.5, uProgress);
+    float localT = clamp((center - xNorm) / uBandWidth + 0.5, 0.0, 1.0);
+    vLocalT = localT;
 
-    vec3 flatPos = vec3(position.x, position.y, 0.0);
-    vec3 rolledPos = vec3(
-      sin(fullAngle) * radiusAtTurn,
-      position.y,
-      -(1.0 - cos(fullAngle)) * radiusAtTurn
-    );
+    // Wrap just this band around a half-cylinder — a genuine tube
+    // cross-section, not a soft bump — so the traveling seam reads
+    // unmistakably as a rolling photo rather than a fade.
+    float angle = localT * PI;
+    vec3 pos = position;
+    pos.z += sin(angle) * uRadius;
 
-    vec3 pos = mix(flatPos, rolledPos, uProgress);
-
-    vec3 flatNormal = vec3(0.0, 0.0, 1.0);
-    vec3 rolledNormal = normalize(vec3(sin(fullAngle), 0.0, cos(fullAngle)));
-    vec3 n = normalize(mix(flatNormal, rolledNormal, uProgress));
-    vec3 worldNormal = normalize(normalMatrix * n);
-
-    vec3 lightDir = normalize(vec3(0.35, 0.55, 1.0));
-    float diff = max(dot(worldNormal, lightDir), 0.0);
-    vLight = 0.42 + diff * 0.7;
-
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    vec4 viewPos = modelViewMatrix * vec4(pos, 1.0);
+    vViewPos = viewPos.xyz;
+    gl_Position = projectionMatrix * viewPos;
   }
 `;
 
 const FRAGMENT_SHADER = /* glsl */ `
   uniform sampler2D uTexA;
   uniform sampler2D uTexB;
-  uniform float uMix;     // 0 = show A, 1 = show B
   uniform float uGradeA;  // 0 = faded/sepia, 1 = full color
   uniform float uGradeB;
   uniform vec4 uCoverA;   // xy = scale, zw = offset (object-cover UV correction)
   uniform vec4 uCoverB;
   varying vec2 vUv;
-  varying float vLight;
+  varying float vLocalT;
+  varying vec3 vViewPos;
 
   vec3 applyGrade(vec3 c, float g) {
     float gray = dot(c, vec3(0.299, 0.587, 0.114));
@@ -80,9 +72,16 @@ const FRAGMENT_SHADER = /* glsl */ `
 
     vec3 colA = applyGrade(texture2D(uTexA, uvA).rgb, uGradeA);
     vec3 colB = applyGrade(texture2D(uTexB, uvB).rgb, uGradeB);
-    vec3 color = mix(colA, colB, uMix);
+    vec3 color = mix(colA, colB, smoothstep(0.48, 0.52, vLocalT));
 
-    color *= vLight;
+    // Strong per-pixel shading on the tube itself, from real screen-space
+    // derivatives of its geometry, so the roll reads as a lit cylinder —
+    // dark on the trailing curve, a bright highlight along its crest.
+    vec3 normal = normalize(cross(dFdx(vViewPos), dFdy(vViewPos)));
+    if (normal.z < 0.0) normal = -normal;
+    vec3 lightDir = normalize(vec3(0.35, 0.55, 1.0));
+    float diff = max(dot(normal, lightDir), 0.0);
+    color *= 0.32 + diff * 1.25;
 
     gl_FragColor = vec4(color, 1.0);
   }
@@ -111,18 +110,17 @@ function GalleryPlane() {
   const textures = useTexture(storyChapters.map((c) => c.imageSrc));
 
   // Fixed unit-square geometry, created exactly once — never recreated on
-  // resize/render, since the curl shader operates in normalized -0.5..0.5
+  // resize/render, since the roll shader operates in normalized -0.5..0.5
   // space regardless of the mesh's actual on-screen size.
   const geometry = useMemo(() => new THREE.PlaneGeometry(1, 1, 220, 2), []);
 
   const uniforms = useMemo(
     () => ({
       uProgress: { value: 0 },
-      uRadius: { value: 0.16 },
-      uTurns: { value: 1.15 },
+      uRadius: { value: 0.22 },
+      uBandWidth: { value: 0.3 },
       uTexA: { value: textures[0] },
       uTexB: { value: textures[1] ?? textures[0] },
-      uMix: { value: 0 },
       uGradeA: { value: storyChapters[0].grade },
       uGradeB: { value: storyChapters[1]?.grade ?? storyChapters[0].grade },
       uCoverA: { value: new THREE.Vector4(1, 1, 0, 0) },
@@ -141,16 +139,11 @@ function GalleryPlane() {
     // writes, no allocation) instead of recreating geometry on resize.
     mesh.scale.set(viewport.width, viewport.height, viewport.width);
 
-    // Light smoothing so the curl never feels stepped even at low frame rates.
+    // Light smoothing so the roll never feels stepped even at low frame rates.
     const raw = clamp(galleryTransition.progress, 0, 1);
     smoothed.current += (raw - smoothed.current) * (1 - Math.exp(-delta * 18));
-    const t = smoothed.current; // 0 = flat on fromIndex, 1 = flat on toIndex
 
-    const curl = t < 0.5 ? t * 2 : (1 - t) * 2;
-    const mixT = t < 0.5 ? 0 : 1;
-
-    mat.uniforms.uProgress.value = curl;
-    mat.uniforms.uMix.value = mixT;
+    mat.uniforms.uProgress.value = smoothed.current;
 
     const texA = textures[galleryTransition.fromIndex];
     const texB = textures[galleryTransition.toIndex];
