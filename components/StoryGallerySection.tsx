@@ -1,30 +1,29 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import SpiralGallery from "./SpiralGallery";
-import { galleryProgress, activeChapter } from "./store";
+import { galleryTransition, lenisRef, galleryCaptureControl } from "./store";
 import { storyChapters } from "./storyData";
 
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
-}
-
-const UNIT_PX = 2200; // scroll distance devoted to each chapter (reading + roll transition)
-const TOTAL_PX = UNIT_PX * storyChapters.length;
-const REST_END = 0.7; // fraction of each chapter's slot spent flat/readable before it starts rolling
+const FLIP_DURATION = 1.05; // seconds, one full roll-to-next-photo animation
+const WHEEL_THRESHOLD = 2; // ignore near-zero wheel noise
+const SWIPE_THRESHOLD = 30; // px, minimum touch swipe to count as a gesture
 
 export default function StoryGallerySection() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(true);
+  const [inView, setInView] = useState(false);
   const [displayIndex, setDisplayIndex] = useState(0);
+  const [captionVisible, setCaptionVisible] = useState(true);
 
-  const captionOpacity = useMotionValue(0);
-  const captionY = useTransform(captionOpacity, [0, 1], [16, 0]);
-  const captionBlur = useTransform(captionOpacity, (v) => `blur(${(1 - v) * 8}px)`);
+  const currentIndexRef = useRef(0);
+  const isAnimatingRef = useRef(false);
+  const capturedRef = useRef(false);
+  const exitingRef = useRef(false);
+  const touchStartYRef = useRef<number | null>(null);
 
+  // Pause the R3F render loop while the section is far off-screen.
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
@@ -40,53 +39,164 @@ export default function StoryGallerySection() {
     const el = sectionRef.current;
     if (!el) return;
 
-    const trigger = ScrollTrigger.create({
-      trigger: el,
-      start: "top top",
-      end: `+=${TOTAL_PX}`,
-      scrub: 0.8,
-      pin: true,
-      anticipatePin: 1,
-      id: "story-gallery",
-      onUpdate: (self) => {
-        const total = self.progress * storyChapters.length;
-        galleryProgress.value = total;
-        const baseIndex = Math.floor(total);
-        const local = total - baseIndex;
-        // Mirror the shader's own texture-swap point (local >= 0.85, see SpiralGallery)
-        // so the header/progress-dots flip to the next chapter at the exact moment
-        // the photo itself does, instead of at the next whole-number boundary.
-        const displayIndex = local >= 0.85 ? baseIndex + 1 : baseIndex;
-        activeChapter.value = Math.min(storyChapters.length, displayIndex + 1);
-      },
-    });
+    function enterCapture() {
+      if (capturedRef.current || exitingRef.current || !el) return;
+      capturedRef.current = true;
+      // Snap exactly to the section's top so it perfectly fills the viewport —
+      // otherwise a smooth-scroll overshoot would leave the next/previous
+      // section peeking in at the edge while "locked".
+      const rect = el.getBoundingClientRect();
+      const targetY = window.scrollY + rect.top;
+      lenisRef.current?.scrollTo(targetY, { immediate: true });
+      lenisRef.current?.stop();
+      document.body.style.overflow = "hidden";
+    }
 
-    return () => trigger.kill();
-  }, []);
-
-  useEffect(() => {
-    let raf: number;
-    const tick = () => {
-      const total = Math.max(0, Math.min(storyChapters.length - 0.0001, galleryProgress.value));
-      const baseIndex = Math.floor(total);
-      const local = total - baseIndex;
-
-      const nextDisplay = local >= 0.85 ? Math.min(baseIndex + 1, storyChapters.length - 1) : baseIndex;
-      setDisplayIndex((d) => (d !== nextDisplay ? nextDisplay : d));
-
-      let opacity = 0;
-      if (local < REST_END) {
-        if (local < 0.1) opacity = local / 0.1;
-        else if (local < 0.55) opacity = 1;
-        else opacity = Math.max(0, 1 - (local - 0.55) / 0.15);
+    // Lets nav links (Home/Story/Join/CTAs) escape the gallery's scroll lock
+    // even if it's mid-capture, and briefly suppress re-capture so a long
+    // jump that transits *through* the gallery (e.g. Home -> Join) doesn't
+    // get trapped again mid-flight. Callers pass 0 when the destination IS
+    // the gallery, so arriving at "Story" still captures immediately.
+    galleryCaptureControl.release = (suppressMs = 1600) => {
+      if (capturedRef.current) {
+        capturedRef.current = false;
+        document.body.style.overflow = "";
+        lenisRef.current?.start();
       }
-      captionOpacity.set(opacity);
-
-      raf = requestAnimationFrame(tick);
+      galleryCaptureControl.suppressedUntil = Date.now() + suppressMs;
     };
+
+    function exitCapture(direction: "up" | "down") {
+      capturedRef.current = false;
+      exitingRef.current = true;
+      document.body.style.overflow = "";
+      lenisRef.current?.start();
+      const delta = direction === "down" ? window.innerHeight : -window.innerHeight;
+      lenisRef.current?.scrollTo(window.scrollY + delta, {
+        duration: 1.1,
+        onComplete: () => {
+          exitingRef.current = false;
+        },
+      });
+    }
+
+    function goTo(targetIndex: number) {
+      if (isAnimatingRef.current) return;
+      const from = currentIndexRef.current;
+      if (targetIndex === from) return;
+
+      isAnimatingRef.current = true;
+      setCaptionVisible(false);
+
+      const obj = { v: 0 };
+      let swapped = false;
+      let revealed = false;
+      gsap.to(obj, {
+        v: 1,
+        duration: FLIP_DURATION,
+        ease: "power2.inOut",
+        onUpdate: () => {
+          galleryTransition.fromIndex = from;
+          galleryTransition.toIndex = targetIndex;
+          galleryTransition.progress = obj.v;
+          // Swap the caption's content the instant the shader swaps textures
+          // (same 0.5 point), but only start revealing it a little later so
+          // its ~0.35s fade-in finishes right as the image finishes settling
+          // flat — the two arrive together instead of text visibly lagging
+          // behind an already-still photo.
+          if (!swapped && obj.v >= 0.5) {
+            swapped = true;
+            setDisplayIndex(targetIndex);
+          }
+          if (!revealed && obj.v >= 0.62) {
+            revealed = true;
+            setCaptionVisible(true);
+          }
+        },
+        onComplete: () => {
+          currentIndexRef.current = targetIndex;
+          galleryTransition.fromIndex = targetIndex;
+          galleryTransition.toIndex = targetIndex;
+          galleryTransition.progress = 0;
+          isAnimatingRef.current = false;
+        },
+      });
+    }
+
+    function handleDirection(delta: number) {
+      if (!capturedRef.current || isAnimatingRef.current) return;
+      if (delta > 0) {
+        if (currentIndexRef.current < storyChapters.length - 1) {
+          goTo(currentIndexRef.current + 1);
+        } else {
+          exitCapture("down");
+        }
+      } else {
+        if (currentIndexRef.current > 0) {
+          goTo(currentIndexRef.current - 1);
+        } else {
+          exitCapture("up");
+        }
+      }
+    }
+
+    function onWheel(e: WheelEvent) {
+      if (!capturedRef.current) return;
+      e.preventDefault();
+      if (Math.abs(e.deltaY) < WHEEL_THRESHOLD) return;
+      handleDirection(e.deltaY);
+    }
+
+    function onTouchStart(e: TouchEvent) {
+      if (!capturedRef.current) return;
+      touchStartYRef.current = e.touches[0].clientY;
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      if (!capturedRef.current || touchStartYRef.current === null) return;
+      e.preventDefault();
+    }
+
+    function onTouchEnd(e: TouchEvent) {
+      if (!capturedRef.current || touchStartYRef.current === null) return;
+      const endY = e.changedTouches[0].clientY;
+      const delta = touchStartYRef.current - endY; // positive = swiped up = "next"
+      touchStartYRef.current = null;
+      if (Math.abs(delta) < SWIPE_THRESHOLD) return;
+      handleDirection(delta);
+    }
+
+    let raf: number;
+    function tick() {
+      if (!capturedRef.current && el && Date.now() > galleryCaptureControl.suppressedUntil) {
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= 2 && rect.top > -rect.height) {
+          enterCapture();
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    }
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [captionOpacity]);
+
+    window.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      galleryCaptureControl.release = null;
+      if (capturedRef.current) {
+        capturedRef.current = false;
+        document.body.style.overflow = "";
+        lenisRef.current?.start();
+      }
+    };
+  }, []);
 
   const chapter = storyChapters[displayIndex];
 
@@ -104,21 +214,26 @@ export default function StoryGallerySection() {
 
       <div className="absolute inset-x-0 bottom-0 z-10 px-8 pb-20 md:px-20 md:pb-28">
         <AnimatePresence mode="wait">
-          <motion.div
-            key={chapter.index}
-            className="max-w-3xl"
-            style={{ opacity: captionOpacity, y: captionY, filter: captionBlur }}
-          >
-            <p className="mb-4 text-[10px] md:text-xs tracking-[0.5em] uppercase text-[color:var(--accent-warm)]/80 font-light">
-              {chapter.eyebrow}
-            </p>
-            <h2 className="font-playfair text-3xl md:text-5xl font-light text-white/92 leading-[1.15] mb-5">
-              {chapter.headline}
-            </h2>
-            <p className="text-base md:text-lg text-white/60 font-light max-w-xl">
-              {chapter.body}
-            </p>
-          </motion.div>
+          {captionVisible && (
+            <motion.div
+              key={chapter.index}
+              className="max-w-3xl"
+              initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -12, filter: "blur(6px)" }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+            >
+              <p className="mb-4 text-[10px] md:text-xs tracking-[0.5em] uppercase text-[color:var(--accent-warm)]/80 font-light">
+                {chapter.eyebrow}
+              </p>
+              <h2 className="font-playfair text-3xl md:text-5xl font-light text-white/92 leading-[1.15] mb-5">
+                {chapter.headline}
+              </h2>
+              <p className="text-base md:text-lg text-white/60 font-light max-w-xl">
+                {chapter.body}
+              </p>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </section>

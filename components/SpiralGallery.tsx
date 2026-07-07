@@ -4,7 +4,7 @@ import { Suspense, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import { galleryProgress } from "./store";
+import { galleryTransition } from "./store";
 import { storyChapters } from "./storyData";
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -141,42 +141,24 @@ function GalleryPlane() {
     // writes, no allocation) instead of recreating geometry on resize.
     mesh.scale.set(viewport.width, viewport.height, viewport.width);
 
-    // Light smoothing so the curl never feels stepped, even if scroll updates are chunky.
-    const raw = clamp(galleryProgress.value, 0, storyChapters.length - 0.001);
-    smoothed.current += (raw - smoothed.current) * (1 - Math.exp(-delta * 10));
-    const total = smoothed.current;
+    // Light smoothing so the curl never feels stepped even at low frame rates.
+    const raw = clamp(galleryTransition.progress, 0, 1);
+    smoothed.current += (raw - smoothed.current) * (1 - Math.exp(-delta * 18));
+    const t = smoothed.current; // 0 = flat on fromIndex, 1 = flat on toIndex
 
-    const baseIndex = Math.floor(total);
-    const local = total - baseIndex;
-
-    const REST_END = 0.7; // fraction of each chapter's "slot" spent fully flat/readable
-    let curl = 0;
-    let mixT = 0;
-
-    if (local >= REST_END) {
-      const t = (local - REST_END) / (1 - REST_END); // 0..1 across the transition window
-      if (t < 0.5) {
-        curl = t * 2;
-        mixT = 0;
-      } else {
-        curl = (1 - t) * 2;
-        mixT = 1;
-      }
-    }
-
-    const isLastChapter = baseIndex >= storyChapters.length - 1;
-    const nextIndex = Math.min(baseIndex + 1, storyChapters.length - 1);
+    const curl = t < 0.5 ? t * 2 : (1 - t) * 2;
+    const mixT = t < 0.5 ? 0 : 1;
 
     mat.uniforms.uProgress.value = curl;
-    mat.uniforms.uMix.value = isLastChapter ? 0 : mixT;
+    mat.uniforms.uMix.value = mixT;
 
-    const texA = textures[baseIndex];
-    const texB = textures[nextIndex];
+    const texA = textures[galleryTransition.fromIndex];
+    const texB = textures[galleryTransition.toIndex];
     if (mat.uniforms.uTexA.value !== texA) mat.uniforms.uTexA.value = texA;
     if (mat.uniforms.uTexB.value !== texB) mat.uniforms.uTexB.value = texB;
 
-    mat.uniforms.uGradeA.value = storyChapters[baseIndex].grade;
-    mat.uniforms.uGradeB.value = storyChapters[nextIndex].grade;
+    mat.uniforms.uGradeA.value = storyChapters[galleryTransition.fromIndex].grade;
+    mat.uniforms.uGradeB.value = storyChapters[galleryTransition.toIndex].grade;
 
     const imgA = texA.image as { width: number; height: number };
     const imgB = texB.image as { width: number; height: number };
@@ -187,18 +169,6 @@ function GalleryPlane() {
     if (imgB?.width) {
       const [sx, sy, ox, oy] = coverUV(imgB.width, imgB.height, viewport.width, viewport.height);
       mat.uniforms.uCoverB.value.set(sx, sy, ox, oy);
-    }
-
-    // On the very last chapter, once it's rolled fully into a tube, fade the
-    // whole plane away (rather than rolling into a nonexistent 9th photo) so
-    // the DOM closing section can take over.
-    if (isLastChapter) {
-      const fadeT = clamp((local - REST_END) / (1 - REST_END), 0, 1);
-      const opacity = fadeT < 0.5 ? 1 : 1 - (fadeT - 0.5) * 2;
-      mat.opacity = clamp(opacity, 0, 1);
-      mat.transparent = true;
-    } else {
-      mat.opacity = 1;
     }
   });
 

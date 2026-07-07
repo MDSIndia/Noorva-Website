@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { scrollProgress } from "./store";
+import { scrollProgress, lenisRef, galleryCaptureControl } from "./store";
 
 const CosmicCanvas = dynamic(() => import("./CosmicCanvas"), { ssr: false });
 
@@ -14,6 +14,11 @@ if (typeof window !== "undefined") {
 
 export default function CinematicIntro() {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  function goTo(target: string) {
+    galleryCaptureControl.release?.(target === "#story-gallery" ? 0 : 1600);
+    lenisRef.current?.scrollTo(target, { duration: 1.4 });
+  }
   // The WebGL scene is expensive to keep rendering forever — pause its render
   // loop once the section scrolls out of view (it's the biggest lag source
   // once the user is deep into the story chapters below).
@@ -41,6 +46,7 @@ export default function CinematicIntro() {
         end: "+=2400",
         scrub: 0.8,
         pin: true,
+        id: "cosmic-intro",
         onUpdate: (self) => {
           scrollProgress.value = self.progress;
         },
@@ -96,13 +102,44 @@ export default function CinematicIntro() {
 
         {/* Text overlays */}
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-          <p
+          <div
             id="ci-text-1"
-            className="absolute text-center px-8 text-white/68 text-xl md:text-2xl font-light tracking-[0.32em] uppercase"
+            className="absolute flex flex-col items-center gap-9 px-8 text-center"
             style={{ opacity: 0, filter: "blur(12px)" }}
           >
-            A spark of intelligence
-          </p>
+            <p className="text-white/68 text-xl md:text-2xl font-light tracking-[0.32em] uppercase">
+              A spark of intelligence
+            </p>
+
+            <div className="pointer-events-auto flex flex-col items-center gap-5 sm:flex-row">
+              <button
+                onClick={() => goTo("#story-gallery")}
+                className="btn-glow shrink-0 rounded-full border border-white/20 px-7 py-3 text-[11px] font-light tracking-[0.28em] text-white/80 uppercase transition-colors duration-300 hover:border-white/40 hover:text-white"
+              >
+                Explore Noorva
+              </button>
+
+              <button
+                onClick={() => goTo("#closing")}
+                className="btn-glow shrink-0 rounded-full border px-7 py-3 text-[11px] font-light tracking-[0.28em] uppercase transition-colors duration-300"
+                style={{
+                  borderColor: "rgba(232,180,120,0.5)",
+                  color: "var(--accent-warm)",
+                }}
+              >
+                Sign Up to Noorva
+              </button>
+
+              <a
+                href="https://mdsindia.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 text-[10px] font-light tracking-[0.24em] text-white/40 uppercase underline-offset-4 transition-colors duration-300 hover:text-white/70 hover:underline"
+              >
+                About MDS &amp; the team
+              </a>
+            </div>
+          </div>
 
           <div
             id="ci-text-4"

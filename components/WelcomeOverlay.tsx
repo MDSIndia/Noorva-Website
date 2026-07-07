@@ -129,7 +129,11 @@ export default function WelcomeOverlay() {
       synth.addEventListener("voiceschanged", scheduleInitialAttempt, { once: true });
     }
 
-    const interactionEvents = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
+    // iOS Safari (and some Android browsers) only recognize a gesture as
+    // "real" for audio/speech purposes on touchend/click — touchstart or
+    // pointerdown alone can be silently ignored on those platforms even
+    // though they satisfy Chrome's desktop autoplay policy.
+    const interactionEvents = ["pointerdown", "keydown", "wheel", "touchstart", "touchend", "click"] as const;
     interactionEvents.forEach((evt) => window.addEventListener(evt, attemptSpeak, { passive: true }));
 
     return () => {
