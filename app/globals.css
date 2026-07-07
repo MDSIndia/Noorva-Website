@@ -58,11 +58,30 @@ html.lenis          { height: auto; }
 }
 
 /* ── COSMIC INTRO SPECIFIC ──────────────────────────────────────── */
+/* Section stacking while pinned (GSAP pin sets position:fixed, which is
+   z-index-sensitive unlike normal flow): intro=30, features=28,
+   chapters=22-29, story-gallery=25. */
 #cosmic-intro canvas {
   position: absolute !important;
   inset: 0 !important;
   width: 100% !important;
   height: 100% !important;
+}
+
+/* ── FEATURES PHONE SCREEN ──────────────────────────────────────── */
+@keyframes phone-typing-dot {
+  0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
+  30%           { opacity: 1;    transform: translateY(-2px); }
+}
+
+@keyframes phone-cursor-blink {
+  0%, 50%   { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes phone-waveform {
+  0%, 100% { transform: scaleY(0.4); }
+  50%      { transform: scaleY(1); }
 }
 
 /* ── SELECTION ──────────────────────────────────────────────────── */

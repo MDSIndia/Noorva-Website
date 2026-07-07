@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { label: "Home", target: "home" },
   { label: "Story", target: "#story-gallery" },
   { label: "Join", target: "#closing" },
+  { label: "About MDS", target: "https://mdsindia.in", external: true },
 ] as const;
 
 // "Home" lands partway into the cosmic intro's scrub (blast settled, hero
@@ -17,7 +18,11 @@ const NAV_ITEMS = [
 const HOME_PROGRESS = 0.32;
 
 export default function Header() {
-  function goTo(target: string) {
+  function goTo(target: string, external?: boolean) {
+    if (external) {
+      window.open(target, "_blank", "noopener,noreferrer");
+      return;
+    }
     galleryCaptureControl.release?.(target === "#story-gallery" ? 0 : 1600);
     if (target === "home") {
       const trigger = ScrollTrigger.getById("cosmic-intro");
@@ -32,7 +37,7 @@ export default function Header() {
     <>
       {/* Logo — its own glowing badge, pinned to the top-left corner, independent of the nav pill */}
       <motion.div
-        className="fixed top-4 left-4 md:top-6 md:left-6 z-50"
+        className="fixed top-3 left-3 sm:top-4 sm:left-4 md:top-6 md:left-6 z-50"
         initial={{ opacity: 0, y: -20, scale: 0.85 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ type: "spring", stiffness: 260, damping: 24 }}
@@ -40,7 +45,7 @@ export default function Header() {
         <motion.div
           whileHover={{ scale: 1.12, rotate: 8 }}
           transition={{ type: "spring", stiffness: 300, damping: 15 }}
-          className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/60 backdrop-blur-xl"
+          className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/60 backdrop-blur-xl sm:h-11 sm:w-11"
           style={{
             boxShadow:
               "inset 0 1px 0 rgba(255,255,255,0.09), 0 8px 24px -6px rgba(0,0,0,0.6)",
@@ -57,7 +62,7 @@ export default function Header() {
       </motion.div>
 
       {/* Nav / progress island — centered, separate from the logo */}
-      <div className="fixed inset-x-0 top-4 md:top-6 z-40 flex justify-center">
+      <div className="fixed inset-x-0 top-3 sm:top-4 md:top-6 z-40 flex justify-center px-16 sm:px-0">
         <motion.div
           layout
           initial={{ opacity: 0, y: -24, scale: 0.85 }}
@@ -77,20 +82,20 @@ export default function Header() {
 
           <motion.header
             layout
-            className="flex items-center gap-4 rounded-full bg-black/70 px-5 py-3 backdrop-blur-2xl backdrop-saturate-150"
+            className="flex items-center gap-3 rounded-full bg-black/70 px-4 py-2.5 backdrop-blur-2xl backdrop-saturate-150 sm:gap-4 sm:px-5 sm:py-3"
             style={{
               boxShadow:
                 "inset 0 1px 0 rgba(255,255,255,0.09), inset 0 0 0 1px rgba(255,255,255,0.02), 0 24px 50px -14px rgba(0,0,0,0.7), 0 2px 12px rgba(0,0,0,0.45)",
             }}
           >
-            <motion.div layout className="hidden items-center gap-5 sm:flex">
+            <motion.div layout className="flex items-center gap-3 sm:gap-5">
               {NAV_ITEMS.map((item) => (
                 <motion.button
                   key={item.label}
-                  onClick={() => goTo(item.target)}
+                  onClick={() => goTo(item.target, "external" in item && item.external)}
                   whileHover={{ scale: 1.06 }}
                   whileTap={{ scale: 0.96 }}
-                  className="shrink-0 text-[10px] tracking-[0.28em] uppercase text-white/60 transition-all duration-300 hover:text-[color:var(--accent-warm)] hover:[text-shadow:0_0_14px_rgba(232,180,120,0.55)]"
+                  className="shrink-0 whitespace-nowrap text-[8.5px] tracking-[0.2em] uppercase text-white/60 transition-all duration-300 hover:text-[color:var(--accent-warm)] hover:[text-shadow:0_0_14px_rgba(232,180,120,0.55)] sm:text-[10px] sm:tracking-[0.28em]"
                 >
                   {item.label}
                 </motion.button>

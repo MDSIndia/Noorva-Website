@@ -5,14 +5,6 @@ export const scrollProgress = { value: 0 };
 // nav links so anchor navigation goes through Lenis instead of a native jump.
 export const lenisRef: { current: import("lenis").default | null } = { current: null };
 
-// Shared singleton — describes the spiral gallery's current roll: a crossfade
-// from chapter `fromIndex` to `toIndex`, at `progress` 0 (flat on fromIndex)
-// to 1 (flat on toIndex). Set by StoryGallerySection's discrete per-gesture
-// flip animation (GSAP-tweened, not scroll-scrubbed — flips can go either
-// direction), read every frame by SpiralGallery's shader without triggering
-// React renders.
-export const galleryTransition = { fromIndex: 0, toIndex: 0, progress: 0 };
-
 // Shared singleton — lets nav links force-release the gallery's scroll
 // capture, and briefly suppress it from re-engaging. Without `release`,
 // clicking Home/Story/Join/any CTA while the gallery has scroll locked for

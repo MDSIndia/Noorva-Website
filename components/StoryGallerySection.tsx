@@ -1,28 +1,37 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import gsap from "gsap";
-import SpiralGallery from "./SpiralGallery";
-import { galleryTransition, lenisRef, galleryCaptureControl } from "./store";
+import BookPage from "./BookPage";
+import { lenisRef, galleryCaptureControl } from "./store";
 import { storyChapters } from "./storyData";
 
-const FLIP_DURATION = 1.35; // seconds, one full roll-to-next-photo animation
+const FLIP_DURATION = 1.1; // seconds, one full page-turn
 const WHEEL_THRESHOLD = 2; // ignore near-zero wheel noise
 const SWIPE_THRESHOLD = 30; // px, minimum touch swipe to count as a gesture
 // Trackpad/inertial wheel scrolling keeps emitting decaying delta events for
 // a while after the user's physical gesture ends. Without this, a single
 // flick that outlasts FLIP_DURATION triggers a second, unintended chapter
-// transition the instant the first one finishes — the image visibly rolls
+// transition the instant the first one finishes — the page visibly turns
 // twice for one scroll. A gesture only "ends" once wheel events stop for
 // this long, so trailing momentum can't chain into another transition.
 const GESTURE_IDLE_MS = 180;
 
 export default function StoryGallerySection() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
-  const [displayIndex, setDisplayIndex] = useState(0);
-  const [captionVisible, setCaptionVisible] = useState(true);
+
+  // Two stacked page slots. `underRef` always rests flat (rotateY 0) and
+  // just has its content silently swapped while hidden behind `overRef`.
+  // `overRef` is the one that actually turns — 0deg -> ±180deg around
+  // whichever edge matches the nav direction — and vanishes past 90deg via
+  // backface-visibility, revealing `under` (already showing the target
+  // chapter) sitting flat underneath. `over` is then silently snapped back
+  // to 0deg/target content, restoring the resting invariant for next time.
+  const underRef = useRef<HTMLDivElement>(null);
+  const overRef = useRef<HTMLDivElement>(null);
+  const overShadeRef = useRef<HTMLDivElement>(null);
+  const [underChapterIdx, setUnderChapterIdx] = useState(0);
+  const [overChapterIdx, setOverChapterIdx] = useState(0);
 
   const currentIndexRef = useRef(0);
   const isAnimatingRef = useRef(false);
@@ -31,18 +40,6 @@ export default function StoryGallerySection() {
   const touchStartYRef = useRef<number | null>(null);
   const gestureConsumedRef = useRef(false);
   const gestureIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Pause the R3F render loop while the section is far off-screen.
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setInView(entry.isIntersecting),
-      { rootMargin: "300px 0px" }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -93,40 +90,32 @@ export default function StoryGallerySection() {
       if (isAnimatingRef.current) return;
       const from = currentIndexRef.current;
       if (targetIndex === from) return;
+      const over = overRef.current;
+      const shade = overShadeRef.current;
+      if (!over || !shade) return;
+
+      const forward = targetIndex > from;
+      const origin = forward ? "left center" : "right center";
+      const endRotation = forward ? -180 : 180;
 
       isAnimatingRef.current = true;
-      setCaptionVisible(false);
+      setUnderChapterIdx(targetIndex); // hidden swap — `under` sits flat beneath `over`
 
-      const obj = { v: 0 };
-      let swapped = false;
-      let revealed = false;
-      gsap.to(obj, {
-        v: 1,
+      gsap.set(over, { transformOrigin: origin, rotateY: 0 });
+
+      gsap.to(over, {
+        rotateY: endRotation,
         duration: FLIP_DURATION,
-        ease: "power3.inOut",
-        onUpdate: () => {
-          galleryTransition.fromIndex = from;
-          galleryTransition.toIndex = targetIndex;
-          galleryTransition.progress = obj.v;
-          // Swap the caption's content the instant the shader swaps textures
-          // (same 0.5 point), but only start revealing it a little later so
-          // its ~0.35s fade-in finishes right as the image finishes settling
-          // flat — the two arrive together instead of text visibly lagging
-          // behind an already-still photo.
-          if (!swapped && obj.v >= 0.5) {
-            swapped = true;
-            setDisplayIndex(targetIndex);
-          }
-          if (!revealed && obj.v >= 0.62) {
-            revealed = true;
-            setCaptionVisible(true);
-          }
+        ease: "power2.inOut",
+        onUpdate: function () {
+          const progress = this.progress();
+          gsap.set(shade, { opacity: Math.sin(progress * Math.PI) * 0.55 });
         },
         onComplete: () => {
           currentIndexRef.current = targetIndex;
-          galleryTransition.fromIndex = targetIndex;
-          galleryTransition.toIndex = targetIndex;
-          galleryTransition.progress = 0;
+          setOverChapterIdx(targetIndex); // now identical to `under` — invisible swap
+          gsap.set(over, { rotateY: 0 });
+          gsap.set(shade, { opacity: 0 });
           isAnimatingRef.current = false;
         },
       });
@@ -218,43 +207,20 @@ export default function StoryGallerySection() {
     };
   }, []);
 
-  const chapter = storyChapters[displayIndex];
-
   return (
     <section
       id="story-gallery"
       ref={sectionRef}
-      className="relative w-full h-screen overflow-hidden bg-black"
+      className="relative flex w-full h-screen items-center justify-center overflow-hidden bg-[color:var(--bg)]/70"
       style={{ zIndex: 25 }}
     >
-      <SpiralGallery frameloop={inView ? "always" : "never"} />
-
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/25" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40" />
       <div className="pointer-events-none absolute inset-0 vignette-edge" />
+      <div className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color:var(--accent-warm)]/6 blur-[160px]" />
 
-      <div className="absolute inset-x-0 bottom-0 z-10 px-8 pb-20 md:px-20 md:pb-28">
-        <AnimatePresence mode="wait">
-          {captionVisible && (
-            <motion.div
-              key={chapter.index}
-              className="max-w-3xl"
-              initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -12, filter: "blur(6px)" }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
-            >
-              <p className="mb-4 text-[10px] md:text-xs tracking-[0.5em] uppercase text-[color:var(--accent-warm)]/80 font-light">
-                {chapter.eyebrow}
-              </p>
-              <h2 className="font-playfair text-3xl md:text-5xl font-light text-white/92 leading-[1.15] mb-5">
-                {chapter.headline}
-              </h2>
-              <p className="text-base md:text-lg text-white/60 font-light max-w-xl">
-                {chapter.body}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <div className="relative h-screen w-full" style={{ perspective: 2600 }}>
+        <BookPage ref={underRef} chapter={storyChapters[underChapterIdx]} />
+        <BookPage ref={overRef} chapter={storyChapters[overChapterIdx]} shadeRef={overShadeRef} />
       </div>
     </section>
   );
