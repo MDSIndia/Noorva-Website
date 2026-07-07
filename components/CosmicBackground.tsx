@@ -16,9 +16,8 @@ const DENSITY = 7000; // px^2 per star — lower = more stars
 
 /**
  * Fixed, full-viewport star field that sits behind every section of the
- * site for the whole scroll length (unlike CosmicCanvas, which only runs
- * during the hero's one-shot explosion sequence). Plain canvas 2D so it
- * stays cheap to keep mounted permanently.
+ * site for the whole scroll length. Plain canvas 2D so it stays cheap to
+ * keep mounted permanently.
  */
 export default function CosmicBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -32,7 +31,7 @@ export default function CosmicBackground() {
     let height = window.innerHeight;
     let stars: Star[] = [];
 
-    function makeStars() {
+    const makeStars = () => {
       const count = Math.round((width * height) / DENSITY);
       stars = Array.from({ length: count }, () => {
         const depth = 0.3 + Math.random() * 0.7;
@@ -46,9 +45,9 @@ export default function CosmicBackground() {
           twinklePhase: Math.random() * Math.PI * 2,
         };
       });
-    }
+    };
 
-    function resize() {
+    const resize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -58,7 +57,7 @@ export default function CosmicBackground() {
       canvas.style.height = `${height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       makeStars();
-    }
+    };
 
     resize();
     window.addEventListener("resize", resize);
@@ -68,7 +67,7 @@ export default function CosmicBackground() {
     let raf = 0;
     let last = performance.now();
 
-    function frame(now: number) {
+    const frame = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       ctx.clearRect(0, 0, width, height);
@@ -96,7 +95,7 @@ export default function CosmicBackground() {
       }
       ctx.globalAlpha = 1;
       raf = requestAnimationFrame(frame);
-    }
+    };
     raf = requestAnimationFrame(frame);
 
     return () => {

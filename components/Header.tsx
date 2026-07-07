@@ -11,10 +11,10 @@ const NAV_ITEMS = [
   { label: "Join", target: "#closing" },
 ] as const;
 
-// "Home" lands partway into the cosmic intro's scrub (stars + "A spark of
-// intelligence" already visible) rather than the very top, which is just a
-// blank black frame before anything has faded in.
-const HOME_PROGRESS = 0.12;
+// "Home" lands partway into the cosmic intro's scrub (blast settled, hero
+// text already visible) rather than the very top, which is just a blank
+// black frame before anything has faded in.
+const HOME_PROGRESS = 0.32;
 
 export default function Header() {
   function goTo(target: string) {

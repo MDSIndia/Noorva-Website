@@ -10,6 +10,13 @@ import { storyChapters } from "./storyData";
 const FLIP_DURATION = 1.35; // seconds, one full roll-to-next-photo animation
 const WHEEL_THRESHOLD = 2; // ignore near-zero wheel noise
 const SWIPE_THRESHOLD = 30; // px, minimum touch swipe to count as a gesture
+// Trackpad/inertial wheel scrolling keeps emitting decaying delta events for
+// a while after the user's physical gesture ends. Without this, a single
+// flick that outlasts FLIP_DURATION triggers a second, unintended chapter
+// transition the instant the first one finishes — the image visibly rolls
+// twice for one scroll. A gesture only "ends" once wheel events stop for
+// this long, so trailing momentum can't chain into another transition.
+const GESTURE_IDLE_MS = 180;
 
 export default function StoryGallerySection() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -22,6 +29,8 @@ export default function StoryGallerySection() {
   const capturedRef = useRef(false);
   const exitingRef = useRef(false);
   const touchStartYRef = useRef<number | null>(null);
+  const gestureConsumedRef = useRef(false);
+  const gestureIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Pause the R3F render loop while the section is far off-screen.
   useEffect(() => {
@@ -144,6 +153,16 @@ export default function StoryGallerySection() {
       if (!capturedRef.current) return;
       e.preventDefault();
       if (Math.abs(e.deltaY) < WHEEL_THRESHOLD) return;
+
+      // Any wheel activity extends the current gesture's idle window, so the
+      // gesture is only considered "over" once events stop for a beat.
+      if (gestureIdleTimerRef.current) clearTimeout(gestureIdleTimerRef.current);
+      gestureIdleTimerRef.current = setTimeout(() => {
+        gestureConsumedRef.current = false;
+      }, GESTURE_IDLE_MS);
+
+      if (gestureConsumedRef.current || isAnimatingRef.current) return;
+      gestureConsumedRef.current = true;
       handleDirection(e.deltaY);
     }
 
@@ -185,6 +204,7 @@ export default function StoryGallerySection() {
 
     return () => {
       cancelAnimationFrame(raf);
+      if (gestureIdleTimerRef.current) clearTimeout(gestureIdleTimerRef.current);
       window.removeEventListener("wheel", onWheel);
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);

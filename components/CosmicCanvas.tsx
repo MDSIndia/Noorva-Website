@@ -1,8 +1,7 @@
 "use client";
 
-import { useRef, useMemo, Suspense } from "react";
+import { useRef, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { scrollProgress } from "./store";
 
@@ -13,8 +12,6 @@ const range = (p: number, lo: number, hi: number) => clamp((p - lo) / (hi - lo),
 const easeOut3 = (t: number) => 1 - Math.pow(1 - t, 3);
 const easeOut4 = (t: number) => 1 - Math.pow(1 - t, 4);
 const easeIn2  = (t: number) => t * t;
-const easeIn3  = (t: number) => t * t * t;
-const easeInOut3 = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
 /* PRNG for deterministic particle placement */
 function prng(n: number) {
@@ -58,7 +55,6 @@ function makeSoftDotTexture(size = 64, r = 255, g = 255, b = 255) {
 /* ─── SCENE FOG ──────────────────────────────────────────────────*/
 function SceneFog({ live }: { live: React.MutableRefObject<number> }) {
   const fog = useRef<THREE.FogExp2>(null);
-  const { scene } = useThree();
 
   useFrame(() => {
     if (!fog.current) return;
@@ -72,34 +68,17 @@ function SceneFog({ live }: { live: React.MutableRefObject<number> }) {
 }
 
 /* ─── CAMERA RIG ─────────────────────────────────────────────────
-   Phase 0–0.18 : static, gentle breathing sway around origin
-   Phase 0.18–0.38: fly forward through the cosmos toward Earth
-   Phase 0.38–0.50: slam into Earth (rapid Z advance)             */
-function CameraRig({ live }: { live: React.MutableRefObject<number> }) {
+   The camera stays put with a gentle, continuous breathing sway —
+   there's no longer a destination (Earth) to travel toward, so it
+   just holds a calm, steady frame around the star blast.          */
+function CameraRig() {
   useFrame(({ camera, clock }) => {
-    const p = live.current;
     const t = clock.getElapsedTime();
-
-    // Subtle drift — always present
     const dx = Math.sin(t * 0.09) * 0.18;
     const dy = Math.cos(t * 0.07) * 0.10;
 
-    // Travel toward Earth
-    const travelT = easeInOut3(range(p, 0.18, 0.38));
-    // Final plunge into Earth
-    const plungeT = easeIn3(range(p, 0.38, 0.50));
-
-    const travelZ = lerp(8, -28, travelT);
-    const plungeZ = lerp(travelZ, 5, plungeT);
-
-    camera.position.set(
-      dx * (1 - plungeT * 0.8),
-      dy * (1 - plungeT * 0.8),
-      lerp(travelZ, plungeZ, plungeT > 0 ? 1 : 0)
-    );
-
-    const lookTarget = new THREE.Vector3(dx * 0.04, dy * 0.04, -24);
-    camera.lookAt(lookTarget);
+    camera.position.set(dx, dy, 8);
+    camera.lookAt(dx * 0.04, dy * 0.04, -24);
   });
   return null;
 }
@@ -239,15 +218,15 @@ function GlowingStar({ live }: { live: React.MutableRefObject<number> }) {
       r.visible = alive;
       if (alive) {
         const onExplode = explodePhase > 0 ? lerp(1, 0, Math.min(1, explodePhase * 2.2)) : 1;
-        const baseLength = i === 0 ? 32 : (i === 1 ? 12 : 6); 
+        const baseLength = i === 0 ? 32 : (i === 1 ? 12 : 6);
         const thickness  = i === 0 ? 0.35 : 0.15;
-        
+
         const scaleX = lerp(0.01, baseLength, Math.min(1, growPhase * 1.8)) * onExplode;
         r.scale.set(Math.max(0.001, scaleX), thickness, 1);
-        
+
         const angles = [0, Math.PI / 2, Math.PI / 4, -Math.PI / 4];
         r.rotation.z = angles[i] + t * 0.015;
-        
+
         mat.opacity = glowBlastT * (i === 0 ? 0.85 : 0.45) * onExplode;
       }
     });
@@ -326,7 +305,7 @@ function GlowingStar({ live }: { live: React.MutableRefObject<number> }) {
 }
 
 /* ─── EXPLOSION PARTICLES ────────────────────────────────────────
-   Particles burst from the star explosion, then fade out for Earth. */
+   Particles burst from the star explosion, then fade out into calm. */
 function ExplosionParticles({ live }: { live: React.MutableRefObject<number> }) {
   const FAST  = 3600;
 
@@ -406,88 +385,26 @@ function ExplosionParticles({ live }: { live: React.MutableRefObject<number> }) 
 /* ─── SPACE BACKDROP GLOW ────────────────────────────────────────
    Large flat plane behind everything with a radial glow that
    represents the galaxy core / deep-space ambience.              */
-function SpaceBackdrop({ live }: { live: React.MutableRefObject<number> }) {
+function SpaceBackdrop() {
   // The user requested a black background, so we disable the blue space backdrop glow.
   return null;
 }
 
-/* ─── EARTH ──────────────────────────────────────────────────────
-   Phase 0.16–0.35: approach (zoom in from far → close)
-   Phase 0.35–0.50: enter (scale up → engulfs camera)
-   Hidden after 0.50 so it never replays                         */
-function Earth({ live }: { live: React.MutableRefObject<number> }) {
-  const group  = useRef<THREE.Group>(null);
-
-  const earthTex = useTexture("/earth.png");
-
-  useFrame(() => {
-    const p = live.current;
-    // Earth appears right after the blast, clearly visible
-    const approachT = easeOut4(range(p, 0.18, 0.35));
-    const enterT    = easeIn3(range(p, 0.35, 0.50));
-    const vis = p > 0.16 && p < 0.52;
-
-    if (group.current) {
-      group.current.visible = vis;
-      if (vis) {
-        group.current.rotation.y += 0.004;
-        const zApproach = lerp(-35, -8, approachT);
-        const zEnter    = lerp(zApproach, 5, enterT);
-        group.current.position.z = zEnter;
-
-        const sApproach = lerp(1.5, 10, approachT);
-        const sEnter    = lerp(sApproach, 80, enterT);
-        group.current.scale.setScalar(sEnter);
-
-        // Slight drift so Earth isn't centered — more cinematic
-        group.current.position.x = lerp(2.0, 0, approachT);
-        group.current.position.y = lerp(-0.8, 0, approachT);
-
-        // Freeze rotation once fully entered so it stays hidden cleanly
-        if (enterT >= 1) group.current.visible = false;
-      }
-    }
-
-  });
-
-  if (!earthTex) return null;
-  return (
-    <group ref={group} visible={false}>
-      {/* Earth sphere */}
-      <mesh>
-        <sphereGeometry args={[1, 96, 96]} />
-        <meshStandardMaterial
-          map={earthTex}
-          roughness={0.65}
-          metalness={0.05}
-          side={THREE.FrontSide}
-        />
-      </mesh>
-      
-      {/* Lighting - strong to make Earth clearly visible */}
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[8, 4, 10]} intensity={4.5} color="#ffeedd" />
-      <directionalLight position={[-5, 2, -8]} intensity={0.8} color="#4488ff" />
-      <pointLight position={[0, 0, 5]} intensity={1.5} color="#ffffff" />
-    </group>
-  );
-}
-
-/* ─── SCENE ASSEMBLY ─────────────────────────────────────────────*/
+/* ─── SCENE ASSEMBLY ─────────────────────────────────────────────
+   Star appears, grows, and explodes into a calm resting star field —
+   that resting state (reached by p ≈ 0.45) is what the page settles
+   into as a static landing once the scroll-pin releases.          */
 function Scene() {
   const live = useLiveProgress();
 
   return (
     <>
       <SceneFog live={live} />
-      <CameraRig live={live} />
-      <SpaceBackdrop live={live} />
+      <CameraRig />
+      <SpaceBackdrop />
       <StarField live={live} />
       <GlowingStar live={live} />
       <ExplosionParticles live={live} />
-      <Suspense fallback={null}>
-        <Earth live={live} />
-      </Suspense>
     </>
   );
 }
