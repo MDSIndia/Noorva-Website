@@ -116,7 +116,7 @@ export default function CinematicIntro() {
                 onClick={() => goTo("#story-gallery")}
                 className="btn-glow shrink-0 rounded-full border border-white/20 px-7 py-3 text-[11px] font-light tracking-[0.28em] text-white/80 uppercase transition-colors duration-300 hover:border-white/40 hover:text-white"
               >
-                Explore Noorva
+                Explore Noorva Book
               </button>
 
               <button

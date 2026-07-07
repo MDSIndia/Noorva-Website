@@ -41,7 +41,7 @@ export default function FeaturesSection() {
   return (
     <section
       id="features"
-      className="relative w-full overflow-hidden bg-[color:var(--bg)] py-28 md:py-36"
+      className="relative w-full overflow-hidden bg-[color:var(--bg)]/70 py-28 md:py-36"
     >
       <div className="pointer-events-none absolute top-1/2 left-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2">
         <div className="h-full w-full rounded-full bg-[color:var(--accent-1)]/8 blur-[140px] animate-float-slow" />

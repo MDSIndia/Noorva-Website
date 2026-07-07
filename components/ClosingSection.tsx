@@ -30,7 +30,7 @@ export default function ClosingSection() {
   }
 
   return (
-    <section id="closing" className="relative w-full min-h-screen overflow-hidden bg-[color:var(--bg)] flex items-center">
+    <section id="closing" className="relative w-full min-h-screen overflow-hidden bg-[color:var(--bg)]/70 flex items-center">
       <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[600px] w-[600px]">
         <div className="h-full w-full rounded-full bg-[color:var(--accent-warm)]/10 blur-[120px] animate-float-slow" />
       </div>
