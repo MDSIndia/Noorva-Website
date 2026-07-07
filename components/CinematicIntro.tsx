@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import gsap from "gsap";
 import { motion } from "framer-motion";
-import { BookOpen, Sparkles } from "lucide-react";
-import { scrollProgress, lenisRef, galleryCaptureControl, acquireScrollLock, releaseScrollLock } from "./store";
+import { Library, ArrowUpRight } from "lucide-react";
+import {
+  scrollProgress,
+  lenisRef,
+  galleryCaptureControl,
+  acquireScrollLock,
+  releaseScrollLock,
+  introRevealControl,
+} from "./store";
 import phoneInHand from "@/assets/images/phone-in-hand-trimmed.png";
 
 const CosmicCanvas = dynamic(() => import("./CosmicCanvas"), { ssr: false });
@@ -85,13 +92,22 @@ export default function CinematicIntro() {
     };
   }, []);
 
-  function handleReveal() {
+  const handleReveal = useCallback(() => {
     if (hasPlayedRef.current) return;
     hasPlayedRef.current = true;
     gsap.to("#ci-click-hint", { opacity: 0, duration: 0.3 });
     tlRef.current?.eventCallback("onComplete", () => releaseScrollLock("cosmic-intro"));
     tlRef.current?.play();
-  }
+  }, []);
+
+  // Let WelcomeOverlay trigger this same reveal from its own dismiss click,
+  // so the star blast starts immediately instead of needing a second click.
+  useEffect(() => {
+    introRevealControl.play = handleReveal;
+    return () => {
+      introRevealControl.play = null;
+    };
+  }, [handleReveal]);
 
   return (
     <section
@@ -130,7 +146,7 @@ export default function CinematicIntro() {
                 className="max-w-md bg-clip-text text-3xl font-bold tracking-[0.1em] text-transparent uppercase md:max-w-xl md:text-5xl lg:max-w-2xl lg:text-6xl"
                 style={{
                   backgroundImage:
-                    "linear-gradient(135deg, #3965e5 0%, #7c5cfc 50%, #db45d7 100%)",
+                    "linear-gradient(135deg, #ffffff 0%, #3965e5 35%, #7c5cfc 65%, #db45d7 100%)",
                 }}
               >
                 Intelligence Like
@@ -150,7 +166,7 @@ export default function CinematicIntro() {
                   }}
                 >
                   <span className="btn-glow flex items-center gap-2 rounded-full bg-black/85 px-7 py-3 text-[11px] font-semibold tracking-[0.28em] text-white uppercase backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70">
-                    <BookOpen className="h-4 w-4" strokeWidth={1.75} />
+                    <Library className="h-4 w-4" strokeWidth={1.75} />
                     Noorva Book
                   </span>
                 </button>
@@ -167,7 +183,7 @@ export default function CinematicIntro() {
                     className="btn-glow flex items-center gap-2 rounded-full bg-black/85 px-7 py-3 text-[11px] font-semibold tracking-[0.28em] uppercase backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70"
                     style={{ color: "var(--accent-warm)" }}
                   >
-                    <Sparkles className="h-4 w-4" strokeWidth={1.75} />
+                    <ArrowUpRight className="h-4 w-4" strokeWidth={1.75} />
                     Join Noorva
                   </span>
                 </button>

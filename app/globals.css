@@ -157,3 +157,14 @@ html.lenis          { height: auto; }
 .animate-float-slow {
   animation: float-slow 14s ease-in-out infinite;
 }
+
+/* ── BOOK COVER SHEEN ────────────────────────────────────────────── */
+/* Slow diagonal foil-catch sweep across the book cover's gilt surface. */
+@keyframes book-sheen {
+  0%, 100% { transform: translateX(-40%); }
+  50%      { transform: translateX(220%); }
+}
+
+.animate-book-sheen {
+  animation: book-sheen 9s ease-in-out infinite;
+}

@@ -21,6 +21,12 @@ export const galleryCaptureControl: { release: ((suppressMs?: number) => void) |
   suppressedUntil: 0,
 };
 
+// Shared singleton — lets WelcomeOverlay trigger CinematicIntro's star-blast
+// reveal directly on the same click that dismisses the overlay, instead of
+// requiring a separate second click on the (now-visible) intro section.
+// CinematicIntro registers `play` here on mount.
+export const introRevealControl: { play: (() => void) | null } = { play: null };
+
 // Reference-counted scroll lock, keyed by owner id. WelcomeOverlay and
 // CinematicIntro both need page scroll frozen during their own gated phase,
 // and their phases can overlap/outlive each other (e.g. the overlay can

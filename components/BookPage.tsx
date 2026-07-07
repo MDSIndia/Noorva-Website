@@ -82,7 +82,14 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(function BookPage({ c
       </div>
 
       {/* Flip-lighting shade, opacity driven by useFlipBook as the page turns edge-on */}
-      <div ref={shadeRef} className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: 0 }} />
+      <div
+        ref={shadeRef}
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: "linear-gradient(105deg, rgba(255,255,255,0.14) 0%, rgba(0,0,0,0.85) 55%)",
+          opacity: 0,
+        }}
+      />
     </div>
   );
 });

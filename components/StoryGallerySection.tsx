@@ -105,7 +105,7 @@ export default function StoryGallerySection() {
       isAnimatingRef.current = true;
       setUnderPageIdx(targetIndex); // hidden swap — `under` sits flat beneath `over`
 
-      gsap.set(over, { transformOrigin: origin, rotateY: 0 });
+      gsap.set(over, { transformOrigin: origin, rotateY: 0, y: 0, scaleX: 1 });
 
       gsap.to(over, {
         rotateY: endRotation,
@@ -113,12 +113,17 @@ export default function StoryGallerySection() {
         ease: "power2.inOut",
         onUpdate: function () {
           const progress = this.progress();
-          gsap.set(shade, { opacity: Math.sin(progress * Math.PI) * 0.55 });
+          // A real page doesn't rotate perfectly rigid — it lifts slightly
+          // off the stack and narrows a touch as it goes edge-on, then
+          // settles back flat. `arc` peaks at the midpoint of the turn.
+          const arc = Math.sin(progress * Math.PI);
+          gsap.set(over, { y: -arc * 16, scaleX: 1 - arc * 0.06 });
+          gsap.set(shade, { opacity: arc * 0.6 });
         },
         onComplete: () => {
           currentIndexRef.current = targetIndex;
           setOverPageIdx(targetIndex); // now identical to `under` — invisible swap
-          gsap.set(over, { rotateY: 0 });
+          gsap.set(over, { rotateY: 0, y: 0, scaleX: 1 });
           gsap.set(shade, { opacity: 0 });
           isAnimatingRef.current = false;
         },

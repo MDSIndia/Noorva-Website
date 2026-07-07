@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { acquireScrollLock, releaseScrollLock } from "./store";
+import { acquireScrollLock, releaseScrollLock, introRevealControl } from "./store";
 
 const TEXT = "Welcome to Noorva.";
 const TYPE_INTERVAL_MS = 85;
@@ -143,8 +143,8 @@ export default function WelcomeOverlay() {
     };
   }, []);
 
-  // Any interaction while typing skips straight to the "ready" state; any
-  // interaction once ready dismisses the overlay and hands off to the page.
+  // A click while typing skips straight to the "ready" state; a click once
+  // ready dismisses the overlay and hands off to the page.
   useEffect(() => {
     function handleInteraction() {
       if (phaseRef.current === "typing") {
@@ -152,11 +152,11 @@ export default function WelcomeOverlay() {
         setPhase("ready");
       } else if (phaseRef.current === "ready") {
         setPhase("dismissed");
+        introRevealControl.play?.();
       }
     }
-    const events = ["wheel", "touchstart", "keydown", "pointerdown"] as const;
-    events.forEach((evt) => window.addEventListener(evt, handleInteraction, { passive: true }));
-    return () => events.forEach((evt) => window.removeEventListener(evt, handleInteraction));
+    window.addEventListener("click", handleInteraction, { passive: true });
+    return () => window.removeEventListener("click", handleInteraction);
   }, []);
 
   return (
@@ -207,7 +207,7 @@ export default function WelcomeOverlay() {
                 className="absolute bottom-14 flex flex-col items-center gap-2"
               >
                 <span className="text-[10px] font-light uppercase tracking-[0.44em] text-white/40">
-                  Scroll to open
+                  Click to open
                 </span>
                 <div className="h-8 w-px animate-pulse bg-gradient-to-b from-white/25 to-transparent" />
               </motion.div>
