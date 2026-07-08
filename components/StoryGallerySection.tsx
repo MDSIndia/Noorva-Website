@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import gsap from "gsap";
 import BookPage from "./BookPage";
 import BookCover from "./BookCover";
@@ -94,10 +95,6 @@ export default function StoryGallerySection() {
       if (isAnimatingRef.current) return;
       const from = currentIndexRef.current;
       if (targetIndex === from) return;
-      const over = overRef.current;
-      const under = underRef.current;
-      const shade = overShadeRef.current;
-      if (!over || !under || !shade) return;
 
       const forward = targetIndex > from;
       const origin = forward ? "left center" : "right center";
@@ -110,7 +107,21 @@ export default function StoryGallerySection() {
       const endRotation = forward ? -92 : 92;
 
       isAnimatingRef.current = true;
-      setUnderPageIdx(targetIndex); // hidden swap — `under` sits flat beneath `over`
+
+      // flushSync forces the content swap to actually commit to the DOM
+      // before we touch refs below — crossing the cover/chapter-one boundary
+      // swaps `under`'s component type (BookCover <-> BookPage), which
+      // remounts its DOM node. Reading `underRef.current` before the flush
+      // would grab the node that's about to be discarded, so the opacity
+      // reset below would silently no-op on a detached element.
+      flushSync(() => setUnderPageIdx(targetIndex));
+      const over = overRef.current;
+      const under = underRef.current;
+      const shade = overShadeRef.current;
+      if (!over || !under || !shade) {
+        isAnimatingRef.current = false;
+        return;
+      }
       gsap.set(under, { opacity: 0 }); // faded in below, not just instantly exposed
 
       gsap.set(over, { transformOrigin: origin, rotateY: 0, y: 0, scaleX: 1 });
@@ -138,10 +149,18 @@ export default function StoryGallerySection() {
         },
         onComplete: () => {
           currentIndexRef.current = targetIndex;
-          setOverPageIdx(targetIndex); // now identical to `under` — invisible swap
-          gsap.set(over, { rotateY: 0, y: 0, scaleX: 1 });
+          // Same flushSync reasoning as above, in reverse: `over` is
+          // currently edge-on and invisible (backfaceVisibility: hidden).
+          // Resetting its rotateY makes it visible again immediately, so
+          // the content swap must already be painted in before that happens
+          // — otherwise the *old* page flashes back into view for a frame
+          // right as the flip finishes.
+          flushSync(() => setOverPageIdx(targetIndex));
+          const freshOver = overRef.current;
+          const freshShade = overShadeRef.current;
+          if (freshOver) gsap.set(freshOver, { rotateY: 0, y: 0, scaleX: 1 });
+          if (freshShade) gsap.set(freshShade, { opacity: 0 });
           gsap.set(under, { opacity: 1 });
-          gsap.set(shade, { opacity: 0 });
           isAnimatingRef.current = false;
         },
       });

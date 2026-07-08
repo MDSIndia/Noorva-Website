@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { Check } from "lucide-react";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
@@ -34,6 +35,13 @@ export default function ClosingSection() {
       <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[600px] w-[600px]">
         <div className="h-full w-full rounded-full bg-[color:var(--accent-warm)]/10 blur-[120px] animate-float-slow" />
       </div>
+      <div className="pointer-events-none absolute -bottom-56 left-1/2 -translate-x-1/2 h-[560px] w-[560px]">
+        <div className="h-full w-full rounded-full bg-[color:var(--accent-1)]/10 blur-[140px]" />
+      </div>
+      <div className="pointer-events-none absolute top-1/3 -left-32 h-[420px] w-[420px]">
+        <div className="h-full w-full rounded-full bg-[color:var(--accent-2)]/10 blur-[130px]" />
+      </div>
+      <div className="pointer-events-none absolute inset-0 vignette-edge" />
 
       <motion.div
         className="relative z-10 mx-auto max-w-2xl px-8 py-32 text-center"
@@ -42,6 +50,29 @@ export default function ClosingSection() {
         viewport={{ once: true, amount: 0.4 }}
         transition={{ staggerChildren: 0.12 }}
       >
+        <motion.div
+          variants={fadeUp}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="relative mx-auto mb-8 flex h-16 w-16 items-center justify-center"
+        >
+          <div
+            className="pointer-events-none absolute inset-0 -z-10 rounded-full opacity-70 blur-lg"
+            style={{ background: "radial-gradient(circle, rgba(124,92,252,0.55), transparent 70%)" }}
+          />
+          <motion.div
+            className="absolute inset-0 rounded-full border border-dashed"
+            style={{ borderColor: "rgba(124,92,252,0.4)" }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
+          />
+          <div
+            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/70 backdrop-blur-xl"
+            style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.09), 0 8px 24px -6px rgba(0,0,0,0.6)" }}
+          >
+            <Image src="/NoorvaLogo.png" alt="Noorva" width={22} height={22} className="opacity-95" />
+          </div>
+        </motion.div>
+
         <motion.p
           variants={fadeUp}
           transition={{ duration: 0.7, ease: "easeOut" }}
@@ -53,11 +84,19 @@ export default function ClosingSection() {
         <motion.h2
           variants={fadeUp}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="font-playfair text-4xl md:text-6xl font-light text-white/95 leading-[1.15] mb-6"
+          className="text-balance font-playfair text-4xl md:text-6xl font-light text-white/95 leading-[1.15] mb-6"
         >
           Every leap in human progress was a new way to connect.
           <br />
-          Noorva is the next one.
+          <span
+            className="bg-clip-text text-transparent"
+            style={{
+              backgroundImage: "linear-gradient(135deg, #3965e5 0%, #7c5cfc 50%, #db45d7 100%)",
+              filter: "drop-shadow(0 0 24px rgba(124,92,252,0.35))",
+            }}
+          >
+            Noorva is the next one.
+          </span>
         </motion.h2>
 
         <motion.p
@@ -69,18 +108,38 @@ export default function ClosingSection() {
           mentor, planner, and companion that grows with you. The next chapter is still being written.
         </motion.p>
 
-        <motion.div variants={fadeUp} transition={{ duration: 0.8, ease: "easeOut" }}>
+        <motion.div
+          variants={fadeUp}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="mx-auto max-w-md rounded-[28px] p-[1.5px]"
+          style={{
+            background: "linear-gradient(135deg, rgba(57,101,229,0.5), rgba(124,92,252,0.55), rgba(219,69,215,0.5))",
+            boxShadow: "0 0 50px -10px rgba(124,92,252,0.35)",
+          }}
+        >
+          <div
+            className="rounded-[27px] bg-black/85 px-6 py-8 backdrop-blur-xl sm:px-8"
+            style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)" }}
+          >
           <AnimatePresence mode="wait">
             {status === "success" ? (
-              <motion.p
+              <motion.div
                 key="success"
                 initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
                 animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                 transition={{ duration: 0.5 }}
-                className="text-white/80 text-base md:text-lg font-light"
+                className="flex flex-col items-center gap-4"
               >
-                You&rsquo;re on the list — we&rsquo;ll be in touch.
-              </motion.p>
+                <div
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--accent-warm)]/40"
+                  style={{ background: "color-mix(in srgb, var(--accent-warm) 15%, transparent)" }}
+                >
+                  <Check className="h-5 w-5 text-[color:var(--accent-warm)]" strokeWidth={2} />
+                </div>
+                <p className="text-white/80 text-base md:text-lg font-light">
+                  You&rsquo;re on the list — we&rsquo;ll be in touch.
+                </p>
+              </motion.div>
             ) : (
               <motion.form
                 key="form"
@@ -100,16 +159,22 @@ export default function ClosingSection() {
                   }}
                   placeholder="Enter your email"
                   aria-label="Email address"
-                  className="flex-1 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm text-white placeholder:text-white/35 outline-none transition focus:border-[color:var(--accent-warm)]/60 focus:ring-1 focus:ring-[color:var(--accent-warm)]/40"
+                  className="flex-1 rounded-full border border-white/15 bg-white/[0.04] px-6 py-3.5 text-sm text-white placeholder:text-white/35 outline-none backdrop-blur-xl transition focus:border-[color:var(--accent-warm)]/60 focus:bg-white/[0.06] focus:ring-1 focus:ring-[color:var(--accent-warm)]/40"
                 />
                 <motion.button
                   type="submit"
                   disabled={status === "submitting"}
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
-                  className="btn-glow shrink-0 rounded-full border border-white/15 bg-white/10 px-8 py-3 text-sm font-medium text-white transition hover:bg-white/15 disabled:opacity-60"
+                  className="group relative shrink-0 rounded-full p-[1.5px] transition-transform duration-300 disabled:opacity-60"
+                  style={{
+                    background: "linear-gradient(135deg, #e8b478, #db45d7, #7c5cfc)",
+                    boxShadow: "0 0 28px rgba(232,180,120,0.35)",
+                  }}
                 >
-                  {status === "submitting" ? "Joining…" : "Join the waitlist"}
+                  <span className="btn-glow flex items-center justify-center rounded-full bg-black/85 px-8 py-3 text-sm font-semibold text-white backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70">
+                    {status === "submitting" ? "Joining…" : "Join the waitlist"}
+                  </span>
                 </motion.button>
               </motion.form>
             )}
@@ -128,14 +193,14 @@ export default function ClosingSection() {
               </motion.p>
             )}
           </AnimatePresence>
+        </div>
         </motion.div>
 
         <motion.div
           variants={fadeUp}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="mt-24 flex flex-col items-center gap-3 opacity-70"
+          className="mx-auto mt-24 flex max-w-xs flex-col items-center gap-4 border-t border-white/10 pt-8 opacity-70"
         >
-          <Image src="/NoorvaLogo.png" alt="Noorva" width={28} height={28} className="opacity-80" />
           <p className="text-[10px] tracking-[0.3em] uppercase text-white/35">
             Noorva &middot; {new Date().getFullYear()}
           </p>

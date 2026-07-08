@@ -1,8 +1,9 @@
 "use client";
 
 // Static, on-brand illustrations standing in for the old flying-phone mockup —
-// one abstract vector scene per feature, each themed to its accent color and
-// set on a soft glowing panel that matches the rest of the site's premium,
+// one abstract vector scene per feature, each themed to its accent color,
+// displayed as the "screen" of a static phone mockup (no animation/rotation —
+// that's what looked bad before) matching the rest of the site's premium,
 // understated look.
 
 // Server/client Math.sin/cos can differ in their last float digit across
@@ -12,19 +13,44 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 
 function ArtPanel({ accent, children }: { accent: string; children: React.ReactNode }) {
   return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.03]">
+    <div className="relative mx-auto aspect-[9/19] h-[46vh] max-h-[440px] min-h-[300px]">
+      {/* Ambient glow behind the phone */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-45 blur-[70px]"
-        style={{ background: `radial-gradient(circle at 50% 42%, ${accent}, transparent 70%)` }}
+        className="pointer-events-none absolute inset-0 -z-10 scale-125 opacity-50 blur-[70px]"
+        style={{ background: `radial-gradient(circle, ${accent}, transparent 70%)` }}
       />
-      <div className="pointer-events-none absolute inset-0 vignette-edge" />
 
+      {/* Phone body — sized to fill this bounded wrapper so it never dwarfs
+          the row or overflows the viewport regardless of column width. */}
       <div
-        className="relative flex h-full w-full items-center justify-center p-8"
-        style={{ filter: `drop-shadow(0 0 16px ${accent})` }}
+        className="relative h-full w-full overflow-hidden rounded-[38px] border-[6px] border-neutral-800 bg-black"
+        style={{ boxShadow: "0 40px 90px -20px rgba(0,0,0,0.75), inset 0 0 0 1px rgba(255,255,255,0.06)" }}
       >
-        {children}
+        {/* Notch */}
+        <div className="absolute top-0 left-1/2 z-20 h-5 w-24 -translate-x-1/2 rounded-b-2xl bg-black" />
+
+        {/* Screen backdrop */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-45 blur-[40px]"
+          style={{ background: `radial-gradient(circle at 50% 42%, ${accent}, transparent 70%)` }}
+        />
+        <div className="pointer-events-none absolute inset-0 vignette-edge" />
+
+        {/* Screen content */}
+        <div
+          className="relative flex h-full w-full items-center justify-center p-6"
+          style={{ filter: `drop-shadow(0 0 14px ${accent})` }}
+        >
+          {children}
+        </div>
+
+        {/* Glass glare */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.06] via-transparent to-transparent" />
       </div>
+
+      {/* Side buttons */}
+      <div className="absolute -left-[7px] top-[20%] h-9 w-[6px] rounded-l-sm bg-neutral-800" />
+      <div className="absolute -right-[7px] top-[16%] h-14 w-[6px] rounded-r-sm bg-neutral-800" />
     </div>
   );
 }
@@ -32,7 +58,7 @@ function ArtPanel({ accent, children }: { accent: string; children: React.ReactN
 export function GuideArt() {
   return (
     <ArtPanel accent="var(--accent-2)">
-      <svg viewBox="0 0 200 200" className="h-[76%] w-[76%]" fill="none">
+      <svg viewBox="0 0 200 200" className="aspect-square w-[72%]" fill="none">
         <defs>
           <linearGradient id="guide-needle" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--accent-2)" />
@@ -80,7 +106,7 @@ export function GuideArt() {
 export function MentorArt() {
   return (
     <ArtPanel accent="var(--accent-1)">
-      <svg viewBox="0 0 200 200" className="h-[76%] w-[76%]" fill="none">
+      <svg viewBox="0 0 200 200" className="aspect-square w-[72%]" fill="none">
         <defs>
           <linearGradient id="mentor-bar" x1="0" y1="1" x2="0" y2="0">
             <stop offset="0%" stopColor="var(--accent-1)" stopOpacity="0.35" />
@@ -112,7 +138,7 @@ export function PlannerArt() {
   const today = 12;
   return (
     <ArtPanel accent="var(--accent-warm)">
-      <svg viewBox="0 0 200 200" className="h-[76%] w-[76%]" fill="none">
+      <svg viewBox="0 0 200 200" className="aspect-square w-[72%]" fill="none">
         <defs>
           <linearGradient id="planner-today" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="var(--accent-warm)" />
@@ -156,7 +182,7 @@ export function PlannerArt() {
 export function CompanionArt() {
   return (
     <ArtPanel accent="var(--accent-warm)">
-      <svg viewBox="0 0 200 200" className="h-[76%] w-[76%]" fill="none">
+      <svg viewBox="0 0 200 200" className="aspect-square w-[72%]" fill="none">
         <defs>
           <linearGradient id="companion-heart" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#fff7e6" />

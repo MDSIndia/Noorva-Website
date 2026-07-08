@@ -138,7 +138,7 @@ export default function CinematicIntro() {
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
           <div
             id="ci-text-1"
-            className="flex flex-col items-center gap-10 px-8 text-center lg:flex-row lg:gap-16"
+            className="flex flex-col-reverse items-center gap-10 px-8 text-center lg:flex-row lg:gap-16"
             style={{ opacity: 0, filter: "blur(12px)" }}
           >
             <div className="flex flex-col items-center gap-9">
