@@ -39,7 +39,7 @@ export default function Scene({ activeIndex, phoneRef, frameloop = "always" }: S
 
       <PhoneModel ref={phoneRef} activeIndex={activeIndex} />
 
-      <ContactShadows position={[0, -1.35, 0]} opacity={0.55} scale={4} blur={2.4} far={2} resolution={512} color="#000000" />
+      <ContactShadows position={[0, -1.35, 0]} opacity={0.55} scale={4} blur={2.4} far={2} resolution={256} frames={1} color="#000000" />
     </Canvas>
   );
 }

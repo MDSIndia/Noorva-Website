@@ -52,24 +52,25 @@ export default function ScreenContent({ activeIndex, z }: ScreenContentProps) {
   });
 
   const feature = FEATURES[activeIndex];
-  const Icon = feature.icon;
 
+  // Real iPhone 16 Pro screen aspect (SCREEN_W/SCREEN_H in PhoneModel.tsx),
+  // so the mockup fills the display edge-to-edge instead of floating at an
+  // arbitrary size — width chosen empirically against the phone's actual
+  // on-screen scale at this scene's distanceFactor.
   return (
     <Html transform distanceFactor={1.35} position={[0, 0, z]} style={{ pointerEvents: "none" }}>
-      <div ref={wrapRef} className="flex flex-col items-center gap-4" style={{ width: 260 }}>
-        <div
-          className="flex h-16 w-16 items-center justify-center rounded-full border backdrop-blur-xl"
-          style={{
-            borderColor: `color-mix(in srgb, ${feature.accent} 45%, transparent)`,
-            background: "rgba(255,255,255,0.04)",
-            boxShadow: `0 0 30px color-mix(in srgb, ${feature.accent} 35%, transparent)`,
-          }}
-        >
-          <Icon className="h-7 w-7" style={{ color: feature.accent }} strokeWidth={1.5} />
-        </div>
-        <span className="font-playfair text-2xl font-light text-white/95" style={{ letterSpacing: "0.02em" }}>
-          {feature.title}
-        </span>
+      <div
+        ref={wrapRef}
+        className="overflow-hidden"
+        style={{ width: 330, aspectRatio: "1085.6 / 2349.1", borderRadius: "13%/6%" }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- fixed set of public/features assets rendered inside drei's Html, next/image's runtime sizing doesn't apply here */}
+        <img
+          src={feature.screenImage}
+          alt={`${feature.title} app screen`}
+          className="h-full w-full object-cover"
+          draggable={false}
+        />
       </div>
     </Html>
   );

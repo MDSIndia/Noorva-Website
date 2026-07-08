@@ -38,6 +38,9 @@ const BOOK_DEPTH = 56;
 const COVER_DESIGN_W = 600;
 const COVER_DESIGN_H = 889;
 
+// Raised binding-cord positions down the spine, as a % of its height.
+const SPINE_BAND_POSITIONS = [14, 32, 50, 68, 86];
+
 function RotatingBookPreview() {
   const half = BOOK_DEPTH / 2;
   return (
@@ -72,7 +75,10 @@ function RotatingBookPreview() {
         </div>
       </div>
 
-      {/* Spine — left edge, the hinge this cover opens from */}
+      {/* Spine — left edge, the hinge this cover opens from. Raised bands
+          across it (the cords a real hardcover is sewn over, showing
+          through the leather) each shaded light-to-dark top-to-bottom so
+          they read as actual 3D ridges, not a flat printed stripe. */}
       <div
         className="absolute top-0 h-full overflow-hidden"
         style={{
@@ -83,11 +89,18 @@ function RotatingBookPreview() {
           background: "linear-gradient(180deg, #241609 0%, #150d06 100%)",
         }}
       >
-        {Array.from({ length: 7 }, (_, i) => (
+        {SPINE_BAND_POSITIONS.map((top) => (
           <div
-            key={i}
-            className="absolute inset-x-0 h-px bg-[color:var(--accent-warm)]/20"
-            style={{ top: `${(i + 1) * 12.5}%` }}
+            key={top}
+            className="absolute inset-x-[3px] rounded-[2px]"
+            style={{
+              top: `${top}%`,
+              height: 9,
+              background:
+                "linear-gradient(180deg, rgba(255,224,168,0.35) 0%, rgba(232,180,120,0.15) 30%, rgba(0,0,0,0.35) 75%, rgba(0,0,0,0.55) 100%)",
+              boxShadow:
+                "0 1px 0 rgba(255,238,210,0.4) inset, 0 -2px 3px rgba(0,0,0,0.6) inset, 0 2px 4px rgba(0,0,0,0.5)",
+            }}
           />
         ))}
       </div>
@@ -103,11 +116,7 @@ function RotatingBookPreview() {
           background:
             "linear-gradient(90deg, rgba(0,0,0,0.35) 0%, rgba(226,199,155,0.95) 30%, rgba(196,165,122,0.95) 70%, rgba(0,0,0,0.3) 100%)",
         }}
-      >
-        {Array.from({ length: 24 }, (_, i) => (
-          <div key={i} className="absolute inset-x-0 h-px bg-black/15" style={{ top: `${i * (100 / 24)}%` }} />
-        ))}
-      </div>
+      />
     </div>
   );
 }

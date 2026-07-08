@@ -71,28 +71,16 @@ const BookCover = forwardRef<HTMLDivElement, BookCoverProps>(function BookCover(
       </div>
 
       {/* Spine — the hinge this cover opens from */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-9 bg-gradient-to-r from-black/75 via-black/25 to-transparent md:w-14">
-        {Array.from({ length: 7 }, (_, i) => (
-          <div
-            key={i}
-            className="absolute inset-x-0 h-px bg-[color:var(--accent-warm)]/15"
-            style={{ top: `${(i + 1) * 12.5}%` }}
-          />
-        ))}
-      </div>
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-9 bg-gradient-to-r from-black/75 via-black/25 to-transparent md:w-14" />
 
-      {/* Fore-edge page stack — dozens of hairline sheets implying a thick tome */}
+      {/* Fore-edge page stack — a smooth cream sliver implying a thick tome */}
       <div
         className="pointer-events-none absolute inset-y-3 right-0 w-[11px] overflow-hidden rounded-r-[13px] md:inset-y-4 md:w-[16px]"
         style={{
           background:
             "linear-gradient(90deg, rgba(0,0,0,0.45) 0%, rgba(226,199,155,0.95) 30%, rgba(196,165,122,0.95) 65%, rgba(0,0,0,0.4) 100%)",
         }}
-      >
-        {Array.from({ length: 48 }, (_, i) => (
-          <div key={i} className="absolute inset-x-0 h-px bg-black/20" style={{ top: `${i * (100 / 48)}%` }} />
-        ))}
-      </div>
+      />
       {/* Tail-edge sliver — same page stack peeking along the bottom */}
       <div
         className="pointer-events-none absolute inset-x-4 bottom-0 h-[8px] overflow-hidden rounded-b-[10px] md:inset-x-6 md:h-[11px]"
@@ -100,11 +88,7 @@ const BookCover = forwardRef<HTMLDivElement, BookCoverProps>(function BookCover(
           background:
             "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(226,199,155,0.9) 35%, rgba(196,165,122,0.9) 70%, rgba(0,0,0,0.35) 100%)",
         }}
-      >
-        {Array.from({ length: 28 }, (_, i) => (
-          <div key={i} className="absolute inset-y-0 w-px bg-black/20" style={{ left: `${i * (100 / 28)}%` }} />
-        ))}
-      </div>
+      />
 
       {/* Gilt double frame — embossed gold foil, the way a real hardcover is stamped */}
       <div className="pointer-events-none absolute inset-4 rounded-[8px] border-[1.5px] border-[color:var(--accent-warm)]/55 md:inset-7" />

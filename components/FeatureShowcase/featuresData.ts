@@ -11,6 +11,8 @@ export interface Feature {
   Art: ComponentType;
   accent: string;
   textSide: Side;
+  /** Full-screen mockup shown on the 3D phone's display for this feature. */
+  screenImage: string;
 }
 
 export const FEATURES: Feature[] = [
@@ -21,6 +23,7 @@ export const FEATURES: Feature[] = [
     Art: GuideArt,
     accent: "var(--accent-2)",
     textSide: "left",
+    screenImage: "/features/guide.png",
   },
   {
     icon: MessageCircle,
@@ -29,6 +32,7 @@ export const FEATURES: Feature[] = [
     Art: MentorArt,
     accent: "var(--accent-1)",
     textSide: "right",
+    screenImage: "/features/mentor.png",
   },
   {
     icon: CalendarCheck,
@@ -37,6 +41,7 @@ export const FEATURES: Feature[] = [
     Art: PlannerArt,
     accent: "var(--accent-warm)",
     textSide: "left",
+    screenImage: "/features/planner.png",
   },
   {
     icon: HeartHandshake,
@@ -45,5 +50,6 @@ export const FEATURES: Feature[] = [
     Art: CompanionArt,
     accent: "var(--accent-warm)",
     textSide: "right",
+    screenImage: "/features/companion.png",
   },
 ];
