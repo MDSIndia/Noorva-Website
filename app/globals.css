@@ -178,6 +178,15 @@ html.lenis          { height: auto; }
   animation: phone-turntable-pulse 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+@keyframes phone-logo-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.phone-logo-spin {
+  animation: phone-logo-spin 5s linear infinite;
+}
+
 /* ── BOOK COVER SHEEN ────────────────────────────────────────────── */
 /* Slow diagonal foil-catch sweep across the book cover's gilt surface. */
 @keyframes book-sheen {
