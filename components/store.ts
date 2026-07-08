@@ -1,6 +1,12 @@
 // Shared singleton — CosmicCanvas reads scroll progress directly without cyclic dependency.
 export const scrollProgress = { value: 0 };
 
+// Shared singleton — PhoneShowcase3D's ScrollTrigger writes the phone's
+// current Y rotation (degrees) here every scrubbed scroll tick; PhoneModel
+// reads it inside useFrame. Kept out of React state since it updates on
+// every scroll frame and would otherwise re-render the whole 3D tree.
+export const phoneShowRotation = { value: 0 };
+
 // Shared singleton — set by SmoothScroll once Lenis initializes, read by Header's
 // nav links so anchor navigation goes through Lenis instead of a native jump.
 export const lenisRef: { current: import("lenis").default | null } = { current: null };

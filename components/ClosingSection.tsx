@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check } from "lucide-react";
+import { Apple, Check, PlayCircle } from "lucide-react";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
@@ -31,7 +31,7 @@ export default function ClosingSection() {
   }
 
   return (
-    <section id="closing" className="relative w-full min-h-screen overflow-hidden bg-[color:var(--bg)]/70 flex items-center">
+    <section id="closing" className="relative w-full overflow-hidden bg-[color:var(--bg)]/70 pt-40 pb-28 md:pt-48 md:pb-36">
       <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[600px] w-[600px]">
         <div className="h-full w-full rounded-full bg-[color:var(--accent-warm)]/10 blur-[120px] animate-float-slow" />
       </div>
@@ -44,7 +44,7 @@ export default function ClosingSection() {
       <div className="pointer-events-none absolute inset-0 vignette-edge" />
 
       <motion.div
-        className="relative z-10 mx-auto max-w-2xl px-8 py-32 text-center"
+        className="relative z-10 mx-auto max-w-2xl px-8 text-center"
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, amount: 0.4 }}
@@ -199,8 +199,36 @@ export default function ClosingSection() {
         <motion.div
           variants={fadeUp}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="mx-auto mt-24 flex max-w-xs flex-col items-center gap-4 border-t border-white/10 pt-8 opacity-70"
+          className="mx-auto mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
         >
+          <a
+            href="#"
+            className="group flex items-center gap-3 rounded-full border border-white/15 bg-white/[0.04] px-6 py-3 backdrop-blur-xl transition-colors duration-300 hover:border-white/30 hover:bg-white/[0.07]"
+          >
+            <Apple className="h-6 w-6 text-white/85" strokeWidth={1.5} />
+            <span className="flex flex-col items-start leading-tight">
+              <span className="text-[9px] tracking-[0.2em] text-white/45 uppercase">Download on the</span>
+              <span className="text-sm font-medium text-white/90">App Store</span>
+            </span>
+          </a>
+          <a
+            href="#"
+            className="group flex items-center gap-3 rounded-full border border-white/15 bg-white/[0.04] px-6 py-3 backdrop-blur-xl transition-colors duration-300 hover:border-white/30 hover:bg-white/[0.07]"
+          >
+            <PlayCircle className="h-6 w-6 text-white/85" strokeWidth={1.5} />
+            <span className="flex flex-col items-start leading-tight">
+              <span className="text-[9px] tracking-[0.2em] text-white/45 uppercase">Get it on</span>
+              <span className="text-sm font-medium text-white/90">Google Play</span>
+            </span>
+          </a>
+        </motion.div>
+
+        <motion.div
+          variants={fadeUp}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="mx-auto mt-16 flex flex-col items-center gap-4 opacity-70"
+        >
+          <div className="h-px w-10 bg-white/15" />
           <p className="text-[10px] tracking-[0.3em] uppercase text-white/35">
             Noorva &middot; {new Date().getFullYear()}
           </p>

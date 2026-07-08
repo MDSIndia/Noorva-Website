@@ -58,9 +58,8 @@ html.lenis          { height: auto; }
 }
 
 /* ── COSMIC INTRO SPECIFIC ──────────────────────────────────────── */
-/* Section stacking while pinned (GSAP pin sets position:fixed, which is
-   z-index-sensitive unlike normal flow): intro=30, features=28,
-   chapters=22-29, story-gallery=25. */
+/* Fixed-position layer stacking: features' pinned 3D phone showcase=28,
+   intro=30, story-gallery's fullscreen book overlay=32, grain=35, header=40/50. */
 #cosmic-intro canvas {
   position: absolute !important;
   inset: 0 !important;
@@ -119,8 +118,9 @@ html.lenis          { height: auto; }
   position: fixed;
   inset: 0;
   pointer-events: none;
-  /* Must stay above every section's stacking z-index (intro=30, chapters=22-29)
-     or the grain texture silently renders underneath them and disappears. */
+  /* Must stay above every fixed-position layer (intro=30, story-gallery's
+     book overlay=32) or the grain texture silently renders underneath them
+     and disappears. */
   z-index: 35;
 }
 .grain::before {
@@ -167,4 +167,18 @@ html.lenis          { height: auto; }
 
 .animate-book-sheen {
   animation: book-sheen 9s ease-in-out infinite;
+}
+
+/* ── BOOK PREVIEW IDLE ROTATION ──────────────────────────────────── */
+/* Continuous full turn for the closed book sitting in normal page flow
+   before it's opened. A flat cover can't do this (its back face is never
+   drawn), so the rotating element here is a real 4-sided box — see
+   RotatingBookPreview in StoryGallerySection.tsx. */
+@keyframes book-3d-spin {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(360deg); }
+}
+
+.animate-book-3d-spin {
+  animation: book-3d-spin 12s linear infinite;
 }

@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { FEATURES, type Feature } from "./FeatureShowcase/featuresData";
 import { lenisRef, galleryCaptureControl } from "./store";
+import useIsMobile from "./useIsMobile";
+import PhoneShowcase3D from "./PhoneShowcase3D/PhoneShowcase3D";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28, filter: "blur(6px)" },
@@ -57,42 +59,53 @@ function FeatureRow({ feature }: { feature: Feature }) {
 }
 
 export default function FeaturesSection() {
-  return (
-    <section id="features" className="relative w-full overflow-hidden bg-[color:var(--bg)]/70 py-28 md:py-36">
-      <div className="pointer-events-none absolute top-1/2 left-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2">
-        <div className="h-full w-full rounded-full bg-[color:var(--accent-1)]/8 blur-[140px] animate-float-slow" />
-      </div>
+  const isMobile = useIsMobile();
 
-      <div className="relative z-10 mx-auto max-w-6xl px-8">
-        <motion.div
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ staggerChildren: 0.12 }}
-        >
-          <motion.p
-            variants={fadeUp}
-            transition={{ duration: 0.7, ease: "easeOut" }}
-            className="mb-5 text-center text-[10px] md:text-xs tracking-[0.5em] uppercase text-[color:var(--accent-warm)]/80 font-light"
-          >
-            What Noorva Becomes
-          </motion.p>
-
-          <motion.h2
-            variants={fadeUp}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="mx-auto max-w-2xl text-center font-playfair text-3xl md:text-5xl font-light text-white/95 leading-[1.2] mb-24 md:mb-32"
-          >
-            One companion. As many roles as your life needs.
-          </motion.h2>
-        </motion.div>
-
-        <div className="flex flex-col gap-24 md:gap-32">
-          {FEATURES.map((feature) => (
-            <FeatureRow key={feature.title} feature={feature} />
-          ))}
+  // The pinned 3D showcase needs real scroll-hijack + a live WebGL canvas —
+  // both are a poor fit for touch viewports (janky pinning, GPU cost on
+  // battery-constrained devices), so mobile/tablet keep this lighter,
+  // already-responsive static layout instead. null = unknown (SSR/first
+  // paint) is treated the same as mobile so there's no hydration mismatch.
+  if (isMobile !== false) {
+    return (
+      <section id="features" className="relative w-full overflow-hidden bg-[color:var(--bg)]/70 py-28 md:py-36">
+        <div className="pointer-events-none absolute top-1/2 left-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2">
+          <div className="h-full w-full rounded-full bg-[color:var(--accent-1)]/8 blur-[140px] animate-float-slow" />
         </div>
-      </div>
-    </section>
-  );
+
+        <div className="relative z-10 mx-auto max-w-6xl px-8">
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ staggerChildren: 0.12 }}
+          >
+            <motion.p
+              variants={fadeUp}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="mb-5 text-center text-[10px] md:text-xs tracking-[0.5em] uppercase text-[color:var(--accent-warm)]/80 font-light"
+            >
+              What Noorva Becomes
+            </motion.p>
+
+            <motion.h2
+              variants={fadeUp}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="mx-auto max-w-2xl text-center font-playfair text-3xl md:text-5xl font-light text-white/95 leading-[1.2] mb-24 md:mb-32"
+            >
+              One companion. As many roles as your life needs.
+            </motion.h2>
+          </motion.div>
+
+          <div className="flex flex-col gap-24 md:gap-32">
+            {FEATURES.map((feature) => (
+              <FeatureRow key={feature.title} feature={feature} />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return <PhoneShowcase3D />;
 }

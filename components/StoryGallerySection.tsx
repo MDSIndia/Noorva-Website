@@ -5,13 +5,14 @@ import { flushSync } from "react-dom";
 import gsap from "gsap";
 import BookPage from "./BookPage";
 import BookCover from "./BookCover";
-import { lenisRef, galleryCaptureControl } from "./store";
+import { galleryCaptureControl, acquireScrollLock, releaseScrollLock } from "./store";
 import { storyChapters } from "./storyData";
 
 // Page 0 is the cover; pages 1..N are the chapters.
 const TOTAL_PAGES = storyChapters.length + 1;
 
 const FLIP_DURATION = 1.1; // seconds, one full page-turn
+const ZOOM_DURATION = 0.9; // seconds, preview -> fullscreen
 const WHEEL_THRESHOLD = 2; // ignore near-zero wheel noise
 const SWIPE_THRESHOLD = 30; // px, minimum touch swipe to count as a gesture
 // Trackpad/inertial wheel scrolling keeps emitting decaying delta events for
@@ -22,8 +23,101 @@ const SWIPE_THRESHOLD = 30; // px, minimum touch swipe to count as a gesture
 // this long, so trailing momentum can't chain into another transition.
 const GESTURE_IDLE_MS = 180;
 
+// Thickness of the idly-spinning preview book, in px — a plain rotateY spin
+// on a flat cover would show nothing for half the turn (its back face is
+// never drawn), so the preview is a real 4-sided box: front cover, back
+// cover, spine, and fore-edge, each rotated/pushed out to its own face.
+const BOOK_DEPTH = 56;
+
+// BookCover's own type sizes (text-5xl md:text-7xl lg:text-8xl, etc.) are
+// tuned for filling the whole viewport as a fullscreen page — dropped
+// straight into the ~200px-wide preview box they'd overflow it completely.
+// Rendering it at this fixed "design" size and scaling the whole thing down
+// keeps every proportion (text, frame, shadow) identical to the fullscreen
+// cover, just shrunk, rather than needing a second hand-tuned mini layout.
+const COVER_DESIGN_W = 600;
+const COVER_DESIGN_H = 889;
+
+function RotatingBookPreview() {
+  const half = BOOK_DEPTH / 2;
+  return (
+    <div className="animate-book-3d-spin absolute inset-0" style={{ transformStyle: "preserve-3d" }}>
+      {/* Front cover */}
+      <div className="absolute inset-0" style={{ transform: `translateZ(${half}px)`, backfaceVisibility: "hidden" }}>
+        <div
+          className="absolute top-0 left-0 origin-top-left [--cover-scale:0.31667] md:[--cover-scale:0.45]"
+          style={{ width: COVER_DESIGN_W, height: COVER_DESIGN_H, transform: "scale(var(--cover-scale))" }}
+        >
+          <BookCover />
+        </div>
+      </div>
+
+      {/* Back cover — same leather ground and gilt frame, no title */}
+      <div
+        className="absolute inset-0 overflow-hidden rounded-[14px]"
+        style={{
+          transform: `rotateY(180deg) translateZ(${half}px)`,
+          backfaceVisibility: "hidden",
+          background: "radial-gradient(150% 120% at 50% -10%, #2c1c14 0%, #1a1108 42%, #090604 100%)",
+          boxShadow: "0 60px 130px -25px rgba(0,0,0,0.9), 0 20px 45px -12px rgba(0,0,0,0.8)",
+        }}
+      >
+        <div className="pointer-events-none absolute inset-4 rounded-[8px] border-[1.5px] border-[color:var(--accent-warm)]/40 md:inset-7" />
+        <div className="pointer-events-none absolute inset-[22px] rounded-[4px] border border-[color:var(--accent-warm)]/20 md:inset-10" />
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div
+            className="h-14 w-14 rounded-full border border-[color:var(--accent-warm)]/35 md:h-20 md:w-20"
+            style={{ boxShadow: "inset 0 0 0 1px rgba(232,180,120,0.25)" }}
+          />
+        </div>
+      </div>
+
+      {/* Spine — left edge, the hinge this cover opens from */}
+      <div
+        className="absolute top-0 h-full overflow-hidden"
+        style={{
+          width: BOOK_DEPTH,
+          left: `calc(50% - ${half}px)`,
+          transform: `rotateY(-90deg) translateZ(calc(var(--book-w) / 2))`,
+          backfaceVisibility: "hidden",
+          background: "linear-gradient(180deg, #241609 0%, #150d06 100%)",
+        }}
+      >
+        {Array.from({ length: 7 }, (_, i) => (
+          <div
+            key={i}
+            className="absolute inset-x-0 h-px bg-[color:var(--accent-warm)]/20"
+            style={{ top: `${(i + 1) * 12.5}%` }}
+          />
+        ))}
+      </div>
+
+      {/* Fore-edge — right edge, implying a stack of thick pages */}
+      <div
+        className="absolute top-0 h-full overflow-hidden"
+        style={{
+          width: BOOK_DEPTH,
+          left: `calc(50% - ${half}px)`,
+          transform: `rotateY(90deg) translateZ(calc(var(--book-w) / 2))`,
+          backfaceVisibility: "hidden",
+          background:
+            "linear-gradient(90deg, rgba(0,0,0,0.35) 0%, rgba(226,199,155,0.95) 30%, rgba(196,165,122,0.95) 70%, rgba(0,0,0,0.3) 100%)",
+        }}
+      >
+        {Array.from({ length: 24 }, (_, i) => (
+          <div key={i} className="absolute inset-x-0 h-px bg-black/15" style={{ top: `${i * (100 / 24)}%` }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function StoryGallerySection() {
-  const sectionRef = useRef<HTMLDivElement>(null);
+  // The clickable, idly-rotating book sitting in normal page flow before
+  // it's opened — its measured rect is the FLIP-animation's start point.
+  const previewWrapRef = useRef<HTMLDivElement>(null);
+  // The fixed fullscreen layer that appears once opened.
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   // Two stacked page slots. `underRef` always rests flat (rotateY 0) and
   // just has its content silently swapped while hidden behind `overRef`.
@@ -32,65 +126,28 @@ export default function StoryGallerySection() {
   // backface-visibility, revealing `under` (already showing the target
   // chapter) sitting flat underneath. `over` is then silently snapped back
   // to 0deg/target content, restoring the resting invariant for next time.
+  // It's also the visible top layer at rest, which is why the preview->
+  // fullscreen zoom below animates `over`, not `under`.
   const underRef = useRef<HTMLDivElement>(null);
   const overRef = useRef<HTMLDivElement>(null);
   const overShadeRef = useRef<HTMLDivElement>(null);
   const [underPageIdx, setUnderPageIdx] = useState(0);
   const [overPageIdx, setOverPageIdx] = useState(0);
+  const [entered, setEntered] = useState(false);
+  const enteredRef = useRef(false);
 
   const currentIndexRef = useRef(0);
   const isAnimatingRef = useRef(false);
-  const capturedRef = useRef(false);
-  const exitingRef = useRef(false);
+  const isTransitioningRef = useRef(false); // guards the open/close zoom itself
   const touchStartYRef = useRef<number | null>(null);
   const gestureConsumedRef = useRef(false);
   const gestureIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
+    enteredRef.current = entered;
+  }, [entered]);
 
-    function enterCapture() {
-      if (capturedRef.current || exitingRef.current || !el) return;
-      capturedRef.current = true;
-      // Snap exactly to the section's top so it perfectly fills the viewport —
-      // otherwise a smooth-scroll overshoot would leave the next/previous
-      // section peeking in at the edge while "locked".
-      const rect = el.getBoundingClientRect();
-      const targetY = window.scrollY + rect.top;
-      lenisRef.current?.scrollTo(targetY, { immediate: true });
-      lenisRef.current?.stop();
-      document.body.style.overflow = "hidden";
-    }
-
-    // Lets nav links (Home/Story/Join/CTAs) escape the gallery's scroll lock
-    // even if it's mid-capture, and briefly suppress re-capture so a long
-    // jump that transits *through* the gallery (e.g. Home -> Join) doesn't
-    // get trapped again mid-flight. Callers pass 0 when the destination IS
-    // the gallery, so arriving at "Story" still captures immediately.
-    galleryCaptureControl.release = (suppressMs = 1600) => {
-      if (capturedRef.current) {
-        capturedRef.current = false;
-        document.body.style.overflow = "";
-        lenisRef.current?.start();
-      }
-      galleryCaptureControl.suppressedUntil = Date.now() + suppressMs;
-    };
-
-    function exitCapture(direction: "up" | "down") {
-      capturedRef.current = false;
-      exitingRef.current = true;
-      document.body.style.overflow = "";
-      lenisRef.current?.start();
-      const delta = direction === "down" ? window.innerHeight : -window.innerHeight;
-      lenisRef.current?.scrollTo(window.scrollY + delta, {
-        duration: 1.1,
-        onComplete: () => {
-          exitingRef.current = false;
-        },
-      });
-    }
-
+  useEffect(() => {
     function goTo(targetIndex: number) {
       if (isAnimatingRef.current) return;
       const from = currentIndexRef.current;
@@ -166,8 +223,34 @@ export default function StoryGallerySection() {
       });
     }
 
+    // Closes the book, with a quick fade/scale-down of the fullscreen layer
+    // — used whenever the reader scrolls/swipes past either end. `immediate`
+    // skips the animation entirely, for nav links that need to escape now.
+    function closeBook(immediate = false) {
+      if (isTransitioningRef.current) return;
+      isTransitioningRef.current = true;
+
+      function finish() {
+        currentIndexRef.current = 0;
+        flushSync(() => {
+          setUnderPageIdx(0);
+          setOverPageIdx(0);
+          setEntered(false);
+        });
+        releaseScrollLock("story-gallery");
+        isTransitioningRef.current = false;
+      }
+
+      const overlay = overlayRef.current;
+      if (immediate || !overlay) {
+        finish();
+        return;
+      }
+      gsap.to(overlay, { opacity: 0, scale: 0.94, duration: 0.45, ease: "power2.in", onComplete: finish });
+    }
+
     function handleDirection(delta: number) {
-      if (!capturedRef.current || isAnimatingRef.current) return;
+      if (!enteredRef.current || isAnimatingRef.current || isTransitioningRef.current) return;
       if (delta > 0) {
         // The cover only opens on a deliberate click, never on scroll —
         // scrolling past it inconsistently was the source of the "book
@@ -176,28 +259,27 @@ export default function StoryGallerySection() {
         if (currentIndexRef.current < TOTAL_PAGES - 1) {
           goTo(currentIndexRef.current + 1);
         } else {
-          exitCapture("down");
+          closeBook();
         }
       } else {
-        // Scrolling back up from chapter one exits the gallery rather than
+        // Scrolling back up from chapter one closes the book rather than
         // re-closing the cover — reopening it is a click gesture, not scroll.
         if (currentIndexRef.current > 1) {
           goTo(currentIndexRef.current - 1);
         } else {
-          exitCapture("up");
+          closeBook();
         }
       }
     }
 
     function onCoverClick() {
-      if (capturedRef.current && !isAnimatingRef.current && currentIndexRef.current === 0) {
+      if (enteredRef.current && !isAnimatingRef.current && currentIndexRef.current === 0) {
         goTo(1);
       }
     }
-    el.addEventListener("click", onCoverClick);
 
     function onWheel(e: WheelEvent) {
-      if (!capturedRef.current) return;
+      if (!enteredRef.current) return;
       e.preventDefault();
       if (Math.abs(e.deltaY) < WHEEL_THRESHOLD) return;
 
@@ -213,18 +295,25 @@ export default function StoryGallerySection() {
       handleDirection(e.deltaY);
     }
 
+    function onKeyDown(e: KeyboardEvent) {
+      if (!enteredRef.current) return;
+      if (e.key === "Escape") {
+        closeBook();
+      }
+    }
+
     function onTouchStart(e: TouchEvent) {
-      if (!capturedRef.current) return;
+      if (!enteredRef.current) return;
       touchStartYRef.current = e.touches[0].clientY;
     }
 
     function onTouchMove(e: TouchEvent) {
-      if (!capturedRef.current || touchStartYRef.current === null) return;
+      if (!enteredRef.current || touchStartYRef.current === null) return;
       e.preventDefault();
     }
 
     function onTouchEnd(e: TouchEvent) {
-      if (!capturedRef.current || touchStartYRef.current === null) return;
+      if (!enteredRef.current || touchStartYRef.current === null) return;
       const endY = e.changedTouches[0].clientY;
       const delta = touchStartYRef.current - endY; // positive = swiped up = "next"
       touchStartYRef.current = null;
@@ -232,39 +321,98 @@ export default function StoryGallerySection() {
       handleDirection(delta);
     }
 
-    let raf: number;
-    function tick() {
-      if (!capturedRef.current && el && Date.now() > galleryCaptureControl.suppressedUntil) {
-        const rect = el.getBoundingClientRect();
-        if (rect.top <= 2 && rect.top > -rect.height) {
-          enterCapture();
-        }
-      }
-      raf = requestAnimationFrame(tick);
-    }
-    raf = requestAnimationFrame(tick);
+    // Lets nav links (Home/Story/Join/CTAs) escape the book instantly even
+    // if it's open mid-read.
+    galleryCaptureControl.release = () => {
+      if (enteredRef.current) closeBook(true);
+    };
 
+    const overlayEl = overlayRef.current;
+    overlayEl?.addEventListener("click", onCoverClick);
     window.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("keydown", onKeyDown);
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: false });
     window.addEventListener("touchend", onTouchEnd, { passive: true });
 
     return () => {
-      cancelAnimationFrame(raf);
       if (gestureIdleTimerRef.current) clearTimeout(gestureIdleTimerRef.current);
+      overlayEl?.removeEventListener("click", onCoverClick);
       window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);
-      el.removeEventListener("click", onCoverClick);
       galleryCaptureControl.release = null;
-      if (capturedRef.current) {
-        capturedRef.current = false;
-        document.body.style.overflow = "";
-        lenisRef.current?.start();
-      }
+    };
+    // Re-runs when `entered` flips so the click-to-open-cover listener can
+    // (re)bind to the overlay element, which only exists in the DOM once
+    // `entered` is true — everything else here reads enteredRef.current
+    // fresh per-call, so it doesn't otherwise need this to re-run.
+  }, [entered]);
+
+  // Unmount-only safety net: releases the lock if the component disappears
+  // while the book happens to be open, independent of the effect above
+  // (which re-runs on every `entered` toggle and isn't a reliable place to
+  // detect a true unmount).
+  useEffect(() => {
+    return () => {
+      if (enteredRef.current) releaseScrollLock("story-gallery");
     };
   }, []);
+
+  // Click on the idly-rotating preview book: measures where it currently
+  // sits, mounts the fullscreen overlay, then GSAP-tweens the (now
+  // full-viewport-sized) cover from that measured rect back down to its
+  // natural size/position — reading as the small book zooming up to fill
+  // the screen, rather than an abrupt cut.
+  function handleEnter() {
+    if (enteredRef.current || isTransitioningRef.current) return;
+    const previewEl = previewWrapRef.current;
+    if (!previewEl) return;
+
+    const startRect = previewEl.getBoundingClientRect();
+    isTransitioningRef.current = true;
+    acquireScrollLock("story-gallery");
+    flushSync(() => setEntered(true));
+
+    const overlay = overlayRef.current;
+    const target = overRef.current;
+    const under = underRef.current;
+    if (!overlay || !target || !under) {
+      isTransitioningRef.current = false;
+      return;
+    }
+
+    const targetRect = target.getBoundingClientRect();
+    const scaleX = startRect.width / targetRect.width;
+    const scaleY = startRect.height / targetRect.height;
+    const originX = startRect.left + startRect.width / 2 - (targetRect.left + targetRect.width / 2);
+    const originY = startRect.top + startRect.height / 2 - (targetRect.top + targetRect.height / 2);
+
+    gsap.set(overlay, { opacity: 1 });
+    // `under` sits fullscreen and at rest (opacity 1) the instant it mounts —
+    // hidden here for the duration of the zoom so it doesn't show the cover
+    // at full size behind the still-small `over` layer as it grows into it.
+    gsap.set(under, { opacity: 0 });
+    gsap.fromTo(
+      target,
+      { x: originX, y: originY, scaleX, scaleY, transformOrigin: "center center" },
+      {
+        x: 0,
+        y: 0,
+        scaleX: 1,
+        scaleY: 1,
+        duration: ZOOM_DURATION,
+        ease: "power3.inOut",
+        onComplete: () => {
+          currentIndexRef.current = 0;
+          gsap.set(under, { opacity: 1 });
+          isTransitioningRef.current = false;
+        },
+      }
+    );
+  }
 
   function renderPage(pageIdx: number, pageRef: React.Ref<HTMLDivElement>, shadeRef?: React.Ref<HTMLDivElement>) {
     if (pageIdx === 0) return <BookCover ref={pageRef} shadeRef={shadeRef} />;
@@ -272,20 +420,72 @@ export default function StoryGallerySection() {
   }
 
   return (
-    <section
-      id="story-gallery"
-      ref={sectionRef}
-      className="relative flex w-full h-screen items-center justify-center overflow-hidden bg-[color:var(--bg)]/70"
-      style={{ zIndex: 25 }}
-    >
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40" />
-      <div className="pointer-events-none absolute inset-0 vignette-edge" />
+    <section id="story-gallery" className="relative w-full overflow-hidden bg-[color:var(--bg)]/70 py-28 md:py-36">
       <div className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color:var(--accent-warm)]/6 blur-[160px]" />
+      <div className="pointer-events-none absolute inset-0 vignette-edge" />
 
-      <div className="relative h-screen w-full" style={{ perspective: 2600 }}>
-        {renderPage(underPageIdx, underRef)}
-        {renderPage(overPageIdx, overRef, overShadeRef)}
+      <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-center px-8 text-center">
+        <p className="mb-5 text-[10px] font-light tracking-[0.5em] text-[color:var(--accent-warm)]/80 uppercase md:text-xs">
+          The Noorva Story
+        </p>
+        <h2 className="font-playfair mb-14 max-w-2xl text-3xl leading-[1.2] font-light text-white/95 md:mb-16 md:text-5xl">
+          A story worth turning the page for.
+        </h2>
+
+        <button
+          type="button"
+          onClick={handleEnter}
+          aria-label="Open the Noorva story book"
+          className="group relative cursor-pointer border-none bg-transparent p-0"
+          style={{ perspective: 1800 }}
+        >
+          <div
+            className="pointer-events-none absolute inset-0 -z-10 scale-110 rounded-full opacity-60 blur-[70px] transition-opacity duration-500 group-hover:opacity-90"
+            style={{ background: "radial-gradient(circle, rgba(232,180,120,0.35), transparent 70%)" }}
+          />
+          <div
+            ref={previewWrapRef}
+            className="relative h-[280px] w-[190px] [--book-w:190px] md:h-[400px] md:w-[270px] md:[--book-w:270px]"
+            style={{ visibility: entered ? "hidden" : "visible", transformStyle: "preserve-3d" }}
+          >
+            <RotatingBookPreview />
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleEnter}
+          className="group relative mt-16 shrink-0 rounded-full p-[1.5px] transition-transform duration-300 hover:scale-105 md:mt-20"
+          style={{
+            background: "linear-gradient(135deg, #e8b478, #db45d7, #7c5cfc)",
+            boxShadow: "0 0 28px rgba(232,180,120,0.35)",
+          }}
+        >
+          <span
+            className="btn-glow flex items-center gap-2 rounded-full bg-black/85 px-7 py-3 text-[11px] font-semibold tracking-[0.28em] uppercase backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70"
+            style={{ color: "var(--accent-warm)" }}
+          >
+            Click to Open
+          </span>
+        </button>
       </div>
+
+      {entered && (
+        <div
+          ref={overlayRef}
+          className="fixed inset-0 flex items-center justify-center overflow-hidden bg-[color:var(--bg)]"
+          style={{ zIndex: 32, opacity: 0 }}
+        >
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40" />
+          <div className="pointer-events-none absolute inset-0 vignette-edge" />
+          <div className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color:var(--accent-warm)]/6 blur-[160px]" />
+
+          <div className="relative h-screen w-full" style={{ perspective: 2600 }}>
+            {renderPage(underPageIdx, underRef)}
+            {renderPage(overPageIdx, overRef, overShadeRef)}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
