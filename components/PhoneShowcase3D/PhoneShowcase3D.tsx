@@ -5,8 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Scene from "./Scene";
-import type { PhoneModelHandle } from "./PhoneModel";
+import IPhoneTurntable from "./IPhoneTurntable";
 import { FEATURES } from "../FeatureShowcase/featuresData";
 import { phoneShowRotation, lenisRef, galleryCaptureControl } from "../store";
 
@@ -27,22 +26,7 @@ function goToClosing() {
 
 export default function PhoneShowcase3D() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const canvasWrapRef = useRef<HTMLDivElement>(null);
-  const phoneRef = useRef<PhoneModelHandle>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [inView, setInView] = useState(false);
-
-  // Pause the WebGL render loop entirely while the canvas is off-screen —
-  // the single biggest lag source once the user has scrolled well past it.
-  useEffect(() => {
-    const el = canvasWrapRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
-      rootMargin: "200px 0px",
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -73,7 +57,6 @@ export default function PhoneShowcase3D() {
         if (idx !== lastIndex) {
           lastIndex = idx;
           setActiveIndex(idx);
-          phoneRef.current?.pulse();
         }
       },
     });
@@ -149,9 +132,9 @@ export default function PhoneShowcase3D() {
             </div>
           </div>
 
-          {/* Pinned 3D phone */}
-          <div ref={canvasWrapRef} className="order-1 h-[60vh] w-full lg:order-2 lg:h-[75vh]">
-            <Scene activeIndex={activeIndex} phoneRef={phoneRef} frameloop={inView ? "always" : "never"} />
+          {/* Pinned iPhone turntable */}
+          <div className="order-1 h-[60vh] w-full lg:order-2 lg:h-[75vh]">
+            <IPhoneTurntable accent={feature.accent} activeIndex={activeIndex} />
           </div>
         </div>
       </div>

@@ -158,6 +158,26 @@ html.lenis          { height: auto; }
   animation: float-slow 14s ease-in-out infinite;
 }
 
+/* ── PHONE TURNTABLE (FEATURES SECTION) ─────────────────────────── */
+@keyframes phone-turntable-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+
+.phone-turntable-float {
+  animation: phone-turntable-float 5.5s ease-in-out infinite;
+}
+
+@keyframes phone-turntable-pulse {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+
+.phone-turntable-pulse {
+  animation: phone-turntable-pulse 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 /* ── BOOK COVER SHEEN ────────────────────────────────────────────── */
 /* Slow diagonal foil-catch sweep across the book cover's gilt surface. */
 @keyframes book-sheen {
