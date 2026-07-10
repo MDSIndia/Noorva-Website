@@ -91,6 +91,12 @@ function BookReaderPages({ underIndex, overIndex, underAnimRef, overAnimRef, isD
 
 interface BookReader3DProps extends Omit<BookReaderPagesProps, "isDesktop"> {
   frameloop?: "always" | "never" | "demand";
+  /** Fires once R3F has created its WebGL context and measured its
+   *  container — see Scene.tsx's own doc comment. StoryGallerySection.tsx
+   *  uses this as the signal that it's now safe to apply the preview-to-
+   *  fullscreen zoom's CSS transform without racing R3F's own internal size
+   *  measurement. */
+  onReady?: () => void;
 }
 
 /** The fullscreen page-turning reader — two PageMesh slots (see PageMesh.tsx),
@@ -98,7 +104,7 @@ interface BookReader3DProps extends Omit<BookReaderPagesProps, "isDesktop"> {
  *  `over` curls away), `over` showing whichever page is mid-turn. Mirrors
  *  the exact under/over convention StoryGallerySection.tsx already used for
  *  the CSS version, just re-targeted at WebGL meshes instead of DOM nodes. */
-export default function BookReader3D({ underIndex, overIndex, underAnimRef, overAnimRef, frameloop = "always" }: BookReader3DProps) {
+export default function BookReader3D({ underIndex, overIndex, underAnimRef, overAnimRef, frameloop = "always", onReady }: BookReader3DProps) {
   const isDesktop = useIsDesktop();
   const width = isDesktop ? LANDSCAPE_W : PORTRAIT_W;
   const height = isDesktop ? LANDSCAPE_H : PORTRAIT_H;
@@ -119,6 +125,7 @@ export default function BookReader3D({ underIndex, overIndex, underAnimRef, over
       // viewport shape, and re-fits automatically when width/height switch
       // between the portrait/landscape variants.
       fitTarget={{ width, height, margin: 0.08 }}
+      onReady={onReady}
     >
       <BookReaderPages underIndex={underIndex} overIndex={overIndex} underAnimRef={underAnimRef} overAnimRef={overAnimRef} isDesktop={isDesktop} />
     </Scene>

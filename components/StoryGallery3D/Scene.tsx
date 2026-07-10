@@ -24,6 +24,12 @@ interface SceneProps {
    *  narrow (portrait mobile) viewports, since it was tuned against a
    *  roughly landscape aspect. */
   fitTarget?: FitTarget;
+  /** Fires once R3F has actually created the WebGL context and measured its
+   *  container — the one reliable "safe to animate now" signal for callers
+   *  that need to apply a CSS transform to an ancestor without racing R3F's
+   *  own internal size measurement (see StoryGallerySection.tsx's
+   *  handleEnter for why a blind delay wasn't robust enough). */
+  onReady?: () => void;
 }
 
 function CameraFit({ width, height, margin = 0.08, baseZ, fov }: FitTarget & { baseZ: number; fov: number }) {
@@ -53,7 +59,7 @@ function CameraFit({ width, height, margin = 0.08, baseZ, fov }: FitTarget & { b
   return null;
 }
 
-export default function Scene({ children, frameloop = "always", dpr = [1, 1.8], cameraZ = 3.4, fov = 32, fitTarget }: SceneProps) {
+export default function Scene({ children, frameloop = "always", dpr = [1, 1.8], cameraZ = 3.4, fov = 32, fitTarget, onReady }: SceneProps) {
   return (
     <Canvas
       frameloop={frameloop}
@@ -62,6 +68,7 @@ export default function Scene({ children, frameloop = "always", dpr = [1, 1.8], 
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       dpr={dpr}
       shadows
+      onCreated={onReady}
     >
       {fitTarget && <CameraFit {...fitTarget} baseZ={cameraZ} fov={fov} />}
       <ambientLight intensity={0.9} />

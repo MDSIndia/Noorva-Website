@@ -195,12 +195,37 @@ export default function CinematicIntro() {
                 animate={{ y: [0, -16, 0], rotateY: [-6, 6, -6] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Image
-                  src={phoneInHand}
-                  alt="Noorva running on a phone"
-                  className="h-auto w-[280px] drop-shadow-[0_25px_60px_rgba(124,92,252,0.35)] sm:w-[340px] lg:w-[400px]"
-                  priority
-                />
+                <div className="relative">
+                  <Image
+                    src={phoneInHand}
+                    alt="Noorva running on a phone"
+                    className="h-auto w-[280px] drop-shadow-[0_25px_60px_rgba(124,92,252,0.35)] sm:w-[340px] lg:w-[400px]"
+                    priority
+                  />
+                  {/* Orbit ring over the phone's screen, aligned to the logo
+                      already baked into phone-in-hand-trimmed.png. Positioned
+                      as a percentage of the full image (measured against the
+                      source PNG's actual screen bounding box) so it tracks
+                      the screen correctly at every breakpoint width. */}
+                  <div
+                    className="absolute"
+                    style={{ left: "36.8%", top: "21.9%", width: "27%", height: "55.8%" }}
+                  >
+                    <div className="absolute top-1/2 left-1/2 aspect-square w-[85%] -translate-x-1/2 -translate-y-1/2">
+                      <motion.div
+                        className="absolute inset-0 rounded-full border border-dashed"
+                        style={{ borderColor: "rgba(192,132,252,0.55)" }}
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                      >
+                        <span
+                          className="absolute top-[-4%] left-1/2 h-[7%] w-[7%] -translate-x-1/2 rounded-full bg-[#c084fc]"
+                          style={{ boxShadow: "0 0 6px 2px rgba(192,132,252,0.85)" }}
+                        />
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             </div>
           </div>

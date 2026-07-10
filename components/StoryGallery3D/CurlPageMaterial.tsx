@@ -17,12 +17,18 @@ const CurlPageMaterial = shaderMaterial(
     uPageWidth: 1,
     uMaxBend: 2.3,
     uEndRotation: THREE.MathUtils.degToRad(92),
-    // The current CSS version pivots a forward turn on the page's LEFT edge
-    // (transformOrigin "left center") and a backward turn on its RIGHT edge
-    // — turning "back" hinges on the opposite side, not a literal physical
-    // book but a deliberate, already-tuned UI convention kept here as-is.
-    // +1 = hinge at local x=0 (geometry's natural orientation), -1 = mirrors
-    // the same math so the hinge reads as the opposite edge instead.
+    // +1 = forward turn, -1 = backward turn. Both hinge at the SAME edge
+    // (local x=0 — the spine, matching PageMesh's fixed world position) —
+    // a real book has exactly one spine, and every page pivots on it
+    // regardless of direction. uDirection only flips which rotational sense
+    // the page swings in around that fixed hinge (see rigidAngle below).
+    // An earlier version hinged backward turns at the FORE-edge instead
+    // (inherited unchanged from the old CSS version's own transformOrigin
+    // convention) — looked fine for ordinary backward chapter navigation,
+    // but made the spine edge itself the one that visibly swings/moves,
+    // which reads as wrong specifically for the book-closing flip: the
+    // motion appeared to originate from the spine side instead of hinging
+    // on it, the opposite of how a real book closes shut.
     uDirection: 1,
     uMap: null,
     uOpacity: 1,
@@ -48,40 +54,35 @@ const CurlPageMaterial = shaderMaterial(
       float safeBend = max(totalBend, 0.0001);
 
       // position.x spans [0, uPageWidth] in the geometry's own fixed local
-      // space, regardless of direction — the hinge itself is at whichever
-      // END of that range uDirection points to (0 for forward, uPageWidth
-      // for backward), not just a sign-flipped version of position.x. Using
-      // xLocal directly (the earlier, buggy approach) only flipped the bend
-      // angle's sign for a given point without actually relocating which
-      // end stays anchored, so the "backward" turn barely visibly bent at
-      // all — this instead measures distance from the correct hinge end,
-      // bends around that, then rotates around that SAME hinge point.
-      float hingeX = uDirection > 0.0 ? 0.0 : uPageWidth;
-      float d = abs(position.x - hingeX);
+      // space — the hinge is always local x=0 (the spine), for both
+      // directions, matching PageMesh's own fixed mesh position (see the
+      // uDirection doc comment above for why). Distance from the spine is
+      // therefore just position.x itself, unconditionally.
+      float d = position.x;
       float t = d / uPageWidth;
       float theta = t * safeBend;
 
       float R = uPageWidth / safeBend;
-      // bendDir: which local-X direction the free end swings away from the
-      // hinge in — +X for forward (hinge at 0), -X for backward (hinge at
-      // uPageWidth, free end at 0) — exactly uDirection itself.
-      float bendDir = uDirection;
-      vec3 curledLocal = vec3(hingeX + bendDir * R * sin(theta), position.y, R * (1.0 - cos(theta)));
+      // The bend always bows the free end outward in the same local sense,
+      // regardless of direction — the page's OWN curl is a property of the
+      // page bowing away from its spine, not of which way it's being swung
+      // (that's rigidAngle's job, below).
+      vec3 curledLocal = vec3(R * sin(theta), position.y, R * (1.0 - cos(theta)));
 
-      vec3 bendTangent = vec3(bendDir * cos(theta), 0.0, sin(theta));
+      vec3 bendTangent = vec3(cos(theta), 0.0, sin(theta));
       vec3 heightTangent = vec3(0.0, 1.0, 0.0);
       vec3 curledNormal = normalize(cross(bendTangent, heightTangent));
 
-      // Rigid hinge rotation pivots around the hinge point itself (hingeX),
-      // not local x=0 — irrelevant for forward (hingeX already 0) but
-      // required for backward, where the hinge sits at uPageWidth instead.
+      // Rigid hinge rotation pivots around the spine (local x=0) for both
+      // directions now — only its SIGN differs, swinging the page in
+      // opposite rotational senses around that one fixed hinge.
       float rigidAngle = uProgress * uEndRotation * -uDirection;
       float c = cos(rigidAngle);
       float s = sin(rigidAngle);
-      float rx = curledLocal.x - hingeX;
+      float rx = curledLocal.x;
       float rz = curledLocal.z;
       vec3 rotated = vec3(
-        hingeX + rx * c + rz * s,
+        rx * c + rz * s,
         curledLocal.y,
         -rx * s + rz * c
       );

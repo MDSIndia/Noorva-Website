@@ -144,14 +144,22 @@ export default function BookModel() {
         <meshPhysicalMaterial map={backTex} metalness={0.1} roughness={0.55} clearcoat={0.25} clearcoatRoughness={0.6} />
       </mesh>
 
-      {/* Spine — left edge, the hinge this cover opens from */}
-      <mesh geometry={spineGeometry} rotation={[0, -Math.PI / 2, 0]} position={[-BOOK_W / 2 - 0.002, 0, 0]}>
+      {/* Spine — left edge, the hinge this cover opens from. Offset well
+          past SPINE_X (which the bumps anchor to) rather than the same
+          0.002 clearance used for the front/back caps: viewed near edge-on
+          — exactly how the spine/fore-edge read most of the time as the
+          book idles through its rotation — a difference that small put the
+          cap and the body wall behind it within the same depth-buffer
+          bucket, so the body's own bare color (#3a2a1a) won every z-test
+          and showed through instead, indistinguishable from LEATHER_DARK by
+          eye but glaringly obvious for the fore-edge's pale PAGE_CREAM. */}
+      <mesh geometry={spineGeometry} rotation={[0, -Math.PI / 2, 0]} position={[-BOOK_W / 2 - 0.014, 0, 0]}>
         <meshPhysicalMaterial color={LEATHER_DARK} metalness={0.2} roughness={0.6} />
       </mesh>
       <SpineBumps />
 
       {/* Fore-edge — right edge, the stack of page ends */}
-      <mesh geometry={foreEdgeGeometry} rotation={[0, Math.PI / 2, 0]} position={[BOOK_W / 2 + 0.002, 0, 0]}>
+      <mesh geometry={foreEdgeGeometry} rotation={[0, Math.PI / 2, 0]} position={[BOOK_W / 2 + 0.014, 0, 0]}>
         <meshPhysicalMaterial color={PAGE_CREAM} metalness={0} roughness={0.85} />
       </mesh>
     </group>
