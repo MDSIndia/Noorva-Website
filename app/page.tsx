@@ -16,8 +16,8 @@ export default function Home() {
       <WelcomeOverlay />
       <Header />
       <CinematicIntro />
-      <FeaturesSection />
       <StoryGallerySection />
+      <FeaturesSection />
       <ClosingSection />
     </>
   );

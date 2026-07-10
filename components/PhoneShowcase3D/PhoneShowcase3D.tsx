@@ -92,15 +92,22 @@ export default function PhoneShowcase3D() {
       id="features"
       ref={sectionRef}
       className="relative h-screen w-full overflow-hidden bg-[color:var(--bg)]/70"
-      style={{ zIndex: 28 }}
+      style={{ zIndex: 33 }}
     >
       <div className="pointer-events-none absolute inset-0 vignette-edge" />
       <div className="pointer-events-none absolute top-1/2 left-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2">
         <div className="h-full w-full rounded-full bg-[color:var(--accent-1)]/8 blur-[140px] animate-float-slow" />
       </div>
 
-      <div className="relative z-10 mx-auto flex h-full max-w-6xl items-center px-8">
-        <div className="grid w-full grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
+      {/* items-start + top padding on mobile: the stacked phone+copy column
+          is taller than the viewport once you add the fixed header, so
+          items-center's symmetric overflow was pushing the phone's top
+          above the header and clipping it. Anchoring to the top with
+          padding that clears the header fixes that; lg: reverts to the
+          original vertical centering, which fits fine in the side-by-side
+          layout. */}
+      <div className="relative z-10 mx-auto flex h-full max-w-6xl items-start justify-center px-8 pt-28 sm:pt-32 lg:items-center lg:pt-0">
+        <div className="grid w-full grid-cols-1 items-center gap-6 lg:grid-cols-2 lg:gap-16">
           {/* Feature copy — crossfades whenever the phone completes a turn */}
           <div className="order-2 flex flex-col items-center text-center lg:order-1 lg:items-start lg:text-left">
             <p className="mb-5 text-[10px] tracking-[0.5em] text-[color:var(--accent-warm)]/80 uppercase md:text-xs">
@@ -150,7 +157,7 @@ export default function PhoneShowcase3D() {
           </div>
 
           {/* Pinned 3D phone */}
-          <div ref={canvasWrapRef} className="order-1 h-[60vh] w-full lg:order-2 lg:h-[75vh]">
+          <div ref={canvasWrapRef} className="order-1 h-[40vh] w-full sm:h-[46vh] lg:order-2 lg:h-[75vh]">
             <Scene activeIndex={activeIndex} phoneRef={phoneRef} frameloop={inView ? "always" : "never"} />
           </div>
         </div>

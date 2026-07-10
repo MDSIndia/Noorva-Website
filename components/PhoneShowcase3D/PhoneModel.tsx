@@ -1,11 +1,12 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
+import { forwardRef, Suspense, useImperativeHandle, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { phoneShowRotation } from "../store";
 import { FEATURES } from "../FeatureShowcase/featuresData";
 import ScreenContent from "./ScreenContent";
+import { roundedRectShape } from "./geometry";
 
 export interface PhoneModelHandle {
   /** Quick decaying scale punch — played whenever the active feature changes. */
@@ -41,26 +42,6 @@ const SCREEN_R = 9.5 * MM;
 // own near-black palette instead of the brighter titanium tones. Real
 // titanium is a satin/brushed finish, not a glossy one — no clearcoat here.
 const TITANIUM = "#2b2b2c";
-
-/** A rectangle rounded only at its four corners — flat edges in between,
- *  unlike RoundedBox's uniformly-rounded "pill" silhouette. This is the
- *  actual shape of a modern iPhone's rail when viewed face-on. */
-function roundedRectShape(w: number, h: number, r: number) {
-  const shape = new THREE.Shape();
-  const hw = w / 2;
-  const hh = h / 2;
-  shape.moveTo(-hw + r, -hh);
-  shape.lineTo(hw - r, -hh);
-  shape.quadraticCurveTo(hw, -hh, hw, -hh + r);
-  shape.lineTo(hw, hh - r);
-  shape.quadraticCurveTo(hw, hh, hw - r, hh);
-  shape.lineTo(-hw + r, hh);
-  shape.quadraticCurveTo(-hw, hh, -hw, hh - r);
-  shape.lineTo(-hw, -hh + r);
-  shape.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
-  shape.closePath();
-  return shape;
-}
 
 const PhoneModel = forwardRef<PhoneModelHandle, PhoneModelProps>(function PhoneModel({ activeIndex }, ref) {
   const groupRef = useRef<THREE.Group>(null);
@@ -268,7 +249,18 @@ const PhoneModel = forwardRef<PhoneModelHandle, PhoneModelProps>(function PhoneM
         <meshBasicMaterial color="#000000" toneMapped={false} />
       </mesh>
 
-      <ScreenContent activeIndex={activeIndex} z={BODY_D / 2 + 0.01} />
+      {/* Sits between the screen glass (z +0.001) and the Dynamic Island
+          (z +0.003) so the island still reads as a cutout punched through
+          the image, matching the real device. */}
+      <Suspense fallback={null}>
+        <ScreenContent
+          activeIndex={activeIndex}
+          z={BODY_D / 2 + 0.002}
+          width={SCREEN_W}
+          height={SCREEN_H}
+          radius={SCREEN_R}
+        />
+      </Suspense>
     </group>
   );
 });

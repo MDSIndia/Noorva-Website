@@ -58,8 +58,11 @@ html.lenis          { height: auto; }
 }
 
 /* ── COSMIC INTRO SPECIFIC ──────────────────────────────────────── */
-/* Fixed-position layer stacking: features' pinned 3D phone showcase=28,
-   intro=30, story-gallery's fullscreen book overlay=32, grain=35, header=40/50. */
+/* Fixed-position layer stacking, in page/scroll order: intro=30,
+   story-gallery's fullscreen book overlay=32, features' pinned 3D phone
+   showcase=33, grain=35, header=40/50. Each section needs a higher z-index
+   than the one before it so it slides on top and covers it during the pin
+   handoff — reorder these together with the section order in app/page.tsx. */
 #cosmic-intro canvas {
   position: absolute !important;
   inset: 0 !important;
@@ -119,8 +122,8 @@ html.lenis          { height: auto; }
   inset: 0;
   pointer-events: none;
   /* Must stay above every fixed-position layer (intro=30, story-gallery's
-     book overlay=32) or the grain texture silently renders underneath them
-     and disappears. */
+     book overlay=32, features' pinned 3D phone showcase=33) or the grain
+     texture silently renders underneath them and disappears. */
   z-index: 35;
 }
 .grain::before {
