@@ -1,0 +1,187 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; }
+  .sheet {
+    width: 1780px;
+    height: 1100px;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Segoe UI', Arial, sans-serif;
+  }
+
+  /* ---------- COVER FRONT / BACK shared leather ground ---------- */
+  .leather {
+    background: radial-gradient(150% 120% at 50% -10%, #2c1c14 0%, #1a1108 42%, #090604 100%);
+  }
+  .leather-vignette {
+    position: absolute; inset: 0;
+    box-shadow: inset 0 0 320px rgba(0,0,0,0.7), inset 0 0 100px rgba(0,0,0,0.55);
+  }
+  .gilt-frame-outer {
+    position: absolute; inset: 34px; border-radius: 16px;
+    border: 3px solid rgba(232,180,120,0.55);
+  }
+  .gilt-frame-inner {
+    position: absolute; inset: 46px; border-radius: 8px;
+    border: 2px solid rgba(232,180,120,0.25);
+  }
+  .flourish {
+    position: absolute; width: 26px; height: 26px; transform: rotate(45deg);
+    border: 2px solid rgba(232,180,120,0.5);
+  }
+
+  /* ---------- COVER FRONT content ---------- */
+  .medallion-ring1 {
+    position: absolute; border-radius: 50%;
+    border: 2px solid rgba(232,180,120,0.5);
+    box-shadow: 0 0 52px rgba(232,180,120,0.25);
+  }
+  .medallion-ring2 { position: absolute; border-radius: 50%; border: 2px solid rgba(232,180,120,0.25); }
+  .medallion-core {
+    position: absolute; border-radius: 50%; background: #0c0805;
+    box-shadow: inset 0 0 0 2px rgba(232,180,120,0.45), 0 0 44px rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cover-eyebrow {
+    position: absolute; left: 0; right: 0; text-align: center;
+    font-size: 20px; font-weight: 300; letter-spacing: 11px; text-transform: uppercase;
+    color: rgba(232,180,120,0.7);
+  }
+  .cover-title {
+    position: absolute; left: 0; right: 0; text-align: center;
+    font-family: Georgia, 'Times New Roman', serif; font-size: 100px; line-height: 1;
+    background: linear-gradient(180deg, #fff7e6 0%, #f6e3ba 30%, #e8b478 65%, #a97a3f 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .cover-rule {
+    position: absolute; left: 50%; transform: translateX(-50%); height: 2px; width: 190px;
+    background: linear-gradient(90deg, transparent, rgba(232,180,120,0.75), transparent);
+  }
+  .cover-desc {
+    position: absolute; left: 50%; transform: translateX(-50%); text-align: center;
+    font-size: 25px; font-weight: 300; line-height: 1.55; font-style: italic;
+    color: rgba(255,255,255,0.5); width: 980px;
+  }
+  .cover-count {
+    position: absolute; left: 0; right: 0; text-align: center;
+    font-size: 22px; font-weight: 300; letter-spacing: 7px; text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+  .cover-cta {
+    position: absolute; left: 0; right: 0; text-align: center;
+    font-size: 20px; font-weight: 300; letter-spacing: 8px; text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+  }
+
+  /* ---------- SPINE ---------- */
+  .spine-sheet { width: 340px; height: 1100px; background: linear-gradient(180deg, #241609 0%, #150d06 100%); }
+  .spine-band {
+    position: absolute; left: 12px; right: 12px; height: 34px; border-radius: 6px;
+    background: linear-gradient(180deg, rgba(255,224,168,0.35) 0%, rgba(232,180,120,0.15) 30%, rgba(0,0,0,0.35) 75%, rgba(0,0,0,0.55) 100%);
+    box-shadow: 0 2px 0 rgba(255,238,210,0.4) inset, 0 -6px 10px rgba(0,0,0,0.6) inset, 0 6px 12px rgba(0,0,0,0.5);
+  }
+
+  /* ---------- CHAPTER PAGE ---------- */
+  .page-sheet {
+    background: radial-gradient(120% 100% at 30% 0%, #f5ead0 0%, #ecdcb4 55%, #ddc797 100%);
+  }
+  .page-vignette { position: absolute; inset: 0; box-shadow: inset 0 0 190px rgba(120,90,45,0.18), inset 0 0 60px rgba(90,65,30,0.12); }
+  .page-border-outer { position: absolute; inset: 26px; border-radius: 14px; border: 2px solid rgba(138,106,53,0.35); }
+  .page-border-inner { position: absolute; inset: 40px; border-radius: 8px; border: 1px solid rgba(138,106,53,0.18); }
+  /* Source photos are tall/narrow portraits (~0.46 aspect) — the column is
+     sized off the image's own max-height (not a width percentage of the
+     now-much-wider landscape sheet), so it stays a slim portrait strip
+     instead of stretching absurdly tall trying to fill 44% of the width. */
+  .page-row { position: absolute; left: 60px; right: 60px; top: 84px; bottom: 150px; display: flex; align-items: center; gap: 56px; }
+  .photo-col { flex-shrink: 0; width: auto; display: flex; flex-direction: column; align-items: center; }
+  .photo-wrap { position: relative; text-align: center; }
+  .photo-wrap img { display: inline-block; max-height: 800px; max-width: 460px; object-fit: contain; border-radius: 10px; box-shadow: 0 30px 70px -18px rgba(60,40,15,0.5); }
+  .photo-caption { margin-top: 14px; text-align: center; font-size: 15px; font-weight: 300; letter-spacing: 5px; text-transform: uppercase; color: rgba(122,95,56,0.7); }
+  .text-col { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+  .page-eyebrow { font-size: 19px; font-weight: 300; letter-spacing: 5px; text-transform: uppercase; color: #9c6b2e; }
+  .page-headline { font-family: Georgia, 'Times New Roman', serif; font-size: 58px; line-height: 1.2; font-weight: 400; color: #332618; margin-top: 28px; max-width: 1080px; }
+  .page-body { font-size: 23px; line-height: 1.7; font-weight: 300; color: #5b4a35; margin-top: 28px; max-width: 960px; }
+  .page-footer { position: absolute; left: 60px; right: 60px; bottom: 54px; display: flex; justify-content: space-between; border-top: 1px solid rgba(138,106,53,0.25); padding-top: 20px; }
+  .page-footer span { font-size: 15px; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; color: rgba(122,95,56,0.7); }
+</style>
+</head>
+<body>
+
+  <!-- ============ COVER FRONT ============ -->
+  <div class="sheet leather" id="cover-front">
+    <div class="leather-vignette"></div>
+    <div class="gilt-frame-outer"></div>
+    <div class="gilt-frame-inner"></div>
+    <div class="flourish" style="top:70px;left:70px;"></div>
+    <div class="flourish" style="top:70px;right:90px;"></div>
+    <div class="flourish" style="bottom:70px;left:70px;"></div>
+    <div class="flourish" style="bottom:70px;right:90px;"></div>
+
+    <div class="medallion-ring1" style="top:252px;left:50%;transform:translateX(-50%);width:140px;height:140px;"></div>
+    <div class="medallion-ring2" style="top:262px;left:50%;transform:translateX(-50%);width:120px;height:120px;"></div>
+    <div class="medallion-core" style="top:280px;left:50%;transform:translateX(-50%);width:84px;height:84px;">
+      <div style="width:40px;height:40px;border-radius:50%;background:radial-gradient(circle,#c084fc,#7c5cfc);"></div>
+    </div>
+
+    <div class="cover-eyebrow" style="top:428px;">The Noorva Story</div>
+    <div class="cover-title" style="top:466px;">Noorva</div>
+    <div class="cover-rule" style="top:590px;"></div>
+    <div class="cover-desc" style="top:616px;">A story of how humanity has always reached for connection — and the next step it takes.</div>
+    <div class="cover-count" style="top:724px;">08 Chapters</div>
+    <div class="cover-cta" style="top:788px;">Click to Open</div>
+  </div>
+
+  <!-- ============ COVER BACK ============ -->
+  <div class="sheet leather" id="cover-back">
+    <div class="leather-vignette"></div>
+    <div class="gilt-frame-outer"></div>
+    <div class="gilt-frame-inner"></div>
+    <div class="flourish" style="top:70px;left:70px;"></div>
+    <div class="flourish" style="top:70px;right:90px;"></div>
+    <div class="flourish" style="bottom:70px;left:70px;"></div>
+    <div class="flourish" style="bottom:70px;right:90px;"></div>
+
+    <div class="medallion-ring1" style="top:50%;left:50%;transform:translate(-50%,-50%);width:230px;height:230px;"></div>
+    <div class="medallion-ring2" style="top:50%;left:50%;transform:translate(-50%,-50%);width:198px;height:198px;"></div>
+    <div class="medallion-core" style="top:50%;left:50%;transform:translate(-50%,-50%);width:132px;height:132px;">
+      <div style="width:60px;height:60px;border-radius:50%;background:radial-gradient(circle,#c084fc,#7c5cfc);"></div>
+    </div>
+
+    <div class="cover-rule" style="top:calc(50% + 158px);"></div>
+    <div class="cover-eyebrow" style="top:calc(50% + 184px);">MDS India</div>
+  </div>
+
+  <!-- ============ SPINE ============ -->
+  <div class="sheet spine-sheet" id="spine">
+    <div class="spine-band" style="top:14%;"></div>
+    <div class="spine-band" style="top:32%;"></div>
+    <div class="spine-band" style="top:50%;"></div>
+    <div class="spine-band" style="top:68%;"></div>
+    <div class="spine-band" style="top:86%;"></div>
+  </div>
+
+  <!-- ============ CHAPTER PAGES ============ -->
+  <div class="sheet page-sheet" id="page-1">
+    <div class="page-vignette"></div>
+    <div class="page-border-outer"></div>
+    <div class="page-border-inner"></div>
+    <div class="page-row">
+      <div class="photo-col">
+        <div class="photo-wrap"><img src="PLACEHOLDER" /></div>
+        <div class="photo-caption">Ch. 01</div>
+      </div>
+      <div class="text-col">
+        <div class="page-eyebrow">01 / The Spark</div>
+        <div class="page-headline">Before language, before fire had a name — there was only the looking up.</div>
+        <div class="page-body">A mind curious enough to wonder about the lights above it was already, quietly, becoming something new.</div>
+      </div>
+    </div>
+    <div class="page-footer"><span>The Noorva Story</span><span>01 / 08</span></div>
+  </div>
+
+</body>
+</html>

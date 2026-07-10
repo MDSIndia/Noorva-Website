@@ -1,3 +1,11 @@
+// The 3D book (components/StoryGallery3D/) renders each chapter as a baked
+// WebGL texture (public/story-3d/), not live text — editing eyebrow/
+// headline/body below does NOT change what's on the page until you also
+// run `npm run bake:story` (see scripts/bake-story-textures.js, which keeps
+// its own copy of this chapter text in sync by hand) and commit the
+// regenerated PNGs. `storyChapters.length` is still read live for chapter
+// counting, but per-chapter fields here only take effect through the bake.
+
 export type KenBurns = "zoom-in" | "zoom-out" | "pan-left" | "pan-right";
 
 export interface StoryChapterData {

@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import gsap from "gsap";
-import BookPage from "./BookPage";
-import BookCover from "./BookCover";
+import BookPreview3D from "./StoryGallery3D/BookPreview3D";
+import BookReader3D from "./StoryGallery3D/BookReader3D";
+import type { PageAnim } from "./StoryGallery3D/PageMesh";
 import { galleryCaptureControl, acquireScrollLock, releaseScrollLock } from "./store";
 import { storyChapters } from "./storyData";
 
-// Page 0 is the cover; pages 1..N are the chapters.
+// Page 0 is the cover; pages 1..N are the chapters — same ordering as
+// BookReader3D's PORTRAIT_PAGE_SOURCES/LANDSCAPE_PAGE_SOURCES.
 const TOTAL_PAGES = storyChapters.length + 1;
 
 const FLIP_DURATION = 1.1; // seconds, one full page-turn
@@ -23,137 +25,70 @@ const SWIPE_THRESHOLD = 30; // px, minimum touch swipe to count as a gesture
 // this long, so trailing momentum can't chain into another transition.
 const GESTURE_IDLE_MS = 180;
 
-// Thickness of the idly-spinning preview book, in px — a plain rotateY spin
-// on a flat cover would show nothing for half the turn (its back face is
-// never drawn), so the preview is a real 4-sided box: front cover, back
-// cover, spine, and fore-edge, each rotated/pushed out to its own face.
-const BOOK_DEPTH = 56;
-
-// BookCover's own type sizes (text-5xl md:text-7xl lg:text-8xl, etc.) are
-// tuned for filling the whole viewport as a fullscreen page — dropped
-// straight into the ~200px-wide preview box they'd overflow it completely.
-// Rendering it at this fixed "design" size and scaling the whole thing down
-// keeps every proportion (text, frame, shadow) identical to the fullscreen
-// cover, just shrunk, rather than needing a second hand-tuned mini layout.
-const COVER_DESIGN_W = 600;
-const COVER_DESIGN_H = 889;
-
-// Raised binding-cord positions down the spine, as a % of its height.
-const SPINE_BAND_POSITIONS = [14, 32, 50, 68, 86];
-
-function RotatingBookPreview() {
-  const half = BOOK_DEPTH / 2;
-  return (
-    <div className="animate-book-3d-spin absolute inset-0" style={{ transformStyle: "preserve-3d" }}>
-      {/* Front cover */}
-      <div className="absolute inset-0" style={{ transform: `translateZ(${half}px)`, backfaceVisibility: "hidden" }}>
-        <div
-          className="absolute top-0 left-0 origin-top-left [--cover-scale:0.31667] md:[--cover-scale:0.45]"
-          style={{ width: COVER_DESIGN_W, height: COVER_DESIGN_H, transform: "scale(var(--cover-scale))" }}
-        >
-          <BookCover />
-        </div>
-      </div>
-
-      {/* Back cover — same leather ground and gilt frame, no title */}
-      <div
-        className="absolute inset-0 overflow-hidden rounded-[14px]"
-        style={{
-          transform: `rotateY(180deg) translateZ(${half}px)`,
-          backfaceVisibility: "hidden",
-          background: "radial-gradient(150% 120% at 50% -10%, #2c1c14 0%, #1a1108 42%, #090604 100%)",
-          boxShadow: "0 60px 130px -25px rgba(0,0,0,0.9), 0 20px 45px -12px rgba(0,0,0,0.8)",
-        }}
-      >
-        <div className="pointer-events-none absolute inset-4 rounded-[8px] border-[1.5px] border-[color:var(--accent-warm)]/40 md:inset-7" />
-        <div className="pointer-events-none absolute inset-[22px] rounded-[4px] border border-[color:var(--accent-warm)]/20 md:inset-10" />
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div
-            className="h-14 w-14 rounded-full border border-[color:var(--accent-warm)]/35 md:h-20 md:w-20"
-            style={{ boxShadow: "inset 0 0 0 1px rgba(232,180,120,0.25)" }}
-          />
-        </div>
-      </div>
-
-      {/* Spine — left edge, the hinge this cover opens from. Raised bands
-          across it (the cords a real hardcover is sewn over, showing
-          through the leather) each shaded light-to-dark top-to-bottom so
-          they read as actual 3D ridges, not a flat printed stripe. */}
-      <div
-        className="absolute top-0 h-full overflow-hidden"
-        style={{
-          width: BOOK_DEPTH,
-          left: `calc(50% - ${half}px)`,
-          transform: `rotateY(-90deg) translateZ(calc(var(--book-w) / 2))`,
-          backfaceVisibility: "hidden",
-          background: "linear-gradient(180deg, #241609 0%, #150d06 100%)",
-        }}
-      >
-        {SPINE_BAND_POSITIONS.map((top) => (
-          <div
-            key={top}
-            className="absolute inset-x-[3px] rounded-[2px]"
-            style={{
-              top: `${top}%`,
-              height: 9,
-              background:
-                "linear-gradient(180deg, rgba(255,224,168,0.35) 0%, rgba(232,180,120,0.15) 30%, rgba(0,0,0,0.35) 75%, rgba(0,0,0,0.55) 100%)",
-              boxShadow:
-                "0 1px 0 rgba(255,238,210,0.4) inset, 0 -2px 3px rgba(0,0,0,0.6) inset, 0 2px 4px rgba(0,0,0,0.5)",
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Fore-edge — right edge, implying a stack of thick pages */}
-      <div
-        className="absolute top-0 h-full overflow-hidden"
-        style={{
-          width: BOOK_DEPTH,
-          left: `calc(50% - ${half}px)`,
-          transform: `rotateY(90deg) translateZ(calc(var(--book-w) / 2))`,
-          backfaceVisibility: "hidden",
-          background:
-            "linear-gradient(90deg, rgba(0,0,0,0.35) 0%, rgba(226,199,155,0.95) 30%, rgba(196,165,122,0.95) 70%, rgba(0,0,0,0.3) 100%)",
-        }}
-      />
-    </div>
-  );
-}
-
 export default function StoryGallerySection() {
   // The clickable, idly-rotating book sitting in normal page flow before
   // it's opened — its measured rect is the FLIP-animation's start point.
   const previewWrapRef = useRef<HTMLDivElement>(null);
   // The fixed fullscreen layer that appears once opened.
   const overlayRef = useRef<HTMLDivElement>(null);
+  // zoomWrapRef is what the preview->fullscreen zoom actually CSS-transforms
+  // (scale/position), the same way the old DOM version transformed the
+  // `over` cover element directly. readerWrapRef (nested inside it) hosts
+  // the actual <Canvas> and is deliberately never transformed itself — see
+  // the comment at its JSX for why that split matters.
+  const zoomWrapRef = useRef<HTMLDivElement>(null);
+  const readerWrapRef = useRef<HTMLDivElement>(null);
 
-  // Two stacked page slots. `underRef` always rests flat (rotateY 0) and
-  // just has its content silently swapped while hidden behind `overRef`.
-  // `overRef` is the one that actually turns — 0deg -> ±180deg around
-  // whichever edge matches the nav direction — and vanishes past 90deg via
-  // backface-visibility, revealing `under` (already showing the target
-  // chapter) sitting flat underneath. `over` is then silently snapped back
-  // to 0deg/target content, restoring the resting invariant for next time.
-  // It's also the visible top layer at rest, which is why the preview->
-  // fullscreen zoom below animates `over`, not `under`.
-  const underRef = useRef<HTMLDivElement>(null);
-  const overRef = useRef<HTMLDivElement>(null);
-  const overShadeRef = useRef<HTMLDivElement>(null);
+  // Two stacked page slots, mirroring the original CSS version's under/over
+  // convention exactly: `under` always rests flat showing the destination
+  // page, silently swapped while hidden behind `over`. `over` is the one
+  // that actually turns (see PageMesh/CurlPageMaterial) and vanishes past
+  // ~92deg via backface culling, revealing `under` (already showing the
+  // target chapter) underneath. `over` is then silently reset to
+  // progress=0/target texture, restoring the resting invariant for next time.
+  const underAnimRef = useRef<PageAnim>({ progress: 0, direction: 1, opacity: 1 });
+  const overAnimRef = useRef<PageAnim>({ progress: 0, direction: 1, opacity: 1 });
   const [underPageIdx, setUnderPageIdx] = useState(0);
   const [overPageIdx, setOverPageIdx] = useState(0);
   const [entered, setEntered] = useState(false);
+  const [inView, setInView] = useState(false);
   const enteredRef = useRef(false);
 
   const currentIndexRef = useRef(0);
   const isAnimatingRef = useRef(false);
   const isTransitioningRef = useRef(false); // guards the open/close zoom itself
+  // Lets handleEnter (defined outside the gesture-wiring effect below) invoke
+  // the same goTo used by wheel/touch/keyboard, so a single click on the
+  // preview can zoom to fullscreen AND immediately flip open to chapter 1 —
+  // instead of requiring a second click on the fullscreen cover.
+  const goToRef = useRef<((targetIndex: number) => void) | null>(null);
   const touchStartYRef = useRef<number | null>(null);
   const gestureConsumedRef = useRef(false);
   const gestureIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Read once at mount, matching CosmicBackground.tsx's existing convention.
+  // A full page-curl swings through a fairly large, sweeping motion — kept
+  // as-is (still a real page turn, not swapped for a plain crossfade) but
+  // sped up and flattened to a linear ease, since duration/easing drama is
+  // exactly what prefers-reduced-motion asks to dial back.
+  const reducedMotionRef = useRef(false);
+
+  useEffect(() => {
+    reducedMotionRef.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }, []);
 
   useEffect(() => {
     enteredRef.current = entered;
+  }, [entered]);
+
+  // Pauses the fullscreen reader's WebGL render loop while its section is
+  // off-screen — same IntersectionObserver + frameloop pattern already used
+  // by PhoneShowcase3D and BookPreview3D.
+  useEffect(() => {
+    const el = overlayRef.current?.parentElement;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { rootMargin: "200px 0px" });
+    observer.observe(el);
+    return () => observer.disconnect();
   }, [entered]);
 
   useEffect(() => {
@@ -163,74 +98,47 @@ export default function StoryGallerySection() {
       if (targetIndex === from) return;
 
       const forward = targetIndex > from;
-      const origin = forward ? "left center" : "right center";
-      // The flipping leaf's back face is never drawn (backfaceVisibility:
-      // hidden), so nothing it does past 90deg is visible — rotating it all
-      // the way to 180 just burns half the tween doing nothing, which is
-      // why the old version looked like it "popped" to the next page at the
-      // halfway mark. Stopping just past edge-on (92deg) means the full
-      // duration is spent on motion that actually reads on screen.
-      const endRotation = forward ? -92 : 92;
+      const direction = forward ? 1 : -1;
 
       isAnimatingRef.current = true;
 
-      // flushSync forces the content swap to actually commit to the DOM
-      // before we touch refs below — crossing the cover/chapter-one boundary
-      // swaps `under`'s component type (BookCover <-> BookPage), which
-      // remounts its DOM node. Reading `underRef.current` before the flush
-      // would grab the node that's about to be discarded, so the opacity
-      // reset below would silently no-op on a detached element.
-      flushSync(() => setUnderPageIdx(targetIndex));
-      const over = overRef.current;
-      const under = underRef.current;
-      const shade = overShadeRef.current;
-      if (!over || !under || !shade) {
-        isAnimatingRef.current = false;
-        return;
-      }
-      gsap.set(under, { opacity: 0 }); // faded in below, not just instantly exposed
+      // `under` reveals the destination immediately (it's hidden behind
+      // `over` until `over` curls away); `over` keeps showing the page
+      // we're turning FROM, animating out.
+      flushSync(() => {
+        setUnderPageIdx(targetIndex);
+        setOverPageIdx(from);
+      });
+      overAnimRef.current.progress = 0;
+      overAnimRef.current.direction = direction;
+      overAnimRef.current.opacity = 1;
 
-      gsap.set(over, { transformOrigin: origin, rotateY: 0, y: 0, scaleX: 1 });
-
-      gsap.to(over, {
-        rotateY: endRotation,
-        duration: FLIP_DURATION,
+      const proxy = { progress: 0 };
+      gsap.to(proxy, {
+        progress: 1,
+        duration: reducedMotionRef.current ? FLIP_DURATION * 0.35 : FLIP_DURATION,
         // inOut eases gently into the turn and, just as importantly, gently
         // out of it — power2.in accelerated the whole way and then stopped
         // dead at full speed, which read as an abrupt snap rather than a
-        // smooth turn settling into place.
-        ease: "power2.inOut",
-        onUpdate: function () {
-          const progress = this.progress();
-          // A real page doesn't rotate perfectly rigid — it lifts off the
-          // stack and narrows as it swings edge-on, peaking right at the
-          // end of the turn (rather than at the midpoint of a 180 spin).
-          const arc = Math.sin(progress * (Math.PI / 2));
-          gsap.set(over, { y: -arc * 16, scaleX: 1 - arc * 0.08 });
-          gsap.set(shade, { opacity: arc * 0.65 });
-          // Crossfade the destination page in over the closing stretch of
-          // the turn, timed to finish exactly as the flipping leaf goes
-          // edge-on — a smooth reveal instead of an instant pop.
-          gsap.set(under, { opacity: Math.max(0, (progress - 0.6) / 0.4) });
+        // smooth turn settling into place. Flattened to linear under
+        // reduced-motion, alongside the shorter duration above.
+        ease: reducedMotionRef.current ? "none" : "power2.inOut",
+        onUpdate: () => {
+          overAnimRef.current.progress = proxy.progress;
         },
         onComplete: () => {
           currentIndexRef.current = targetIndex;
-          // Same flushSync reasoning as above, in reverse: `over` is
-          // currently edge-on and invisible (backfaceVisibility: hidden).
-          // Resetting its rotateY makes it visible again immediately, so
-          // the content swap must already be painted in before that happens
-          // — otherwise the *old* page flashes back into view for a frame
-          // right as the flip finishes.
-          flushSync(() => setOverPageIdx(targetIndex));
-          const freshOver = overRef.current;
-          const freshShade = overShadeRef.current;
-          if (freshOver) gsap.set(freshOver, { rotateY: 0, y: 0, scaleX: 1 });
-          if (freshShade) gsap.set(freshShade, { opacity: 0 });
-          gsap.set(under, { opacity: 1 });
+          // `over` is edge-on/invisible at progress=1 (backface-culled) —
+          // safe to silently snap it back to the resting state and swap its
+          // texture to the target page, ready as the "from" page for
+          // whichever direction the next flip goes.
+          setOverPageIdx(targetIndex);
+          overAnimRef.current.progress = 0;
           isAnimatingRef.current = false;
         },
       });
     }
+    goToRef.current = goTo;
 
     // Closes the book, with a quick fade/scale-down of the fullscreen layer
     // — used whenever the reader scrolls/swipes past either end. `immediate`
@@ -372,9 +280,11 @@ export default function StoryGallerySection() {
 
   // Click on the idly-rotating preview book: measures where it currently
   // sits, mounts the fullscreen overlay, then GSAP-tweens the (now
-  // full-viewport-sized) cover from that measured rect back down to its
-  // natural size/position — reading as the small book zooming up to fill
-  // the screen, rather than an abrupt cut.
+  // full-viewport-sized) reader canvas from that measured rect back down to
+  // its natural size/position — reading as the small book zooming up to
+  // fill the screen, rather than an abrupt cut. `under` stays hidden
+  // (opacity 0) for the duration so the cover at full size doesn't show
+  // through behind the still-small `over` layer as it grows into it.
   function handleEnter() {
     if (enteredRef.current || isTransitioningRef.current) return;
     const previewEl = previewWrapRef.current;
@@ -386,46 +296,68 @@ export default function StoryGallerySection() {
     flushSync(() => setEntered(true));
 
     const overlay = overlayRef.current;
-    const target = overRef.current;
-    const under = underRef.current;
-    if (!overlay || !target || !under) {
+    const zoomWrap = zoomWrapRef.current;
+    if (!overlay || !zoomWrap) {
       isTransitioningRef.current = false;
       return;
     }
 
-    const targetRect = target.getBoundingClientRect();
-    const scaleX = startRect.width / targetRect.width;
-    const scaleY = startRect.height / targetRect.height;
-    const originX = startRect.left + startRect.width / 2 - (targetRect.left + targetRect.width / 2);
-    const originY = startRect.top + startRect.height / 2 - (targetRect.top + targetRect.height / 2);
-
+    overAnimRef.current.progress = 0;
+    overAnimRef.current.opacity = 1;
+    underAnimRef.current.opacity = 0;
     gsap.set(overlay, { opacity: 1 });
-    // `under` sits fullscreen and at rest (opacity 1) the instant it mounts —
-    // hidden here for the duration of the zoom so it doesn't show the cover
-    // at full size behind the still-small `over` layer as it grows into it.
-    gsap.set(under, { opacity: 0 });
-    gsap.fromTo(
-      target,
-      { x: originX, y: originY, scaleX, scaleY, transformOrigin: "center center" },
-      {
-        x: 0,
-        y: 0,
-        scaleX: 1,
-        scaleY: 1,
-        duration: ZOOM_DURATION,
-        ease: "power3.inOut",
-        onComplete: () => {
-          currentIndexRef.current = 0;
-          gsap.set(under, { opacity: 1 });
-          isTransitioningRef.current = false;
-        },
-      }
-    );
-  }
 
-  function renderPage(pageIdx: number, pageRef: React.Ref<HTMLDivElement>, shadeRef?: React.Ref<HTMLDivElement>) {
-    if (pageIdx === 0) return <BookCover ref={pageRef} shadeRef={shadeRef} />;
-    return <BookPage ref={pageRef} chapter={storyChapters[pageIdx - 1]} shadeRef={shadeRef} />;
+    // R3F's <Canvas> measures its container's size at mount via its own
+    // ResizeObserver — if the zoom's tiny starting scale is already applied
+    // by the time that fires, it permanently locks onto that tiny size (a
+    // transform change doesn't fire ResizeObserver again). Keeping zoomWrap
+    // invisible-but-untransformed for a beat lets the Canvas mount and
+    // settle at its true full size FIRST; only once that's done do we
+    // measure it and apply the (now-safe) zoom. Two nested rAFs was NOT
+    // reliably past this — ResizeObserver callbacks run in their own timing
+    // phase that can still land after a same-frame rAF chain, so this uses a
+    // short real delay instead, comfortably past any observer/rAF race.
+    gsap.set(zoomWrap, { opacity: 0 });
+    setTimeout(() => {
+      const targetRect = zoomWrap.getBoundingClientRect();
+      const scaleX = startRect.width / targetRect.width;
+      const scaleY = startRect.height / targetRect.height;
+      const originX = startRect.left + startRect.width / 2 - (targetRect.left + targetRect.width / 2);
+      const originY = startRect.top + startRect.height / 2 - (targetRect.top + targetRect.height / 2);
+
+      gsap.fromTo(
+        zoomWrap,
+        { x: originX, y: originY, scaleX, scaleY, opacity: 1, transformOrigin: "center center" },
+        {
+          x: 0,
+          y: 0,
+          scaleX: 1,
+          scaleY: 1,
+          duration: reducedMotionRef.current ? ZOOM_DURATION * 0.35 : ZOOM_DURATION,
+          ease: reducedMotionRef.current ? "none" : "power3.inOut",
+          onComplete: () => {
+            currentIndexRef.current = 0;
+            underAnimRef.current.opacity = 1;
+            isTransitioningRef.current = false;
+            // A single click on the preview now takes the reader all the way
+            // to chapter one — zoom to fullscreen, then straight into the
+            // opening page-turn — instead of landing on the closed cover and
+            // waiting for a second click. A short beat (skipped/shortened
+            // under reduced motion, matching this component's other timings)
+            // lets the zoom's arrival register before the cover starts
+            // turning, rather than the two motions blurring into one.
+            // enteredRef is re-checked since the book could have been closed
+            // (Escape, nav-link escape) during this delay.
+            setTimeout(
+              () => {
+                if (enteredRef.current) goToRef.current?.(1);
+              },
+              reducedMotionRef.current ? 60 : 220
+            );
+          },
+        }
+      );
+    }, 80);
   }
 
   return (
@@ -446,7 +378,6 @@ export default function StoryGallerySection() {
           onClick={handleEnter}
           aria-label="Open the Noorva story book"
           className="group relative cursor-pointer border-none bg-transparent p-0"
-          style={{ perspective: 1800 }}
         >
           <div
             className="pointer-events-none absolute inset-0 -z-10 scale-110 rounded-full opacity-60 blur-[70px] transition-opacity duration-500 group-hover:opacity-90"
@@ -454,10 +385,10 @@ export default function StoryGallerySection() {
           />
           <div
             ref={previewWrapRef}
-            className="relative h-[280px] w-[190px] [--book-w:190px] md:h-[400px] md:w-[270px] md:[--book-w:270px]"
-            style={{ visibility: entered ? "hidden" : "visible", transformStyle: "preserve-3d" }}
+            className="relative h-[280px] w-[190px] md:h-[400px] md:w-[270px]"
+            style={{ visibility: entered ? "hidden" : "visible" }}
           >
-            <RotatingBookPreview />
+            <BookPreview3D />
           </div>
         </button>
 
@@ -489,9 +420,23 @@ export default function StoryGallerySection() {
           <div className="pointer-events-none absolute inset-0 vignette-edge" />
           <div className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color:var(--accent-warm)]/6 blur-[160px]" />
 
-          <div className="relative h-screen w-full" style={{ perspective: 2600 }}>
-            {renderPage(underPageIdx, underRef)}
-            {renderPage(overPageIdx, overRef, overShadeRef)}
+          {/* zoomWrapRef is what handleEnter's GSAP transform actually
+              scales/translates — readerWrapRef (the Canvas's immediate
+              container) stays untransformed and always at its natural full
+              size, so R3F measures it correctly at mount instead of latching
+              onto the zoom's scaled-down starting size (transforms don't
+              fire ResizeObserver, so a Canvas that mounts mid-scale never
+              gets a chance to re-measure once the scale animates back to 1). */}
+          <div ref={zoomWrapRef} className="h-screen w-full">
+            <div ref={readerWrapRef} className="relative h-screen w-full">
+              <BookReader3D
+                underIndex={underPageIdx}
+                overIndex={overPageIdx}
+                underAnimRef={underAnimRef}
+                overAnimRef={overAnimRef}
+                frameloop={inView ? "always" : "never"}
+              />
+            </div>
           </div>
         </div>
       )}

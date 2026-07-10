@@ -171,17 +171,3 @@ html.lenis          { height: auto; }
 .animate-book-sheen {
   animation: book-sheen 9s ease-in-out infinite;
 }
-
-/* ── BOOK PREVIEW IDLE ROTATION ──────────────────────────────────── */
-/* Continuous full turn for the closed book sitting in normal page flow
-   before it's opened. A flat cover can't do this (its back face is never
-   drawn), so the rotating element here is a real 4-sided box — see
-   RotatingBookPreview in StoryGallerySection.tsx. */
-@keyframes book-3d-spin {
-  from { transform: rotateY(0deg); }
-  to   { transform: rotateY(360deg); }
-}
-
-.animate-book-3d-spin {
-  animation: book-3d-spin 12s linear infinite;
-}
