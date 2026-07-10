@@ -12,7 +12,7 @@ import { roundedRectShape } from "../PhoneShowcase3D/geometry";
 // desktop viewports; see BookReader3D.tsx's own BOOK_W_LANDSCAPE/BOOK_H_LANDSCAPE.
 export const BOOK_W = 1.2;
 export const BOOK_H = 1.78;
-export const BOOK_D = 0.14;
+export const BOOK_D = 0.2; // thicker, diary-like spine — was 0.14
 export const BOOK_R = 0.045; // cover corner radius
 // Validated in the Phase 0a spike (app/debug-bevel, now removed): a real
 // ExtrudeGeometry bevel on this shape's topology does NOT self-intersect at

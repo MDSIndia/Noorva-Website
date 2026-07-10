@@ -19,6 +19,12 @@ const LANDSCAPE_H = 1.1;
 // h-[...] md:h-[...] sizing in StoryGallerySection.tsx).
 const DESKTOP_QUERY = "(min-width: 768px)";
 
+// How much of the full cover width/height the turning page actually
+// occupies — a real book's pages sit recessed a little from the cover's
+// top/bottom/fore-edge (bound flush only at the spine), giving a diary-like
+// inset rather than the page exactly filling the cover's own outline.
+const PAGE_INSET = 0.93;
+
 // Index 0 = cover, 1..N = chapters — same ordering as storyChapters plus the
 // cover, mirroring TOTAL_PAGES in StoryGallerySection.tsx.
 const PORTRAIT_PAGE_SOURCES = [
@@ -83,8 +89,8 @@ function BookReaderPages({ underIndex, overIndex, underAnimRef, overAnimRef, isD
 
   return (
     <>
-      <PageMesh texture={textures[underIndex]} width={width} height={height} animRef={underAnimRef} />
-      <PageMesh texture={textures[overIndex]} width={width} height={height} animRef={overAnimRef} />
+      <PageMesh texture={textures[underIndex]} width={width} height={height} inset={PAGE_INSET} animRef={underAnimRef} />
+      <PageMesh texture={textures[overIndex]} width={width} height={height} inset={PAGE_INSET} animRef={overAnimRef} />
     </>
   );
 }

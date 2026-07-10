@@ -159,7 +159,7 @@ export default function Header() {
               }}
             >
               <div
-                className="flex flex-col divide-y divide-white/10 rounded-2xl bg-black/85 backdrop-blur-2xl backdrop-saturate-150"
+                className="flex flex-col rounded-2xl bg-black/85 backdrop-blur-2xl backdrop-saturate-150"
                 style={{
                   boxShadow:
                     "inset 0 1px 0 rgba(255,255,255,0.09), 0 24px 50px -14px rgba(0,0,0,0.7), 0 2px 12px rgba(0,0,0,0.45)",

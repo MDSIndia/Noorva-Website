@@ -204,14 +204,16 @@ export default function CinematicIntro() {
                   />
                   {/* Orbit ring over the phone's screen, aligned to the logo
                       already baked into phone-in-hand-trimmed.png. Positioned
-                      as a percentage of the full image (measured against the
-                      source PNG's actual screen bounding box) so it tracks
-                      the screen correctly at every breakpoint width. */}
+                      as a percentage of the full image (measured via pixel
+                      analysis of the source PNG — the logo's true center
+                      sits at 50.67%/51.47% of the image, not exactly image
+                      center) so it tracks the screen correctly at every
+                      breakpoint width. */}
                   <div
                     className="absolute"
-                    style={{ left: "36.8%", top: "21.9%", width: "27%", height: "55.8%" }}
+                    style={{ left: "37.2%", top: "23.6%", width: "27%", height: "55.8%" }}
                   >
-                    <div className="absolute top-1/2 left-1/2 aspect-square w-[85%] -translate-x-1/2 -translate-y-1/2">
+                    <div className="absolute top-1/2 left-1/2 aspect-square w-[80%] -translate-x-1/2 -translate-y-1/2">
                       <motion.div
                         className="absolute inset-0 rounded-full border border-dashed"
                         style={{ borderColor: "rgba(192,132,252,0.55)" }}
