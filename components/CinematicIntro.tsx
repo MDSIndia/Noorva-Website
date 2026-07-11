@@ -2,9 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import Image from "next/image";
 import gsap from "gsap";
-import { motion } from "framer-motion";
 import { Library, ArrowUpRight } from "lucide-react";
 import {
   scrollProgress,
@@ -14,7 +12,7 @@ import {
   releaseScrollLock,
   introRevealControl,
 } from "./store";
-import phoneInHand from "@/assets/images/phone-in-hand-trimmed.png";
+import HeroLogoPortal from "./HeroLogoPortal";
 
 const CosmicCanvas = dynamic(() => import("./CosmicCanvas"), { ssr: false });
 
@@ -235,45 +233,8 @@ export default function CinematicIntro() {
               </div>
             </div>
 
-            <div className="relative pointer-events-none shrink-0" style={{ perspective: 1200 }}>
-              <motion.div
-                animate={{ y: [0, -16, 0], rotateY: [-6, 6, -6] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <div className="relative">
-                  <Image
-                    src={phoneInHand}
-                    alt="Noorva running on a phone"
-                    className="h-auto w-[280px] drop-shadow-[0_25px_60px_rgba(124,92,252,0.35)] sm:w-[340px] lg:w-[400px]"
-                    priority
-                  />
-                  {/* Orbit ring over the phone's screen, aligned to the logo
-                      already baked into phone-in-hand-trimmed.png. Positioned
-                      as a percentage of the full image (measured via pixel
-                      analysis of the source PNG — the logo's true center
-                      sits at 50.67%/51.47% of the image, not exactly image
-                      center) so it tracks the screen correctly at every
-                      breakpoint width. */}
-                  <div
-                    className="absolute"
-                    style={{ left: "37.2%", top: "23.6%", width: "27%", height: "55.8%" }}
-                  >
-                    <div className="absolute top-1/2 left-1/2 aspect-square w-[80%] -translate-x-1/2 -translate-y-1/2">
-                      <motion.div
-                        className="absolute inset-0 rounded-full border border-dashed"
-                        style={{ borderColor: "rgba(192,132,252,0.55)" }}
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                      >
-                        <span
-                          className="absolute top-[-4%] left-1/2 h-[7%] w-[7%] -translate-x-1/2 rounded-full bg-[#c084fc]"
-                          style={{ boxShadow: "0 0 6px 2px rgba(192,132,252,0.85)" }}
-                        />
-                      </motion.div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
+            <div className="relative shrink-0">
+              <HeroLogoPortal />
             </div>
           </div>
         </div>

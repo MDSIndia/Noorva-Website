@@ -53,6 +53,13 @@ const TITANIUM = "#b0b0b4";
 // slack beyond the one-viewport check to stay clear of the frustum edge.
 const SHOWCASE_SCALE = 0.8;
 
+// Entrance slide: the phone starts off to the right and glides in to its
+// resting x=0 as the section first mounts, timed to arrive alongside
+// Podium.tsx's own mirrored slide-in from the left — the two converging
+// toward center reads as a single deliberate "assembling" entrance instead
+// of two unrelated objects that happen to already be there.
+const ENTRANCE_X_OFFSET = 2.6;
+
 const PhoneModel = forwardRef<PhoneModelHandle, PhoneModelProps>(function PhoneModel({ activeIndex }, ref) {
   const groupRef = useRef<THREE.Group>(null);
   const pulseEnvelope = useRef(0); // 0..1, decays back to 0 after pulse() fires
@@ -95,8 +102,15 @@ const PhoneModel = forwardRef<PhoneModelHandle, PhoneModelProps>(function PhoneM
 
     // "Roll in": the very first time this mounts, the phone spins the last
     // stretch into its correct scroll-driven angle instead of just being
-    // present — plays once, over about a second, then never again.
-    entranceRef.current = Math.min(1, entranceRef.current + delta * 1.1);
+    // present — plays once, over about a second, then never again. Clamp
+    // delta here specifically: Scene.tsx's Canvas toggles frameloop from
+    // "never" to "always" once the section scrolls into view, and the very
+    // first frame after that switch reports a large delta (real wall-clock
+    // time since the last render, while frameloop was paused) — left
+    // unclamped, that one frame alone blows entranceRef straight to 1 and
+    // the whole entrance plays out as an instant snap instead of animating.
+    const entranceDelta = Math.min(delta, 1 / 30);
+    entranceRef.current = Math.min(1, entranceRef.current + entranceDelta * 1.1);
     const entrance = 1 - Math.pow(1 - entranceRef.current, 3); // easeOutCubic
 
     const targetDeg = phoneShowRotation.value;
@@ -107,6 +121,7 @@ const PhoneModel = forwardRef<PhoneModelHandle, PhoneModelProps>(function PhoneM
     // always on, small enough to read as "alive" without looking animated.
     const t = state.clock.getElapsedTime();
     group.position.y = Math.sin(t * 0.55) * 0.045 - (1 - entrance) * 0.35;
+    group.position.x = (1 - entrance) * ENTRANCE_X_OFFSET;
 
     // Decaying pulse: a quick, soft punch right after a feature change,
     // never a hard snap. Combined with the entrance's own scale-up.

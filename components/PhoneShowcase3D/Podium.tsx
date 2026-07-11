@@ -52,6 +52,13 @@ const PODIUM_CAP = "#8a6a3a";
 const TRIM_GOLD = "#e8b478";
 const GLOW_COLOR = "#7c5cfc";
 
+// Entrance slide: the podium starts off to the left and glides in to its
+// resting x (from the `position` prop) as the section first mounts, timed
+// to match PhoneModel.tsx's own mirrored slide-in from the right — same
+// duration/easing constants (delta*1.1, easeOutCubic) so the two visibly
+// converge toward center together rather than drifting in independently.
+const ENTRANCE_X_OFFSET = -2.2;
+
 // Radial-gradient canvas texture for the ground glow — the disc is viewed at
 // a shallow, near-edge-on angle from Scene.tsx's camera, so a flat solid
 // color with a hard circular edge foreshortens into a stark, hard-edged bar
@@ -80,15 +87,32 @@ function useGlowTexture() {
 }
 
 export default function Podium({ position = [0, -1.42, 0] }: PodiumProps) {
+  const groupRef = useRef<THREE.Group>(null);
   const ringRef = useRef<THREE.Mesh>(null);
   const haloRef = useRef<THREE.Mesh>(null);
+  const entranceRef = useRef(0); // 0..1, eases up once on mount — never resets
   const glowTexture = useGlowTexture();
 
-  // Slow breathing glow on the top accent ring and the soft halo beneath it
-  // — enough to read as "alive" without competing with the phone's own
-  // scroll-driven rotation, which is the thing that should actually draw
-  // the eye.
-  useFrame((state) => {
+  useFrame((state, delta) => {
+    // Slide-in entrance, same easeOutCubic curve/duration as PhoneModel.tsx's
+    // own so the two arrive at center together. Delta clamped for the same
+    // reason as PhoneModel.tsx's own entrance: Scene.tsx's Canvas switches
+    // frameloop from "never" to "always" right as the section scrolls into
+    // view, and that first frame's delta (real wall-clock time since the
+    // last render while paused) is otherwise large enough to jump straight
+    // to entrance=1 in one step instead of animating.
+    const entranceDelta = Math.min(delta, 1 / 30);
+    entranceRef.current = Math.min(1, entranceRef.current + entranceDelta * 1.1);
+    const entrance = 1 - Math.pow(1 - entranceRef.current, 3);
+    const group = groupRef.current;
+    if (group) {
+      group.position.set(position[0] + (1 - entrance) * ENTRANCE_X_OFFSET, position[1], position[2]);
+    }
+
+    // Slow breathing glow on the top accent ring and the soft halo beneath
+    // it — enough to read as "alive" without competing with the phone's own
+    // scroll-driven rotation, which is the thing that should actually draw
+    // the eye.
     const pulse = 0.55 + Math.sin(state.clock.getElapsedTime() * 0.8) * 0.25;
     const ring = ringRef.current;
     if (ring) (ring.material as THREE.MeshBasicMaterial).opacity = pulse;
@@ -100,7 +124,11 @@ export default function Podium({ position = [0, -1.42, 0] }: PodiumProps) {
   const baseRadius = TIERS[0].radiusBottom;
 
   return (
-    <group position={position}>
+    // No declarative position prop — useFrame above drives it every frame
+    // (starting from the entrance-offset x), matching PhoneModel.tsx's own
+    // group so neither one flashes at its resting position for a frame
+    // before the entrance animation takes over.
+    <group ref={groupRef}>
       {/* Soft additive glow disc, flush with the ground — sells "light
           source" presence even at a glance, independent of how much the
           physical tier steps themselves catch the eye. Feathered via
