@@ -43,6 +43,16 @@ const SCREEN_R = 9.5 * MM;
 // against the dark site background.
 const TITANIUM = "#b0b0b4";
 
+// Scene.tsx's camera is fixed (not a dynamic fitTarget), so the whole phone
+// is shrunk uniformly around its own center to free up real headroom below
+// it for a properly-defined podium (Podium.tsx) instead of the sliver-thin
+// stack that was previously the only thing that fit under the frustum edge.
+// Deliberately generous margin here (not just barely enough) — real browser
+// windows vary in effective viewport height (chrome/taskbar/zoom eat into
+// it in ways a fixed test viewport doesn't capture), so the podium needs
+// slack beyond the one-viewport check to stay clear of the frustum edge.
+const SHOWCASE_SCALE = 0.8;
+
 const PhoneModel = forwardRef<PhoneModelHandle, PhoneModelProps>(function PhoneModel({ activeIndex }, ref) {
   const groupRef = useRef<THREE.Group>(null);
   const pulseEnvelope = useRef(0); // 0..1, decays back to 0 after pulse() fires
@@ -103,7 +113,7 @@ const PhoneModel = forwardRef<PhoneModelHandle, PhoneModelProps>(function PhoneM
     pulseEnvelope.current = Math.max(0, pulseEnvelope.current - delta * 2.2);
     const bump = Math.sin(pulseEnvelope.current * Math.PI) * 0.045;
     const entranceScale = THREE.MathUtils.lerp(0.8, 1, entrance);
-    group.scale.setScalar(entranceScale + bump);
+    group.scale.setScalar((entranceScale + bump) * SHOWCASE_SCALE);
   });
 
   const feature = FEATURES[activeIndex];

@@ -42,15 +42,31 @@ export default function Scene({ activeIndex, phoneRef, frameloop = "always" }: S
 
       {/* This camera (fixed at z=4.6, fov=32, not a dynamic fitTarget like
           other Scene components in this repo) only shows about 1.32 world
-          units below center before its own frustum edge — the phone's body
-          half-height alone (~1.21) already eats most of that, leaving just
-          ~0.1 units of real headroom. Position math: phone rest-bottom
-          (-1.21) minus a 0.03 gap minus the podium's own ~0.04 stacked
-          height lands the base at -1.28, with margin to spare before the
-          frustum bottom (~-1.32) — a taller podium here would clip. */}
-      <Podium position={[0, -1.28, 0]} />
+          units below center before its own frustum edge. PhoneModel.tsx
+          applies a 0.8 SHOWCASE_SCALE to the whole phone to buy back
+          headroom here: rest-bottom shrinks from -1.255 to about -1.01,
+          leaving ~0.3 units free. Podium.tsx's stack is ~0.126 tall — base =
+          phone rest-bottom (-1.01) minus a 0.04 gap minus that height lands
+          at -1.18, about 0.14 units clear of the frustum bottom (~-1.32) —
+          deliberately more margin than the bare minimum, since real browser
+          windows (chrome/taskbar/zoom) render a shorter effective viewport
+          than a clean test window, which was eating into a tighter margin
+          and clipping most of the podium down to a thin visible sliver. */}
+      <Podium position={[0, -1.18, 0]} />
 
-      <ContactShadows position={[0, -1.3, 0]} opacity={0.55} scale={4} blur={2.4} far={2} resolution={256} frames={1} color="#000000" />
+      {/* Dedicated stage lighting for the podium — its own light sources
+          close to it, rather than just catching spillover from the phone's
+          key/rim lights above. plain pointLights (not spotLight) since a
+          spotLight's default target Object3D isn't attached to the scene
+          graph in R3F unless done explicitly, which silently leaves it
+          aimed at the origin regardless of any position prop — these avoid
+          that pitfall entirely while still picking out the gold crown tier
+          and purple ring with real, warm/cool rim highlights. */}
+      <pointLight position={[0, -0.75, 1.3]} intensity={1.4} distance={2.6} decay={2} color="#fff4e0" />
+      <pointLight position={[0.9, -1, 1.1]} intensity={0.7} distance={2.4} decay={2} color="#e8b478" />
+      <pointLight position={[-0.9, -1, 1.1]} intensity={0.6} distance={2.4} decay={2} color="#7c5cfc" />
+
+      <ContactShadows position={[0, -1.18, 0]} opacity={0.55} scale={4} blur={2.4} far={2} resolution={256} frames={1} color="#000000" />
     </Canvas>
   );
 }
