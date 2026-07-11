@@ -38,10 +38,10 @@ const SCREEN_W = BODY_W - BEZEL * 2;
 const SCREEN_H = BODY_H - BEZEL * 2;
 const SCREEN_R = 9.5 * MM;
 
-// Black Titanium — the darkest of the 16 Pro finishes, matching the site's
-// own near-black palette instead of the brighter titanium tones. Real
-// titanium is a satin/brushed finish, not a glossy one — no clearcoat here.
-const TITANIUM = "#2b2b2c";
+// Natural Titanium — a bright brushed-silver finish, the lightest of the
+// 16 Pro lineup, giving the 3-D model a premium silver look that pops
+// against the dark site background.
+const TITANIUM = "#b0b0b4";
 
 const PhoneModel = forwardRef<PhoneModelHandle, PhoneModelProps>(function PhoneModel({ activeIndex }, ref) {
   const groupRef = useRef<THREE.Group>(null);
@@ -155,7 +155,7 @@ const PhoneModel = forwardRef<PhoneModelHandle, PhoneModelProps>(function PhoneM
       {/* Body / frame — polished titanium rail, catching a bright highlight
           as it turns rather than sitting flat and matte. */}
       <mesh geometry={bodyGeometry} castShadow receiveShadow>
-        <meshPhysicalMaterial color={TITANIUM} metalness={0.9} roughness={0.26} reflectivity={0.6} />
+        <meshPhysicalMaterial color={TITANIUM} metalness={0.95} roughness={0.18} reflectivity={0.8} />
       </mesh>
 
       {/* Back glass panel — satin/frosted, distinctly less glossy than the

@@ -3,6 +3,7 @@
 import { Canvas } from "@react-three/fiber";
 import { Environment, ContactShadows } from "@react-three/drei";
 import PhoneModel, { type PhoneModelHandle } from "./PhoneModel";
+import Podium from "./Podium";
 import type { Ref } from "react";
 
 interface SceneProps {
@@ -39,7 +40,17 @@ export default function Scene({ activeIndex, phoneRef, frameloop = "always" }: S
 
       <PhoneModel ref={phoneRef} activeIndex={activeIndex} />
 
-      <ContactShadows position={[0, -1.35, 0]} opacity={0.55} scale={4} blur={2.4} far={2} resolution={256} frames={1} color="#000000" />
+      {/* This camera (fixed at z=4.6, fov=32, not a dynamic fitTarget like
+          other Scene components in this repo) only shows about 1.32 world
+          units below center before its own frustum edge — the phone's body
+          half-height alone (~1.21) already eats most of that, leaving just
+          ~0.1 units of real headroom. Position math: phone rest-bottom
+          (-1.21) minus a 0.03 gap minus the podium's own ~0.04 stacked
+          height lands the base at -1.28, with margin to spare before the
+          frustum bottom (~-1.32) — a taller podium here would clip. */}
+      <Podium position={[0, -1.28, 0]} />
+
+      <ContactShadows position={[0, -1.3, 0]} opacity={0.55} scale={4} blur={2.4} far={2} resolution={256} frames={1} color="#000000" />
     </Canvas>
   );
 }

@@ -25,10 +25,17 @@ const CosmicCanvas = dynamic(() => import("./CosmicCanvas"), { ssr: false });
 const BLAST_SETTLE_P = 0.45;
 const REVEAL_DURATION = 3.4; // seconds, click -> fully settled
 
+// Full heading text split into lines for the typewriter
+const HEADING_LINES = ["Intelligence Like", "Never Before In", "Your Hands"];
+const HEADING_FULL = HEADING_LINES.join("\n");
+
 export default function CinematicIntro() {
   const containerRef = useRef<HTMLDivElement>(null);
   const hasPlayedRef = useRef(false);
   const tlRef = useRef<gsap.core.Timeline | null>(null);
+  const [typedText, setTypedText] = useState("");
+  const [typingDone, setTypingDone] = useState(false);
+  const typingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function goTo(target: string) {
     galleryCaptureControl.release?.(target === "#story-gallery" ? 0 : 1600);
@@ -92,13 +99,36 @@ export default function CinematicIntro() {
     };
   }, []);
 
+  const startTyping = useCallback(() => {
+    let i = 0;
+    const type = () => {
+      i++;
+      setTypedText(HEADING_FULL.slice(0, i));
+      if (i < HEADING_FULL.length) {
+        // Slightly slower on spaces/newlines for a natural rhythm
+        const ch = HEADING_FULL[i - 1];
+        const delay = ch === " " || ch === "\n" ? 60 : 38;
+        typingRef.current = setTimeout(type, delay);
+      } else {
+        setTypingDone(true);
+      }
+    };
+    typingRef.current = setTimeout(type, 0);
+  }, []);
+
   const handleReveal = useCallback(() => {
     if (hasPlayedRef.current) return;
     hasPlayedRef.current = true;
     gsap.to("#ci-click-hint", { opacity: 0, duration: 0.3 });
-    tlRef.current?.eventCallback("onComplete", () => releaseScrollLock("cosmic-intro"));
+    tlRef.current?.eventCallback("onComplete", () => {
+      releaseScrollLock("cosmic-intro");
+      startTyping();
+    });
     tlRef.current?.play();
-  }, []);
+  }, [startTyping]);
+
+  // Cleanup typing timer on unmount
+  useEffect(() => () => { if (typingRef.current) clearTimeout(typingRef.current); }, []);
 
   // Let WelcomeOverlay trigger this same reveal from its own dismiss click,
   // so the star blast starts immediately instead of needing a second click.
@@ -143,20 +173,35 @@ export default function CinematicIntro() {
           >
             <div className="flex flex-col items-center gap-9">
               <p
-                className="max-w-md bg-clip-text text-3xl font-bold tracking-[0.1em] text-transparent uppercase md:max-w-xl md:text-5xl lg:max-w-2xl lg:text-6xl"
+                className="max-w-md bg-clip-text text-3xl font-bold tracking-[0.1em] text-transparent uppercase md:max-w-xl md:text-5xl lg:max-w-2xl lg:text-6xl whitespace-pre-line"
                 style={{
                   backgroundImage:
                     "linear-gradient(135deg, #ffffff 0%, #3965e5 35%, #7c5cfc 65%, #db45d7 100%)",
                 }}
               >
-                Intelligence Like
-                <br />
-                Never Before In
-                <br />
-                Your Hands
+                {typedText || ""}
+                {!typingDone && (
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: "2px",
+                      marginLeft: "2px",
+                      background: "linear-gradient(135deg, #ffffff, #7c5cfc)",
+                      animation: "ci-blink 0.75s step-end infinite",
+                      verticalAlign: "middle",
+                      height: "0.85em",
+                    }}
+                  />
+                )}
               </p>
+              <style>{`
+                @keyframes ci-blink {
+                  0%, 100% { opacity: 1; }
+                  50% { opacity: 0; }
+                }
+              `}</style>
 
-              <div className="pointer-events-auto flex flex-col items-center gap-5 sm:flex-row">
+              <div className="pointer-events-auto flex flex-col items-center gap-4 sm:flex-row lg:flex-row">
                 <button
                   onClick={() => goTo("#story-gallery")}
                   className="group relative shrink-0 rounded-full p-[1.5px] transition-transform duration-300 hover:scale-105"
@@ -165,8 +210,8 @@ export default function CinematicIntro() {
                     boxShadow: "0 0 28px rgba(124,92,252,0.4)",
                   }}
                 >
-                  <span className="btn-glow flex items-center gap-2 rounded-full bg-black/85 px-7 py-3 text-[11px] font-semibold tracking-[0.28em] text-white uppercase backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70">
-                    <Library className="h-4 w-4" strokeWidth={1.75} />
+                  <span className="btn-glow flex items-center gap-1.5 rounded-full bg-black/85 px-4 py-2 text-[9px] font-semibold tracking-[0.22em] text-white uppercase backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70 sm:px-7 sm:py-3 sm:text-[11px] sm:tracking-[0.28em] sm:gap-2">
+                    <Library className="h-3 w-3 sm:h-4 sm:w-4" strokeWidth={1.75} />
                     Noorva Book
                   </span>
                 </button>
@@ -180,10 +225,10 @@ export default function CinematicIntro() {
                   }}
                 >
                   <span
-                    className="btn-glow flex items-center gap-2 rounded-full bg-black/85 px-7 py-3 text-[11px] font-semibold tracking-[0.28em] uppercase backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70"
+                    className="btn-glow flex items-center gap-1.5 rounded-full bg-black/85 px-4 py-2 text-[9px] font-semibold tracking-[0.22em] uppercase backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70 sm:px-7 sm:py-3 sm:text-[11px] sm:tracking-[0.28em] sm:gap-2"
                     style={{ color: "var(--accent-warm)" }}
                   >
-                    <ArrowUpRight className="h-4 w-4" strokeWidth={1.75} />
+                    <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4" strokeWidth={1.75} />
                     Join Noorva
                   </span>
                 </button>

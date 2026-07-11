@@ -85,24 +85,27 @@
     box-shadow: 0 2px 0 rgba(255,238,210,0.4) inset, 0 -6px 10px rgba(0,0,0,0.6) inset, 0 6px 12px rgba(0,0,0,0.5);
   }
 
-  /* ---------- CHAPTER PAGE ---------- */
-  .page-sheet {
-    background: radial-gradient(120% 100% at 30% 0%, #f5ead0 0%, #ecdcb4 55%, #ddc797 100%);
+  /* ---------- CHAPTER PAGE ----------
+     Full-bleed photo filling the entire sheet, not a small boxed thumbnail
+     beside a text column — the copy sits directly on top of the image via a
+     bottom scrim, like a photo-essay/magazine spread. */
+  .page-sheet { background: #0c0805; }
+  .page-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 65%; }
+  .page-scrim {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg,
+      rgba(10,7,4,0.05) 0%, rgba(10,7,4,0.08) 34%, rgba(10,7,4,0.5) 58%,
+      rgba(10,7,4,0.86) 78%, rgba(8,5,3,0.96) 100%);
   }
-  .page-vignette { position: absolute; inset: 0; box-shadow: inset 0 0 190px rgba(120,90,45,0.18), inset 0 0 60px rgba(90,65,30,0.12); }
-  .page-border-outer { position: absolute; inset: 26px; border-radius: 14px; border: 2px solid rgba(138,106,53,0.35); }
-  .page-border-inner { position: absolute; inset: 40px; border-radius: 8px; border: 1px solid rgba(138,106,53,0.18); }
-  .page-row { position: absolute; inset: 64px; top: 210px; display: flex; gap: 42px; }
-  .photo-col { width: 44%; flex-shrink: 0; display: flex; flex-direction: column; }
-  .photo-wrap { position: relative; text-align: center; }
-  .photo-wrap img { display: inline-block; max-height: 1320px; max-width: 100%; object-fit: contain; border-radius: 10px; box-shadow: 0 30px 70px -18px rgba(60,40,15,0.5); }
-  .photo-caption { margin-top: 14px; text-align: center; font-size: 15px; font-weight: 300; letter-spacing: 5px; text-transform: uppercase; color: rgba(122,95,56,0.7); }
-  .text-col { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-  .page-eyebrow { font-size: 18px; font-weight: 300; letter-spacing: 5px; text-transform: uppercase; color: #9c6b2e; }
-  .page-headline { font-family: Georgia, 'Times New Roman', serif; font-size: 52px; line-height: 1.2; font-weight: 400; color: #332618; margin-top: 26px; }
-  .page-body { font-size: 22px; line-height: 1.7; font-weight: 300; color: #5b4a35; margin-top: 26px; max-width: 640px; }
-  .page-footer { position: absolute; left: 64px; right: 64px; bottom: 64px; display: flex; justify-content: space-between; border-top: 1px solid rgba(138,106,53,0.25); padding-top: 22px; }
-  .page-footer span { font-size: 15px; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; color: rgba(122,95,56,0.7); }
+  .page-vignette { position: absolute; inset: 0; box-shadow: inset 0 0 170px rgba(0,0,0,0.4); }
+  .page-border-outer { position: absolute; inset: 26px; border-radius: 14px; border: 2px solid rgba(232,180,120,0.4); }
+  .page-border-inner { position: absolute; inset: 40px; border-radius: 8px; border: 1px solid rgba(232,180,120,0.18); }
+  .page-content { position: absolute; left: 64px; right: 64px; bottom: 130px; }
+  .page-eyebrow { font-size: 18px; font-weight: 300; letter-spacing: 5px; text-transform: uppercase; color: rgba(232,180,120,0.88); text-shadow: 0 2px 14px rgba(0,0,0,0.55); }
+  .page-headline { font-family: Georgia, 'Times New Roman', serif; font-size: 50px; line-height: 1.22; font-weight: 400; color: #fdf6e8; margin-top: 24px; text-shadow: 0 4px 22px rgba(0,0,0,0.65); }
+  .page-body { font-size: 21px; line-height: 1.65; font-weight: 300; color: rgba(255,255,255,0.84); margin-top: 24px; max-width: 900px; text-shadow: 0 2px 12px rgba(0,0,0,0.6); }
+  .page-footer { position: absolute; left: 64px; right: 64px; bottom: 48px; display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; }
+  .page-footer span { font-size: 15px; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; color: rgba(255,255,255,0.6); text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
 </style>
 </head>
 <body>
@@ -162,19 +165,15 @@
 
   <!-- ============ CHAPTER PAGES ============ -->
   <div class="sheet page-sheet" id="page-1">
+    <img class="page-photo" src="PLACEHOLDER" />
+    <div class="page-scrim"></div>
     <div class="page-vignette"></div>
     <div class="page-border-outer"></div>
     <div class="page-border-inner"></div>
-    <div class="page-row">
-      <div class="photo-col">
-        <div class="photo-wrap"><img src="PLACEHOLDER" /></div>
-        <div class="photo-caption">Ch. 01</div>
-      </div>
-      <div class="text-col">
-        <div class="page-eyebrow">01 / The Spark</div>
-        <div class="page-headline">Before language, before fire had a name — there was only the looking up.</div>
-        <div class="page-body">A mind curious enough to wonder about the lights above it was already, quietly, becoming something new.</div>
-      </div>
+    <div class="page-content">
+      <div class="page-eyebrow">01 / The Spark</div>
+      <div class="page-headline">Before language, before fire had a name — there was only the looking up.</div>
+      <div class="page-body">A mind curious enough to wonder about the lights above it was already, quietly, becoming something new.</div>
     </div>
     <div class="page-footer"><span>The Noorva Story</span><span>01 / 08</span></div>
   </div>

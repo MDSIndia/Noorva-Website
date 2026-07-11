@@ -62,8 +62,11 @@ async function bakeVariant(browser, variant) {
       const template = document.getElementById("page-1");
 
       function fillPage(el, ch) {
-        el.querySelector("img").src = `file:///${projectRoot}/public/story/chapter-${ch.i}.png`.replace(/\\/g, "/");
-        el.querySelector(".photo-caption").textContent = `Ch. ${String(ch.i).padStart(2, "0")}`;
+        // Portrait pages have one <img> (.page-photo); landscape pages have
+        // two (.page-photo-fg sharp panel + .page-photo-bg blurred full-
+        // width backdrop) — both need the same source photo.
+        const src = `file:///${projectRoot}/public/story/chapter-${ch.i}.png`.replace(/\\/g, "/");
+        el.querySelectorAll("img").forEach((img) => { img.src = src; });
         el.querySelector(".page-eyebrow").textContent = ch.eyebrow;
         el.querySelector(".page-headline").textContent = ch.headline;
         el.querySelector(".page-body").textContent = ch.body;

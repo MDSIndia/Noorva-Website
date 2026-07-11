@@ -111,7 +111,7 @@ export default function ClosingSection() {
         <motion.div
           variants={fadeUp}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="mx-auto max-w-md rounded-[28px] p-[1.5px]"
+          className="mx-auto w-full max-w-xl rounded-[28px] p-[1.5px]"
           style={{
             background: "linear-gradient(135deg, rgba(57,101,229,0.5), rgba(124,92,252,0.55), rgba(219,69,215,0.5))",
             boxShadow: "0 0 50px -10px rgba(124,92,252,0.35)",
@@ -146,7 +146,7 @@ export default function ClosingSection() {
                 onSubmit={handleSubmit}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3 }}
-                className="mx-auto flex w-full max-w-md flex-col gap-3 sm:flex-row"
+                className="mx-auto flex w-full flex-col gap-3 sm:flex-row sm:items-stretch"
                 noValidate
               >
                 <input
@@ -166,13 +166,13 @@ export default function ClosingSection() {
                   disabled={status === "submitting"}
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
-                  className="group relative shrink-0 rounded-full p-[1.5px] transition-transform duration-300 disabled:opacity-60"
+                  className="group relative shrink-0 self-stretch rounded-full p-[1.5px] transition-transform duration-300 disabled:opacity-60"
                   style={{
                     background: "linear-gradient(135deg, #e8b478, #db45d7, #7c5cfc)",
                     boxShadow: "0 0 28px rgba(232,180,120,0.35)",
                   }}
                 >
-                  <span className="btn-glow flex items-center justify-center rounded-full bg-black/85 px-8 py-3 text-sm font-semibold text-white backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70">
+                  <span className="btn-glow flex h-full w-full items-center justify-center rounded-full bg-black/85 px-6 py-3 text-sm font-semibold text-white backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70">
                     {status === "submitting" ? "Joining…" : "Join the waitlist"}
                   </span>
                 </motion.button>

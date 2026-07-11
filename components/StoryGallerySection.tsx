@@ -3,24 +3,24 @@
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import gsap from "gsap";
+import { X } from "lucide-react";
 import BookPreview3D from "./StoryGallery3D/BookPreview3D";
-import BookReader3D from "./StoryGallery3D/BookReader3D";
-import type { PageAnim } from "./StoryGallery3D/PageMesh";
+import StoryCinematic from "./StoryCinematic";
 import { galleryCaptureControl, acquireScrollLock, releaseScrollLock } from "./store";
 import { storyChapters } from "./storyData";
 
-// Page 0 is the cover; pages 1..N are the chapters — same ordering as
-// BookReader3D's PORTRAIT_PAGE_SOURCES/LANDSCAPE_PAGE_SOURCES.
-const TOTAL_PAGES = storyChapters.length + 1;
+// Slide 0 is the title/cover; slides 1..N are storyChapters[0..N-1] — same
+// ordering StoryCinematic.tsx expects.
+const TOTAL_SLIDES = storyChapters.length + 1;
 
-const FLIP_DURATION = 1.1; // seconds, one full page-turn
+const SLIDE_DURATION = 1.05; // seconds, one crossfade between slides — matches StoryCinematic's own transition duration
 const ZOOM_DURATION = 0.9; // seconds, preview -> fullscreen
 const WHEEL_THRESHOLD = 2; // ignore near-zero wheel noise
 const SWIPE_THRESHOLD = 30; // px, minimum touch swipe to count as a gesture
 // Trackpad/inertial wheel scrolling keeps emitting decaying delta events for
 // a while after the user's physical gesture ends. Without this, a single
-// flick that outlasts FLIP_DURATION triggers a second, unintended chapter
-// transition the instant the first one finishes — the page visibly turns
+// flick that outlasts SLIDE_DURATION triggers a second, unintended chapter
+// transition the instant the first one finishes — the slide visibly changes
 // twice for one scroll. A gesture only "ends" once wheel events stop for
 // this long, so trailing momentum can't chain into another transition.
 const GESTURE_IDLE_MS = 180;
@@ -32,26 +32,13 @@ export default function StoryGallerySection() {
   // The fixed fullscreen layer that appears once opened.
   const overlayRef = useRef<HTMLDivElement>(null);
   // zoomWrapRef is what the preview->fullscreen zoom actually CSS-transforms
-  // (scale/position), the same way the old DOM version transformed the
-  // `over` cover element directly. readerWrapRef (nested inside it) hosts
-  // the actual <Canvas> and is deliberately never transformed itself — see
-  // the comment at its JSX for why that split matters.
+  // (scale/position) — a plain DOM wrapper around StoryCinematic, so unlike
+  // the earlier WebGL reader there's no Canvas/ResizeObserver measurement
+  // race to guard against; the zoom can start as soon as this mounts.
   const zoomWrapRef = useRef<HTMLDivElement>(null);
-  const readerWrapRef = useRef<HTMLDivElement>(null);
 
-  // Two stacked page slots, mirroring the original CSS version's under/over
-  // convention exactly: `under` always rests flat showing the destination
-  // page, silently swapped while hidden behind `over`. `over` is the one
-  // that actually turns (see PageMesh/CurlPageMaterial) and vanishes past
-  // ~92deg via backface culling, revealing `under` (already showing the
-  // target chapter) underneath. `over` is then silently reset to
-  // progress=0/target texture, restoring the resting invariant for next time.
-  const underAnimRef = useRef<PageAnim>({ progress: 0, direction: 1, opacity: 1 });
-  const overAnimRef = useRef<PageAnim>({ progress: 0, direction: 1, opacity: 1 });
-  const [underPageIdx, setUnderPageIdx] = useState(0);
-  const [overPageIdx, setOverPageIdx] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [entered, setEntered] = useState(false);
-  const [inView, setInView] = useState(false);
   const enteredRef = useRef(false);
 
   const currentIndexRef = useRef(0);
@@ -59,22 +46,18 @@ export default function StoryGallerySection() {
   const isTransitioningRef = useRef(false); // guards the open/close zoom itself
   // Lets handleEnter (defined outside the gesture-wiring effect below) invoke
   // the same goTo used by wheel/touch/keyboard, so a single click on the
-  // preview can zoom to fullscreen AND immediately flip open to chapter 1 —
-  // instead of requiring a second click on the fullscreen cover.
+  // preview can zoom to fullscreen AND immediately advance to chapter one —
+  // instead of requiring a second click on the fullscreen cover slide.
   const goToRef = useRef<((targetIndex: number) => void) | null>(null);
-  // Holds the "now safe to start the zoom" continuation — invoked from
-  // BookReader3D's onReady (fired once R3F has actually created its WebGL
-  // context and measured its container), not a fixed timer. See handleEnter
-  // for why a blind delay wasn't reliable across cold vs. warm page loads.
-  const startZoomRef = useRef<(() => void) | null>(null);
+  // Exposes the animated closeBook to the visible close button below — on
+  // mobile there's no Escape key, and swiping all the way past either end
+  // of the book to close it isn't discoverable, so an explicit tap target
+  // is the only reliable exit once several chapters deep.
+  const closeBookRef = useRef<(() => void) | null>(null);
   const touchStartYRef = useRef<number | null>(null);
   const gestureConsumedRef = useRef(false);
   const gestureIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Read once at mount, matching CosmicBackground.tsx's existing convention.
-  // A full page-curl swings through a fairly large, sweeping motion — kept
-  // as-is (still a real page turn, not swapped for a plain crossfade) but
-  // sped up and flattened to a linear ease, since duration/easing drama is
-  // exactly what prefers-reduced-motion asks to dial back.
   const reducedMotionRef = useRef(false);
 
   useEffect(() => {
@@ -85,84 +68,25 @@ export default function StoryGallerySection() {
     enteredRef.current = entered;
   }, [entered]);
 
-  // Pauses the fullscreen reader's WebGL render loop while its section is
-  // off-screen — same IntersectionObserver + frameloop pattern already used
-  // by PhoneShowcase3D and BookPreview3D.
   useEffect(() => {
-    const el = overlayRef.current?.parentElement;
-    if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { rootMargin: "200px 0px" });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [entered]);
-
-  useEffect(() => {
-    // `thenClose`: used when backing out of chapter one by scroll — flips
-    // the cover page shut (curling backward, the mirror of a forward turn)
-    // and only once that settles does closeBook() run, so the exit reads as
-    // one continuous "the book is closing" motion instead of chapter one's
-    // content abruptly fading/shrinking away mid-page.
+    // `thenClose`: used when backing out of chapter one by scroll — crossfades
+    // back to the cover slide and only once that settles does closeBook() run,
+    // so the exit reads as one continuous "closing" motion instead of chapter
+    // one's content abruptly shrinking away mid-read.
     function goTo(targetIndex: number, thenClose = false) {
       if (isAnimatingRef.current) return;
       const from = currentIndexRef.current;
       if (targetIndex === from) return;
 
-      const forward = targetIndex > from;
-      const direction = forward ? 1 : -1;
-
       isAnimatingRef.current = true;
+      currentIndexRef.current = targetIndex;
+      setCurrentIndex(targetIndex);
 
-      // `under` reveals the destination immediately (it's hidden behind
-      // `over` until `over` curls away); `over` keeps showing the page
-      // we're turning FROM, animating out.
-      flushSync(() => {
-        setUnderPageIdx(targetIndex);
-        setOverPageIdx(from);
-      });
-      overAnimRef.current.progress = 0;
-      overAnimRef.current.direction = direction;
-      overAnimRef.current.opacity = 1;
-
-      const proxy = { progress: 0 };
-      let flipFinished = false;
-      // Guards against GSAP's onComplete never firing — observed under heavy
-      // main-thread contention from the actively-rendering WebGL canvas,
-      // which can stall GSAP's own requestAnimationFrame-driven ticker well
-      // past a tween's nominal duration (see the identical safety net in
-      // handleEnter's zoom, where this was first diagnosed: a 900ms tween's
-      // onComplete hadn't fired even 1.6s later). Without this, isAnimatingRef
-      // gets stuck true, silently blocking every future page turn.
-      const finishFlip = () => {
-        if (flipFinished) return;
-        flipFinished = true;
-        gsap.killTweensOf(proxy);
-        currentIndexRef.current = targetIndex;
-        // `over` is edge-on/invisible at progress=1 (backface-culled) —
-        // safe to silently snap it back to the resting state and swap its
-        // texture to the target page, ready as the "from" page for
-        // whichever direction the next flip goes.
-        setOverPageIdx(targetIndex);
-        overAnimRef.current.progress = 0;
+      const duration = (reducedMotionRef.current ? SLIDE_DURATION * 0.35 : SLIDE_DURATION) * 1000;
+      setTimeout(() => {
         isAnimatingRef.current = false;
         if (thenClose) closeBook();
-      };
-
-      gsap.to(proxy, {
-        progress: 1,
-        duration: reducedMotionRef.current ? FLIP_DURATION * 0.35 : FLIP_DURATION,
-        // inOut eases gently into the turn and, just as importantly, gently
-        // out of it — power2.in accelerated the whole way and then stopped
-        // dead at full speed, which read as an abrupt snap rather than a
-        // smooth turn settling into place. Flattened to linear under
-        // reduced-motion, alongside the shorter duration above.
-        ease: reducedMotionRef.current ? "none" : "power2.inOut",
-        onUpdate: () => {
-          overAnimRef.current.progress = proxy.progress;
-        },
-        onComplete: finishFlip,
-      });
-      const flipDurationMs = (reducedMotionRef.current ? FLIP_DURATION * 0.35 : FLIP_DURATION) * 1000;
-      setTimeout(finishFlip, flipDurationMs + 2500);
+      }, duration);
     }
     goToRef.current = goTo;
 
@@ -176,8 +100,7 @@ export default function StoryGallerySection() {
       function finish() {
         currentIndexRef.current = 0;
         flushSync(() => {
-          setUnderPageIdx(0);
-          setOverPageIdx(0);
+          setCurrentIndex(0);
           setEntered(false);
         });
         releaseScrollLock("story-gallery");
@@ -191,6 +114,7 @@ export default function StoryGallerySection() {
       }
       gsap.to(overlay, { opacity: 0, scale: 0.94, duration: 0.45, ease: "power2.in", onComplete: finish });
     }
+    closeBookRef.current = () => closeBook();
 
     function handleDirection(delta: number) {
       if (!enteredRef.current || isAnimatingRef.current || isTransitioningRef.current) return;
@@ -199,7 +123,7 @@ export default function StoryGallerySection() {
         // scrolling past it inconsistently was the source of the "book
         // sometimes doesn't open" flakiness.
         if (currentIndexRef.current === 0) return;
-        if (currentIndexRef.current < TOTAL_PAGES - 1) {
+        if (currentIndexRef.current < TOTAL_SLIDES - 1) {
           goTo(currentIndexRef.current + 1);
         } else {
           closeBook();
@@ -207,10 +131,10 @@ export default function StoryGallerySection() {
       } else {
         // Scrolling back up from chapter one closes the book rather than
         // landing back on an interactive cover — reopening it is a click
-        // gesture, not scroll. But it should still look like the book
-        // closing: flip chapter one shut first (goTo(0, true) — curling
-        // backward, the mirror of a forward turn), THEN fade/scale out,
-        // rather than chapter one's content abruptly vanishing mid-page.
+        // gesture, not scroll. But it should still look like it's closing:
+        // crossfade back to the cover slide first (goTo(0, true)), THEN
+        // fade/scale out, rather than chapter one's content abruptly
+        // vanishing mid-read.
         if (currentIndexRef.current > 1) {
           goTo(currentIndexRef.current - 1);
         } else if (currentIndexRef.current === 1) {
@@ -312,11 +236,9 @@ export default function StoryGallerySection() {
 
   // Click on the idly-rotating preview book: measures where it currently
   // sits, mounts the fullscreen overlay, then GSAP-tweens the (now
-  // full-viewport-sized) reader canvas from that measured rect back down to
-  // its natural size/position — reading as the small book zooming up to
-  // fill the screen, rather than an abrupt cut. `under` stays hidden
-  // (opacity 0) for the duration so the cover at full size doesn't show
-  // through behind the still-small `over` layer as it grows into it.
+  // full-viewport-sized) cinematic wrapper from that measured rect back down
+  // to its natural size/position — reading as the small book zooming up to
+  // fill the screen, rather than an abrupt cut.
   function handleEnter() {
     if (enteredRef.current || isTransitioningRef.current) return;
     const previewEl = previewWrapRef.current;
@@ -334,98 +256,60 @@ export default function StoryGallerySection() {
       return;
     }
 
-    overAnimRef.current.progress = 0;
-    overAnimRef.current.opacity = 1;
-    underAnimRef.current.opacity = 0;
     gsap.set(overlay, { opacity: 1 });
 
-    // R3F's <Canvas> measures its container's size at mount via its own
-    // ResizeObserver — if the zoom's tiny starting scale is already applied
-    // by the time that fires, it permanently locks onto that tiny size (a
-    // transform change doesn't fire ResizeObserver again). Keeping zoomWrap
-    // invisible-but-untransformed until BookReader3D's onReady confirms R3F
-    // has actually created its WebGL context (and therefore already
-    // measured its container) avoids the race entirely, rather than
-    // guessing a fixed delay: a hardcoded wait tuned against a warm dev
-    // server reliably passed on subsequent loads but was NOT long enough on
-    // a genuinely cold first load (all of this session's changed files
-    // compiling for the first time), which reproduced the exact
-    // "permanently stuck small in the corner" bug this was meant to fix.
-    // Two nested rAFs was tried even earlier and also wasn't reliable —
-    // ResizeObserver callbacks run in their own timing phase that can land
-    // after a same-frame rAF chain.
-    gsap.set(zoomWrap, { opacity: 0 });
+    // flushSync above already committed the DOM, so zoomWrap's real
+    // fullscreen rect is measurable right away — unlike the old WebGL
+    // reader, a plain DOM wrapper has no ResizeObserver-vs-transform race to
+    // wait out here.
+    const targetRect = zoomWrap.getBoundingClientRect();
+    const scaleX = startRect.width / targetRect.width;
+    const scaleY = startRect.height / targetRect.height;
+    const originX = startRect.left + startRect.width / 2 - (targetRect.left + targetRect.width / 2);
+    const originY = startRect.top + startRect.height / 2 - (targetRect.top + targetRect.height / 2);
 
-    let started = false;
-    const startZoom = () => {
-      if (started) return;
-      started = true;
-      startZoomRef.current = null;
-
-      const targetRect = zoomWrap.getBoundingClientRect();
-      const scaleX = startRect.width / targetRect.width;
-      const scaleY = startRect.height / targetRect.height;
-      const originX = startRect.left + startRect.width / 2 - (targetRect.left + targetRect.width / 2);
-      const originY = startRect.top + startRect.height / 2 - (targetRect.top + targetRect.height / 2);
-
-      let openFinished = false;
-      // Guards against GSAP's onComplete never firing. Confirmed via direct
-      // instrumentation: with the fullscreen reader's WebGL canvas actively
-      // rendering (frameloop "always"), the heavy per-frame render cost can
-      // starve the main thread badly enough to stall GSAP's own
-      // requestAnimationFrame-driven ticker — a 900ms tween's onComplete was
-      // observed not firing even 1.6s later. Without this safety net,
-      // isTransitioningRef gets stuck true forever, and closeBook()'s own
-      // guard then silently no-ops on every future Escape/scroll/nav-escape
-      // attempt — the book becomes permanently unclosable.
-      const finishOpening = () => {
-        if (openFinished) return;
-        openFinished = true;
-        gsap.killTweensOf(zoomWrap);
-        gsap.set(zoomWrap, { x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: 1 });
-        currentIndexRef.current = 0;
-        underAnimRef.current.opacity = 1;
-        isTransitioningRef.current = false;
-        // A single click on the preview now takes the reader all the way
-        // to chapter one — zoom to fullscreen, then straight into the
-        // opening page-turn — instead of landing on the closed cover and
-        // waiting for a second click. A short beat (skipped/shortened
-        // under reduced motion, matching this component's other timings)
-        // lets the zoom's arrival register before the cover starts
-        // turning, rather than the two motions blurring into one.
-        // enteredRef is re-checked since the book could have been closed
-        // (Escape, nav-link escape) during this delay.
-        setTimeout(
-          () => {
-            if (enteredRef.current) goToRef.current?.(1);
-          },
-          reducedMotionRef.current ? 60 : 220
-        );
-      };
-
-      gsap.fromTo(
-        zoomWrap,
-        { x: originX, y: originY, scaleX, scaleY, opacity: 1, transformOrigin: "center center" },
-        {
-          x: 0,
-          y: 0,
-          scaleX: 1,
-          scaleY: 1,
-          duration: reducedMotionRef.current ? ZOOM_DURATION * 0.35 : ZOOM_DURATION,
-          ease: reducedMotionRef.current ? "none" : "power3.inOut",
-          onComplete: finishOpening,
-        }
+    let openFinished = false;
+    // Guards against GSAP's onComplete never firing under heavy main-thread
+    // contention — the identical safety net used throughout this file's
+    // history for every GSAP-driven transition.
+    const finishOpening = () => {
+      if (openFinished) return;
+      openFinished = true;
+      gsap.killTweensOf(zoomWrap);
+      gsap.set(zoomWrap, { x: 0, y: 0, scaleX: 1, scaleY: 1 });
+      currentIndexRef.current = 0;
+      isTransitioningRef.current = false;
+      // A single click on the preview now takes the reader all the way to
+      // chapter one — zoom to fullscreen, then straight into the opening
+      // crossfade — instead of landing on the cover slide and waiting for a
+      // second click. A short beat (skipped/shortened under reduced motion)
+      // lets the zoom's arrival register before the first chapter appears,
+      // rather than the two motions blurring into one. enteredRef is
+      // re-checked since the book could have been closed (Escape, nav-link
+      // escape) during this delay.
+      setTimeout(
+        () => {
+          if (enteredRef.current) goToRef.current?.(1);
+        },
+        reducedMotionRef.current ? 60 : 220
       );
-      const zoomDurationMs = (reducedMotionRef.current ? ZOOM_DURATION * 0.35 : ZOOM_DURATION) * 1000;
-      setTimeout(finishOpening, zoomDurationMs + 2500);
     };
 
-    startZoomRef.current = startZoom;
-    // Safety net only — onReady should always fire first in practice. Guards
-    // against a pathological case (e.g. a WebGL context creation failure)
-    // where onReady never fires and the reader would otherwise hang
-    // invisible forever.
-    setTimeout(startZoom, 4000);
+    gsap.fromTo(
+      zoomWrap,
+      { x: originX, y: originY, scaleX, scaleY, transformOrigin: "center center" },
+      {
+        x: 0,
+        y: 0,
+        scaleX: 1,
+        scaleY: 1,
+        duration: reducedMotionRef.current ? ZOOM_DURATION * 0.35 : ZOOM_DURATION,
+        ease: reducedMotionRef.current ? "none" : "power3.inOut",
+        onComplete: finishOpening,
+      }
+    );
+    const zoomDurationMs = (reducedMotionRef.current ? ZOOM_DURATION * 0.35 : ZOOM_DURATION) * 1000;
+    setTimeout(finishOpening, zoomDurationMs + 2500);
   }
 
   return (
@@ -484,28 +368,29 @@ export default function StoryGallerySection() {
           className="fixed inset-0 flex items-center justify-center overflow-hidden bg-[color:var(--bg)]"
           style={{ zIndex: 32, opacity: 0 }}
         >
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40" />
-          <div className="pointer-events-none absolute inset-0 vignette-edge" />
-          <div className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color:var(--accent-warm)]/6 blur-[160px]" />
+          {/* Explicit close control — Escape and swiping past either end
+              both already close the book, but neither is discoverable on a
+              touch device (no keyboard, and swiping back through every
+              already-read chapter just to exit isn't obvious), so this is
+              the only reliably reachable exit once several chapters deep.
+              Pinned below the header at every breakpoint, not just top-right
+              — Header.tsx's own nav wrapper spans the full viewport width
+              (`inset-x-0`) for hit-testing even though its visible pill is
+              centered/right-aligned within it, so anything placed inside
+              that same top band anywhere across the width gets its clicks
+              swallowed by the wrapper's z-40, not just directly under the
+              pill itself. */}
+          <button
+            type="button"
+            onClick={() => closeBookRef.current?.()}
+            aria-label="Close the Noorva story book"
+            className="fixed top-20 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/70 text-white/70 backdrop-blur-xl transition-colors duration-300 hover:text-[color:var(--accent-warm)] sm:right-4 md:top-24 md:right-6 md:h-10 md:w-10"
+          >
+            <X className="h-4 w-4" strokeWidth={1.75} />
+          </button>
 
-          {/* zoomWrapRef is what handleEnter's GSAP transform actually
-              scales/translates — readerWrapRef (the Canvas's immediate
-              container) stays untransformed and always at its natural full
-              size, so R3F measures it correctly at mount instead of latching
-              onto the zoom's scaled-down starting size (transforms don't
-              fire ResizeObserver, so a Canvas that mounts mid-scale never
-              gets a chance to re-measure once the scale animates back to 1). */}
           <div ref={zoomWrapRef} className="h-screen w-full">
-            <div ref={readerWrapRef} className="relative h-screen w-full">
-              <BookReader3D
-                underIndex={underPageIdx}
-                overIndex={overPageIdx}
-                underAnimRef={underAnimRef}
-                overAnimRef={overAnimRef}
-                frameloop={inView ? "always" : "never"}
-                onReady={() => startZoomRef.current?.()}
-              />
-            </div>
+            <StoryCinematic currentIndex={currentIndex} />
           </div>
         </div>
       )}
