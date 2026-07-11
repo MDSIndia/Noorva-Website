@@ -2,17 +2,18 @@
 
 import { Canvas } from "@react-three/fiber";
 import { Environment, ContactShadows } from "@react-three/drei";
-import PhoneModel, { type PhoneModelHandle } from "./PhoneModel";
+import PhoneModel from "./PhoneModel";
 import Podium from "./Podium";
-import type { Ref } from "react";
 
 interface SceneProps {
-  activeIndex: number;
-  phoneRef: Ref<PhoneModelHandle>;
+  /** Which feature indices currently have a mounted phone — 1 entry when
+   *  settled on a feature, 2 during a carousel transition (outgoing +
+   *  incoming), driven by PhoneShowcase3D.tsx's scroll-scrubbed timeline. */
+  renderIndices: number[];
   frameloop?: "always" | "never" | "demand";
 }
 
-export default function Scene({ activeIndex, phoneRef, frameloop = "always" }: SceneProps) {
+export default function Scene({ renderIndices, frameloop = "always" }: SceneProps) {
   return (
     <Canvas
       frameloop={frameloop}
@@ -38,7 +39,9 @@ export default function Scene({ activeIndex, phoneRef, frameloop = "always" }: S
           backdrop — the page's own cosmic background stays what's seen. */}
       <Environment preset="city" background={false} environmentIntensity={1.6} />
 
-      <PhoneModel ref={phoneRef} activeIndex={activeIndex} />
+      {renderIndices.map((idx) => (
+        <PhoneModel key={idx} activeIndex={idx} />
+      ))}
 
       {/* This camera (fixed at z=4.6, fov=32, not a dynamic fitTarget like
           other Scene components in this repo) only shows about 1.32 world
@@ -52,22 +55,13 @@ export default function Scene({ activeIndex, phoneRef, frameloop = "always" }: S
           windows (chrome/taskbar/zoom) render a shorter effective viewport
           than a clean test window, which was eating into a tighter margin
           and clipping most of the podium down to a thin visible sliver. */}
+      {/* Podium.tsx now owns its own dedicated stage lighting internally
+          (as children of its own group, positioned relative to it) so that
+          lighting can be recolored per-frame to match whichever feature's
+          accent is active/incoming — it needs a ref to each light to do
+          that, which only works cleanly if Podium.tsx renders them itself
+          rather than Scene.tsx holding them at arm's length. */}
       <Podium position={[0, -1.18, 0]} />
-
-      {/* Dedicated stage lighting for the podium — its own light sources
-          close to it, rather than just catching spillover from the phone's
-          key/rim lights above. Plain pointLights (not spotLight) since a
-          spotLight's default target Object3D isn't attached to the scene
-          graph in R3F unless done explicitly, which silently leaves it
-          aimed at the origin regardless of any position prop — these avoid
-          that pitfall entirely. All blue-toned and pushed brighter/further
-          than before so the podium visibly uplights the phone's lower body
-          — the podium is now a dark navy that blends into the background,
-          so this glow is what actually sells it as a light source next to
-          the phone rather than just a dark shape it happens to float near. */}
-      <pointLight position={[0, -0.7, 1.3]} intensity={2.2} distance={3.4} decay={2} color="#7ec4ea" />
-      <pointLight position={[0.9, -0.95, 1.1]} intensity={1.1} distance={3} decay={2} color="#4fa8d5" />
-      <pointLight position={[-0.9, -0.95, 1.1]} intensity={1.1} distance={3} decay={2} color="#4fa8d5" />
 
       <ContactShadows position={[0, -1.18, 0]} opacity={0.55} scale={4} blur={2.4} far={2} resolution={256} frames={1} color="#000000" />
     </Canvas>

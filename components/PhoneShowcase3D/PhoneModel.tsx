@@ -1,29 +1,20 @@
 "use client";
 
-import { forwardRef, Suspense, useImperativeHandle, useMemo, useRef } from "react";
+import { Suspense, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { phoneShowRotation } from "../store";
-import { FEATURES } from "../FeatureShowcase/featuresData";
+import { phoneCarouselX } from "../store";
+import { FEATURES, ACCENT_HEX } from "../FeatureShowcase/featuresData";
 import ScreenContent from "./ScreenContent";
 import { roundedRectShape } from "./geometry";
 
-export interface PhoneModelHandle {
-  /** Quick decaying scale punch — played whenever the active feature changes. */
-  pulse: () => void;
-}
-
 interface PhoneModelProps {
+  /** Which feature this specific phone instance shows — fixed for its
+   *  whole lifetime. A new feature means a whole new PhoneModel mounts
+   *  (see PhoneShowcase3D.tsx's renderIndices), not this prop changing on
+   *  an existing instance, so there's no in-place content swap to animate. */
   activeIndex: number;
 }
-
-// CSS custom properties aren't resolvable inside WebGL materials — this
-// mirrors the literal hex values from app/globals.css's :root block.
-const ACCENT_HEX: Record<string, string> = {
-  "var(--accent-1)": "#7c5cfc",
-  "var(--accent-2)": "#4fa8d5",
-  "var(--accent-warm)": "#e8b478",
-};
 
 // iPhone 16 Pro's real dimensions (149.6 x 71.5 x 8.25mm), normalized so the
 // body height lands at 2.42 scene units — every other measurement below is
@@ -53,23 +44,28 @@ const TITANIUM = "#b0b0b4";
 // slack beyond the one-viewport check to stay clear of the frustum edge.
 const SHOWCASE_SCALE = 0.8;
 
-// Entrance slide: the phone starts off to the right and glides in to its
-// resting x=0 as the section first mounts, timed to arrive alongside
-// Podium.tsx's own mirrored slide-in from the left — the two converging
-// toward center reads as a single deliberate "assembling" entrance instead
-// of two unrelated objects that happen to already be there.
+// Carousel spacing — how far apart (in world units) each feature's phone
+// sits along the X axis. Reused as-is from the old single-phone entrance's
+// own off-screen offset (2.6), which was already proven to clear this
+// camera's frustum at every breakpoint, so a neighboring slot at exactly
+// this distance is guaranteed off-screen rather than peeking into frame.
+const SLOT_SPACING = 2.6;
+
+// Mount entrance — every phone instance (not just the very first) eases in
+// from this extra offset added on top of its own carousel position. For the
+// very first phone this produces the classic "slides in from the right"
+// reveal (carousel position is 0 at mount, so the offset alone carries it
+// off-screen to start). For every later phone, its carousel position is
+// already off-screen (it only ever mounts as the upcoming slot, one full
+// SLOT_SPACING to the right) by the time this runs, so the extra offset
+// just makes it briefly even further off-screen — invisible either way,
+// and resolved back to its true carousel position well before a real
+// scroll gesture brings it into view. Simpler than gating this per-instance.
 const ENTRANCE_X_OFFSET = 2.6;
 
-const PhoneModel = forwardRef<PhoneModelHandle, PhoneModelProps>(function PhoneModel({ activeIndex }, ref) {
+function PhoneModel({ activeIndex }: PhoneModelProps) {
   const groupRef = useRef<THREE.Group>(null);
-  const pulseEnvelope = useRef(0); // 0..1, decays back to 0 after pulse() fires
   const entranceRef = useRef(0); // 0..1, eases up once on mount — never resets
-
-  useImperativeHandle(ref, () => ({
-    pulse: () => {
-      pulseEnvelope.current = 1;
-    },
-  }));
 
   // Flat-sided body: a rounded-rect face extruded to the phone's thickness —
   // RoundedBox's uniform rounding reads as a rounded pebble instead of the
@@ -100,35 +96,40 @@ const PhoneModel = forwardRef<PhoneModelHandle, PhoneModelProps>(function PhoneM
     const group = groupRef.current;
     if (!group) return;
 
-    // "Roll in": the very first time this mounts, the phone spins the last
-    // stretch into its correct scroll-driven angle instead of just being
-    // present — plays once, over about a second, then never again. Clamp
-    // delta here specifically: Scene.tsx's Canvas toggles frameloop from
-    // "never" to "always" once the section scrolls into view, and the very
-    // first frame after that switch reports a large delta (real wall-clock
-    // time since the last render, while frameloop was paused) — left
-    // unclamped, that one frame alone blows entranceRef straight to 1 and
-    // the whole entrance plays out as an instant snap instead of animating.
+    // Mount entrance — plays once, over about a second, then never again.
+    // Clamp delta here specifically: Scene.tsx's Canvas toggles frameloop
+    // from "never" to "always" once the section scrolls into view, and the
+    // very first frame after that switch reports a large delta (real
+    // wall-clock time since the last render, while frameloop was paused) —
+    // left unclamped, that one frame alone blows entranceRef straight to 1
+    // and the whole entrance plays out as an instant snap instead of
+    // animating.
     const entranceDelta = Math.min(delta, 1 / 30);
     entranceRef.current = Math.min(1, entranceRef.current + entranceDelta * 1.1);
     const entrance = 1 - Math.pow(1 - entranceRef.current, 3); // easeOutCubic
 
-    const targetDeg = phoneShowRotation.value;
-    const entranceSpinDeg = (1 - entrance) * 130;
-    group.rotation.y = THREE.MathUtils.degToRad(targetDeg + entranceSpinDeg);
+    // Carousel position: this instance's own fixed feature index minus the
+    // continuously scroll-driven carousel value, scaled to world units.
+    // Positive while this phone is still "upcoming" (off to the right),
+    // zero once it's the fully-centered active one, negative once it's
+    // become the "outgoing" phone sliding away to the left — the actual
+    // "new phone from the right, old phone to the left" motion, driven by
+    // the same single scrubbed value for every mounted phone at once.
+    const carouselOffset = (activeIndex - phoneCarouselX.value) * SLOT_SPACING;
 
-    // Subtle idle float, layered on top of the scroll-driven rotation —
-    // always on, small enough to read as "alive" without looking animated.
+    // Always facing forward — no more scroll-driven spin. The carousel
+    // slide is the whole transition now; a still-spinning phone on top of
+    // that would look chaotic rather than like a clean product swap.
+    group.rotation.y = 0;
+
+    // Subtle idle float, always on, small enough to read as "alive"
+    // without looking animated.
     const t = state.clock.getElapsedTime();
     group.position.y = Math.sin(t * 0.55) * 0.045 - (1 - entrance) * 0.35;
-    group.position.x = (1 - entrance) * ENTRANCE_X_OFFSET;
+    group.position.x = carouselOffset + (1 - entrance) * ENTRANCE_X_OFFSET;
 
-    // Decaying pulse: a quick, soft punch right after a feature change,
-    // never a hard snap. Combined with the entrance's own scale-up.
-    pulseEnvelope.current = Math.max(0, pulseEnvelope.current - delta * 2.2);
-    const bump = Math.sin(pulseEnvelope.current * Math.PI) * 0.045;
     const entranceScale = THREE.MathUtils.lerp(0.8, 1, entrance);
-    group.scale.setScalar((entranceScale + bump) * SHOWCASE_SCALE);
+    group.scale.setScalar(entranceScale * SHOWCASE_SCALE);
   });
 
   const feature = FEATURES[activeIndex];
@@ -288,6 +289,6 @@ const PhoneModel = forwardRef<PhoneModelHandle, PhoneModelProps>(function PhoneM
       </Suspense>
     </group>
   );
-});
+}
 
 export default PhoneModel;

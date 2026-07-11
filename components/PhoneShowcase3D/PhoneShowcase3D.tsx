@@ -6,18 +6,13 @@ import { ArrowRight } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Scene from "./Scene";
-import type { PhoneModelHandle } from "./PhoneModel";
 import { FEATURES } from "../FeatureShowcase/featuresData";
-import { phoneShowRotation, lenisRef, galleryCaptureControl } from "../store";
+import { phoneCarouselX, lenisRef, galleryCaptureControl } from "../store";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// One full 360deg turn per feature, four features — see the master spec's
-// own checkpoint table (Feature 1 -> 0deg ... Feature 4 -> 1080deg, exit at 1440deg).
-const DEG_PER_FEATURE = 360;
-const TOTAL_DEG = DEG_PER_FEATURE * FEATURES.length;
 // How much scroll distance the whole pinned sequence consumes, in viewport
-// heights — long enough that each 360deg turn doesn't fly by too fast.
+// heights — long enough that each slide transition doesn't fly by too fast.
 const PIN_VH_MULTIPLIER = 3.6;
 
 function goToClosing() {
@@ -28,8 +23,13 @@ function goToClosing() {
 export default function PhoneShowcase3D() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
-  const phoneRef = useRef<PhoneModelHandle>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  // Which feature indices currently have a mounted phone — [0] when settled,
+  // [i, i+1] mid-transition (outgoing + incoming). Only updates on an
+  // integer crossing (see onUpdate below), not every scroll tick, so this
+  // doesn't cause a React re-render on every scrubbed frame the way writing
+  // the continuous position itself to state would.
+  const [renderIndices, setRenderIndices] = useState<number[]>([0]);
   const [inView, setInView] = useState(false);
 
   // Pause the WebGL render loop entirely while the canvas is off-screen —
@@ -48,8 +48,9 @@ export default function PhoneShowcase3D() {
     const section = sectionRef.current;
     if (!section) return;
 
-    const rotationProxy = { deg: 0 };
-    let lastIndex = -1;
+    const proxy = { p: 0 };
+    let lastFloor = -1;
+    let lastDisplay = -1;
 
     const tl = gsap.timeline({
       scrollTrigger: {
@@ -63,17 +64,34 @@ export default function PhoneShowcase3D() {
       },
     });
 
-    tl.to(rotationProxy, {
-      deg: TOTAL_DEG,
+    // Continuous 0 -> (N-1) sweep — 0 sits exactly on the first feature,
+    // 1 on the second, 1.5 is halfway through the slide from second to
+    // third, etc. Every mounted PhoneModel reads this same value each frame
+    // to compute its own carousel offset; this timeline only needs to track
+    // the *discrete* feature-index crossings, to know which one or two
+    // phones ought to be mounted at all.
+    tl.to(proxy, {
+      p: FEATURES.length - 1,
       duration: 1,
       ease: "none",
       onUpdate: () => {
-        phoneShowRotation.value = rotationProxy.deg;
-        const idx = Math.min(FEATURES.length - 1, Math.floor(rotationProxy.deg / DEG_PER_FEATURE));
-        if (idx !== lastIndex) {
-          lastIndex = idx;
-          setActiveIndex(idx);
-          phoneRef.current?.pulse();
+        phoneCarouselX.value = proxy.p;
+        const idxA = Math.max(0, Math.min(FEATURES.length - 1, Math.floor(proxy.p)));
+        const idxB = Math.min(FEATURES.length - 1, idxA + 1);
+        const blend = proxy.p - idxA;
+
+        // Text column / progress dots switch at the slide's midpoint, not
+        // at the very start of the transition — matches the old rotation
+        // model's "crossfades once the turn is far enough along" feel.
+        const displayIndex = blend >= 0.5 ? idxB : idxA;
+        if (displayIndex !== lastDisplay) {
+          lastDisplay = displayIndex;
+          setActiveIndex(displayIndex);
+        }
+
+        if (idxA !== lastFloor) {
+          lastFloor = idxA;
+          setRenderIndices(idxB !== idxA ? [idxA, idxB] : [idxA]);
         }
       },
     });
@@ -158,7 +176,7 @@ export default function PhoneShowcase3D() {
 
           {/* Pinned 3D phone */}
           <div ref={canvasWrapRef} className="order-1 h-[40vh] w-full sm:h-[46vh] lg:order-2 lg:h-[75vh]">
-            <Scene activeIndex={activeIndex} phoneRef={phoneRef} frameloop={inView ? "always" : "never"} />
+            <Scene renderIndices={renderIndices} frameloop={inView ? "always" : "never"} />
           </div>
         </div>
       </div>

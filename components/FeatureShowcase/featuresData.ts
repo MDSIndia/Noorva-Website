@@ -2,6 +2,17 @@ import { Compass, MessageCircle, CalendarCheck, HeartHandshake, type LucideIcon 
 
 export type Side = "left" | "right";
 
+// CSS custom properties aren't resolvable inside WebGL materials — this
+// mirrors the literal hex values from app/globals.css's :root block. Shared
+// here (rather than defined inline in PhoneModel.tsx, where it originated)
+// since Podium.tsx now needs the same mapping to recolor its glow to match
+// whichever feature's phone is currently active/incoming.
+export const ACCENT_HEX: Record<string, string> = {
+  "var(--accent-1)": "#7c5cfc",
+  "var(--accent-2)": "#4fa8d5",
+  "var(--accent-warm)": "#e8b478",
+};
+
 export interface Feature {
   icon: LucideIcon;
   title: string;

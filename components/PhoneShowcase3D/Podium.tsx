@@ -3,6 +3,8 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { phoneCarouselX } from "../store";
+import { FEATURES, ACCENT_HEX } from "../FeatureShowcase/featuresData";
 
 interface PodiumProps {
   position?: [number, number, number];
@@ -40,20 +42,18 @@ const PODIUM_TOP_Y = stackedY;
 // Deep navy-blue rather than neutral near-black — matches the page's own
 // dark starfield backdrop (CosmicBackground/CosmicCanvas) so the podium
 // reads as part of the same dark environment instead of a separate gray/gold
-// object sitting on top of it. The crown tier stays a distinct lighter
-// surface (now blue-toned, not gold) so the step from "dark stage" to
-// "glowing crown" the phone rests above is still legible, just recolored to
-// the site's cool accent (--accent-2) instead of the warm one.
+// object sitting on top of it. This stays fixed regardless of feature — it's
+// the "dark stage" the glow (which does change per feature, see below) sits
+// on top of, not the accent color itself.
 const PODIUM_METAL = "#060a18";
 const PODIUM_CAP = "#0f1c3a";
-const TRIM_ACCENT = "#4fa8d5";
-const GLOW_COLOR = "#4fa8d5";
+const DEFAULT_ACCENT = "#4fa8d5";
 
 // A visible cone of light rising from the podium's crown up through/around
 // the phone — narrow at the source, widening as it rises, like a stage
 // spotlight shining upward. This is the actual "light coming from the
-// podium" the point lights in Scene.tsx only implied via reflected
-// highlights; this mesh is the beam itself, rendered directly.
+// podium" the point lights below only imply via reflected highlights; this
+// mesh is the beam itself, rendered directly.
 const BEAM_HEIGHT = 1.7;
 const BEAM_RADIUS_BOTTOM = 0.1;
 const BEAM_RADIUS_TOP = 0.52;
@@ -65,12 +65,26 @@ const BEAM_RADIUS_TOP = 0.52;
 // converge toward center together rather than drifting in independently.
 const ENTRANCE_X_OFFSET = -2.2;
 
+// Podium's own stage lighting, positioned relative to its group (not the
+// scene root) so it slides in together with the podium during the entrance
+// and stays correctly placed regardless of the `position` prop. World-space
+// equivalents these replaced: [0,-0.7,1.3], [0.9,-0.95,1.1], [-0.9,-0.95,1.1]
+// at a podium position of [0,-1.18,0] — converted to local offsets here.
+const PODIUM_LIGHTS = [
+  { position: [0, 0.48, 1.3] as [number, number, number], intensity: 2.2, distance: 3.4 },
+  { position: [0.9, 0.23, 1.1] as [number, number, number], intensity: 1.1, distance: 3 },
+  { position: [-0.9, 0.23, 1.1] as [number, number, number], intensity: 1.1, distance: 3 },
+];
+
 // Radial-gradient canvas texture for the ground glow — the disc is viewed at
 // a shallow, near-edge-on angle from Scene.tsx's camera, so a flat solid
 // color with a hard circular edge foreshortens into a stark, hard-edged bar
 // across the whole frame instead of a soft glow puddle. Feathering the alpha
 // out to zero at the rim keeps it reading as a glow at any angle, matching
-// the CanvasTexture + SSR-guard pattern already used in BookModel.tsx.
+// the CanvasTexture + SSR-guard pattern already used in BookModel.tsx. Baked
+// in neutral white (not a fixed hue) — this now gets tinted per-frame via
+// the material's own `color`, which shifts to match whichever feature is
+// active/incoming, so the texture itself has to stay color-neutral.
 function useGlowTexture() {
   return useMemo(() => {
     if (typeof document === "undefined") return null;
@@ -81,9 +95,9 @@ function useGlowTexture() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
     const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-    gradient.addColorStop(0, "rgba(79,168,213,1)");
-    gradient.addColorStop(0.45, "rgba(79,168,213,0.5)");
-    gradient.addColorStop(1, "rgba(79,168,213,0)");
+    gradient.addColorStop(0, "rgba(255,255,255,1)");
+    gradient.addColorStop(0.45, "rgba(255,255,255,0.5)");
+    gradient.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, size, size);
     const texture = new THREE.CanvasTexture(canvas);
@@ -98,7 +112,8 @@ function useGlowTexture() {
 // empirically for BookModel.tsx's paper-edge texture — this one's the
 // documented, reliable default), so a canvas gradient bright at the bottom
 // and fading to transparent at the top reads as a beam of light rising from
-// the podium rather than a solid illuminated cone.
+// the podium rather than a solid illuminated cone. Also baked in neutral
+// white for the same per-frame tinting reason as the glow texture above.
 function useBeamTexture() {
   return useMemo(() => {
     if (typeof document === "undefined") return null;
@@ -109,9 +124,9 @@ function useBeamTexture() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
     const gradient = ctx.createLinearGradient(0, size, 0, 0);
-    gradient.addColorStop(0, "rgba(126,196,234,0.9)");
-    gradient.addColorStop(0.35, "rgba(79,168,213,0.35)");
-    gradient.addColorStop(1, "rgba(79,168,213,0)");
+    gradient.addColorStop(0, "rgba(255,255,255,0.9)");
+    gradient.addColorStop(0.35, "rgba(255,255,255,0.35)");
+    gradient.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 8, size);
     const texture = new THREE.CanvasTexture(canvas);
@@ -125,7 +140,15 @@ export default function Podium({ position = [0, -1.42, 0] }: PodiumProps) {
   const ringRef = useRef<THREE.Mesh>(null);
   const haloRef = useRef<THREE.Mesh>(null);
   const beamRef = useRef<THREE.Mesh>(null);
+  const capMaterialRef = useRef<THREE.MeshPhysicalMaterial>(null);
+  const trimRefs = useRef<(THREE.Mesh | null)[]>([]);
+  const lightRefs = useRef<(THREE.PointLight | null)[]>([]);
   const entranceRef = useRef(0); // 0..1, eases up once on mount — never resets
+  // Reused every frame rather than allocated fresh — avoids a per-frame
+  // THREE.Color garbage-collection churn for what's otherwise a cheap lerp.
+  const accentColor = useRef(new THREE.Color(DEFAULT_ACCENT));
+  const scratchA = useRef(new THREE.Color());
+  const scratchB = useRef(new THREE.Color());
   const glowTexture = useGlowTexture();
   const beamTexture = useBeamTexture();
 
@@ -145,17 +168,53 @@ export default function Podium({ position = [0, -1.42, 0] }: PodiumProps) {
       group.position.set(position[0] + (1 - entrance) * ENTRANCE_X_OFFSET, position[1], position[2]);
     }
 
+    // Blend toward whichever feature's accent color is active/incoming,
+    // reading the exact same continuous scroll-driven value PhoneModel.tsx
+    // uses for its own carousel slide — the podium's glow shifts color in
+    // sync with the phone transition instead of snapping at a different
+    // moment or drifting out of sync with it.
+    const p = THREE.MathUtils.clamp(phoneCarouselX.value, 0, FEATURES.length - 1);
+    const idxA = Math.min(FEATURES.length - 1, Math.floor(p));
+    const idxB = Math.min(FEATURES.length - 1, idxA + 1);
+    const blend = p - idxA;
+    scratchA.current.set(ACCENT_HEX[FEATURES[idxA].accent] ?? DEFAULT_ACCENT);
+    scratchB.current.set(ACCENT_HEX[FEATURES[idxB].accent] ?? DEFAULT_ACCENT);
+    accentColor.current.copy(scratchA.current).lerp(scratchB.current, blend);
+
     // Slow breathing glow on the top accent ring and the soft halo beneath
     // it — enough to read as "alive" without competing with the phone's own
-    // scroll-driven rotation, which is the thing that should actually draw
-    // the eye.
+    // carousel slide, which is the thing that should actually draw the eye.
     const pulse = 0.55 + Math.sin(state.clock.getElapsedTime() * 0.8) * 0.25;
     const ring = ringRef.current;
-    if (ring) (ring.material as THREE.MeshBasicMaterial).opacity = pulse;
+    if (ring) {
+      const mat = ring.material as THREE.MeshBasicMaterial;
+      mat.opacity = pulse;
+      mat.color.copy(accentColor.current);
+    }
     const halo = haloRef.current;
-    if (halo) (halo.material as THREE.MeshBasicMaterial).opacity = pulse * 0.4;
+    if (halo) {
+      const mat = halo.material as THREE.MeshBasicMaterial;
+      mat.opacity = pulse * 0.4;
+      mat.color.copy(accentColor.current);
+    }
     const beam = beamRef.current;
-    if (beam) (beam.material as THREE.MeshBasicMaterial).opacity = 0.5 + pulse * 0.35;
+    if (beam) {
+      const mat = beam.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.5 + pulse * 0.35;
+      mat.color.copy(accentColor.current);
+    }
+    trimRefs.current.forEach((mesh) => {
+      if (!mesh) return;
+      const mat = mesh.material as THREE.MeshPhysicalMaterial;
+      mat.color.copy(accentColor.current);
+      mat.emissive.copy(accentColor.current);
+    });
+    if (capMaterialRef.current) {
+      capMaterialRef.current.emissive.copy(accentColor.current);
+    }
+    lightRefs.current.forEach((light) => {
+      if (light) light.color.copy(accentColor.current);
+    });
   });
 
   const topRadius = TIERS[TIERS.length - 1].radiusTop;
@@ -167,6 +226,20 @@ export default function Podium({ position = [0, -1.42, 0] }: PodiumProps) {
     // group so neither one flashes at its resting position for a frame
     // before the entrance animation takes over.
     <group ref={groupRef}>
+      {PODIUM_LIGHTS.map((light, i) => (
+        <pointLight
+          key={i}
+          ref={(el) => {
+            lightRefs.current[i] = el;
+          }}
+          position={light.position}
+          intensity={light.intensity}
+          distance={light.distance}
+          decay={2}
+          color={DEFAULT_ACCENT}
+        />
+      ))}
+
       {/* Soft additive glow disc, flush with the ground — sells "light
           source" presence even at a glance, independent of how much the
           physical tier steps themselves catch the eye. Feathered via
@@ -175,7 +248,7 @@ export default function Podium({ position = [0, -1.42, 0] }: PodiumProps) {
       <mesh ref={haloRef} position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[baseRadius * 1.35, 48]} />
         <meshBasicMaterial
-          color={GLOW_COLOR}
+          color={DEFAULT_ACCENT}
           map={glowTexture}
           toneMapped={false}
           transparent
@@ -191,6 +264,7 @@ export default function Podium({ position = [0, -1.42, 0] }: PodiumProps) {
           <mesh key={i} position={[0, tier.centerY, 0]} castShadow receiveShadow>
             <cylinderGeometry args={[tier.radiusTop, tier.radiusBottom, tier.height, 64]} />
             <meshPhysicalMaterial
+              ref={isCap ? capMaterialRef : undefined}
               color={isCap ? PODIUM_CAP : PODIUM_METAL}
               metalness={isCap ? 0.75 : 0.35}
               roughness={isCap ? 0.22 : 0.42}
@@ -203,18 +277,25 @@ export default function Podium({ position = [0, -1.42, 0] }: PodiumProps) {
         );
       })}
 
-      {/* A bright blue trim seam at the lower two step edges — emissive so
-          it reads as a lit accent line regardless of viewing/lighting
-          angle, rather than depending on catching a specular reflection
-          the way a plain metallic ring does. The topmost shoulder skips
-          this trim; the crown tier and glow ring above it already carry
-          that accent role. */}
+      {/* A bright trim seam at the lower two step edges, tinted to the
+          active feature's accent — emissive so it reads as a lit accent
+          line regardless of viewing/lighting angle, rather than depending
+          on catching a specular reflection the way a plain metallic ring
+          does. The topmost shoulder skips this trim; the crown tier and
+          glow ring above it already carry that accent role. */}
       {TIERS.slice(0, -1).map((tier, i) => (
-        <mesh key={`edge-${i}`} position={[0, tier.centerY + tier.height / 2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh
+          key={`edge-${i}`}
+          ref={(el) => {
+            trimRefs.current[i] = el;
+          }}
+          position={[0, tier.centerY + tier.height / 2, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
           <ringGeometry args={[tier.radiusTop * 0.97, tier.radiusTop * 1.07, 48]} />
           <meshPhysicalMaterial
-            color={TRIM_ACCENT}
-            emissive={TRIM_ACCENT}
+            color={DEFAULT_ACCENT}
+            emissive={DEFAULT_ACCENT}
             emissiveIntensity={0.4}
             metalness={0.9}
             roughness={0.18}
@@ -223,13 +304,13 @@ export default function Podium({ position = [0, -1.42, 0] }: PodiumProps) {
         </mesh>
       ))}
 
-      {/* Glowing blue crown ring, set into the cap like a jewel — the one
-          hero accent, matching the dark-blue podium that now blends into
-          the page's own starfield backdrop instead of standing apart from
-          it. */}
+      {/* Glowing crown ring, set into the cap like a jewel, tinted to the
+          active feature's accent — the one hero accent, matching the
+          dark-blue podium that blends into the page's own starfield
+          backdrop instead of standing apart from it. */}
       <mesh ref={ringRef} position={[0, PODIUM_TOP_Y + 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[topRadius * 0.6, topRadius * 0.78, 64]} />
-        <meshBasicMaterial color={GLOW_COLOR} toneMapped={false} transparent opacity={0.85} side={THREE.DoubleSide} />
+        <meshBasicMaterial color={DEFAULT_ACCENT} toneMapped={false} transparent opacity={0.85} side={THREE.DoubleSide} />
       </mesh>
 
       {/* The light beam itself — rises from the crown up past the phone,
@@ -239,7 +320,7 @@ export default function Podium({ position = [0, -1.42, 0] }: PodiumProps) {
       <mesh ref={beamRef} position={[0, PODIUM_TOP_Y + BEAM_HEIGHT / 2, 0]}>
         <cylinderGeometry args={[BEAM_RADIUS_TOP, BEAM_RADIUS_BOTTOM, BEAM_HEIGHT, 32, 1, true]} />
         <meshBasicMaterial
-          color="#7ec4ea"
+          color={DEFAULT_ACCENT}
           map={beamTexture}
           toneMapped={false}
           transparent

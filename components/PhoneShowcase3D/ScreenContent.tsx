@@ -1,11 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useEffect, useMemo } from "react";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import gsap from "gsap";
-import { phoneShowRotation } from "../store";
 import { FEATURES } from "../FeatureShowcase/featuresData";
 import { roundedRectShape } from "./geometry";
 
@@ -42,16 +39,18 @@ function applyCoverUV(texture: THREE.Texture, shapeAspect: number) {
   texture.updateMatrix();
 }
 
+// Each PhoneModel instance now represents exactly one fixed feature for its
+// whole lifetime (PhoneShowcase3D.tsx mounts/unmounts a whole new instance
+// per carousel slot instead of swapping content on a single persistent
+// phone), so this only ever needs to load and show its own one texture —
+// no in-place crossfade, no rotation-based facing fade, both of which only
+// existed to support the old single-persistent-phone model.
 export default function ScreenContent({ activeIndex, z, width, height, radius }: ScreenContentProps) {
-  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
-  // Separate from the material itself so gsap can tween a plain object and
-  // useFrame below paints it every frame, combined with the rotation-based
-  // facing fade — matches the crossfade envelope pattern used elsewhere in
-  // this scene (see PhoneModel's pulse/entrance refs).
-  const crossfade = useRef({ opacity: 1 });
-  const isFirstRun = useRef(true);
-
-  const textures = useTexture(useMemo(() => FEATURES.map((f) => f.screenImage), []));
+  // Wrapped in an array — react-hooks/immutability forbids mutating a
+  // hook's own return value directly, but not properties reached by
+  // iterating an array the hook returned; matches the identical workaround
+  // already established in BookModel.tsx's useBakedCoverTextures.
+  const [texture] = useTexture([FEATURES[activeIndex].screenImage]);
 
   const geometry = useMemo(() => {
     const geo = new THREE.ShapeGeometry(roundedRectShape(width, height, radius), 24);
@@ -72,36 +71,15 @@ export default function ScreenContent({ activeIndex, z, width, height, radius }:
   }, [width, height, radius]);
 
   useEffect(() => {
-    const shapeAspect = width / height;
-    textures.forEach((texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      applyCoverUV(texture, shapeAspect);
+    [texture].forEach((t) => {
+      t.colorSpace = THREE.SRGBColorSpace;
+      applyCoverUV(t, width / height);
     });
-  }, [textures, width, height]);
-
-  // Premium dissolve on every feature change — skipped on mount.
-  useEffect(() => {
-    if (isFirstRun.current) {
-      isFirstRun.current = false;
-      return;
-    }
-    gsap.fromTo(crossfade.current, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power3.out" });
-  }, [activeIndex]);
-
-  // Faded by hand instead of relying on backface culling: once the phone's
-  // rotation carries the screen past 90°, this mesh would otherwise still
-  // be visible (mirrored) through the back.
-  useFrame(() => {
-    const mat = materialRef.current;
-    if (!mat) return;
-    const rad = THREE.MathUtils.degToRad(phoneShowRotation.value);
-    const facing = Math.max(0, Math.cos(rad));
-    mat.opacity = facing * crossfade.current.opacity;
-  });
+  }, [texture, width, height]);
 
   return (
     <mesh geometry={geometry} position={[0, 0, z]}>
-      <meshBasicMaterial ref={materialRef} map={textures[activeIndex]} transparent toneMapped={false} />
+      <meshBasicMaterial map={texture} transparent toneMapped={false} />
     </mesh>
   );
 }
