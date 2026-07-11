@@ -56,15 +56,18 @@ export default function Scene({ activeIndex, phoneRef, frameloop = "always" }: S
 
       {/* Dedicated stage lighting for the podium — its own light sources
           close to it, rather than just catching spillover from the phone's
-          key/rim lights above. plain pointLights (not spotLight) since a
+          key/rim lights above. Plain pointLights (not spotLight) since a
           spotLight's default target Object3D isn't attached to the scene
           graph in R3F unless done explicitly, which silently leaves it
           aimed at the origin regardless of any position prop — these avoid
-          that pitfall entirely while still picking out the gold crown tier
-          and purple ring with real, warm/cool rim highlights. */}
-      <pointLight position={[0, -0.75, 1.3]} intensity={1.4} distance={2.6} decay={2} color="#fff4e0" />
-      <pointLight position={[0.9, -1, 1.1]} intensity={0.7} distance={2.4} decay={2} color="#e8b478" />
-      <pointLight position={[-0.9, -1, 1.1]} intensity={0.6} distance={2.4} decay={2} color="#7c5cfc" />
+          that pitfall entirely. All blue-toned and pushed brighter/further
+          than before so the podium visibly uplights the phone's lower body
+          — the podium is now a dark navy that blends into the background,
+          so this glow is what actually sells it as a light source next to
+          the phone rather than just a dark shape it happens to float near. */}
+      <pointLight position={[0, -0.7, 1.3]} intensity={2.2} distance={3.4} decay={2} color="#7ec4ea" />
+      <pointLight position={[0.9, -0.95, 1.1]} intensity={1.1} distance={3} decay={2} color="#4fa8d5" />
+      <pointLight position={[-0.9, -0.95, 1.1]} intensity={1.1} distance={3} decay={2} color="#4fa8d5" />
 
       <ContactShadows position={[0, -1.18, 0]} opacity={0.55} scale={4} blur={2.4} far={2} resolution={256} frames={1} color="#000000" />
     </Canvas>
