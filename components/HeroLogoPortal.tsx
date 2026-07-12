@@ -64,20 +64,37 @@ function useEnergyTrailTexture() {
   return useMemo(() => {
     if (typeof document === "undefined") return null;
     const w = 512;
+    const h = 64;
     const canvas = document.createElement("canvas");
     canvas.width = w;
-    canvas.height = 8;
+    canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    const grad = ctx.createLinearGradient(0, 0, w, 0);
-    grad.addColorStop(0, "rgba(255,255,255,0)");
-    grad.addColorStop(0.02, "rgba(255,255,255,1)");
-    grad.addColorStop(0.06, "rgba(255,255,255,0.75)");
-    grad.addColorStop(0.34, "rgba(255,255,255,0.22)");
-    grad.addColorStop(0.64, "rgba(255,255,255,0.035)");
-    grad.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, 8);
+
+    // U axis (around the ring): bright comet head, long fading tail, dark
+    // gap before it wraps back to the head again.
+    const uGrad = ctx.createLinearGradient(0, 0, w, 0);
+    uGrad.addColorStop(0, "rgba(255,255,255,0)");
+    uGrad.addColorStop(0.02, "rgba(255,255,255,1)");
+    uGrad.addColorStop(0.06, "rgba(255,255,255,0.8)");
+    uGrad.addColorStop(0.34, "rgba(255,255,255,0.3)");
+    uGrad.addColorStop(0.64, "rgba(255,255,255,0.06)");
+    uGrad.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = uGrad;
+    ctx.fillRect(0, 0, w, h);
+
+    // V axis (across the tube's own cross-section): a full-height canvas
+    // plus a soft round falloff punched through it via destination-in —
+    // this is what turns the tube into a thick, soft-edged glowing wave
+    // instead of a thin hard-edged wireframe line.
+    ctx.globalCompositeOperation = "destination-in";
+    const vGrad = ctx.createLinearGradient(0, 0, 0, h);
+    vGrad.addColorStop(0, "rgba(255,255,255,0)");
+    vGrad.addColorStop(0.5, "rgba(255,255,255,1)");
+    vGrad.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = vGrad;
+    ctx.fillRect(0, 0, w, h);
+
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.colorSpace = THREE.SRGBColorSpace;
@@ -248,23 +265,24 @@ interface RingSpec {
   opacity: number;
 }
 
-// The reference image isn't 2-3 clean, separable rings — it's a dense,
-// tangled sphere of thin light strands at every orientation, like a
-// wireframe ball of magnetic field lines, with a blue/cyan bias on one
-// side fading to purple/pink on the other. A dozen-plus strands, tiltX
-// spanning the FULL 0..π range (not clustered near-equatorial) and every
-// tiltZ, is what actually produces that "woven ball" coverage instead of
-// a handful of obviously distinct ellipses.
+// A dense, tangled sphere of light at every orientation, like a wireframe
+// ball of magnetic field lines, with a blue/cyan bias on one side fading to
+// purple/pink on the other — tiltX spans the FULL 0..π range (not clustered
+// near-equatorial) and every tiltZ, so the strands weave into a "woven ball"
+// rather than a handful of obviously distinct ellipses. Each strand itself
+// is a thick, soft-edged wave (see useEnergyTrailTexture's V-axis falloff),
+// not a thin wireframe hairline — fewer, chunkier strands than a hairline
+// version needs, or the overlaps blow out to a solid white blob.
 const RING_PALETTE = ["#7dd3fc", "#5eb8f5", "#93c5fd", "#a78bfa", "#c084fc", "#d8b4fe", "#e879f9", "#f0abfc"];
-const RING_COUNT = 16;
+const RING_COUNT = 11;
 const RING_SPECS: RingSpec[] = Array.from({ length: RING_COUNT }, (_, i) => ({
-  radius: round3(0.72 + prng(i * 17 + 1) * 0.46),
-  tube: round3(0.005 + prng(i * 17 + 2) * 0.009),
+  radius: round3(0.7 + prng(i * 17 + 1) * 0.48),
+  tube: round3(0.028 + prng(i * 17 + 2) * 0.032),
   tiltX: round3(prng(i * 17 + 3) * Math.PI),
   tiltZ: round3(prng(i * 17 + 4) * Math.PI * 2),
   speed: round3(0.1 + prng(i * 17 + 5) * 0.28) * (i % 2 === 0 ? 1 : -1),
   color: RING_PALETTE[i % RING_PALETTE.length],
-  opacity: round3(0.5 + prng(i * 17 + 6) * 0.4),
+  opacity: round3(0.4 + prng(i * 17 + 6) * 0.32),
 }));
 
 function EnergyRing({ spec, texture }: { spec: RingSpec; texture: THREE.Texture | null }) {
@@ -288,7 +306,7 @@ function EnergyRing({ spec, texture }: { spec: RingSpec; texture: THREE.Texture 
 
   return (
     <mesh rotation={[spec.tiltX, 0, spec.tiltZ]}>
-      <torusGeometry args={[spec.radius, spec.tube, 6, 96]} />
+      <torusGeometry args={[spec.radius, spec.tube, 12, 96]} />
       <meshBasicMaterial
         map={ringTexture}
         color={spec.color}
