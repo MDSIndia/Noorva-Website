@@ -45,14 +45,18 @@ const TITANIUM = "#b0b0b4";
 // (the bottom-anchored caption in PhoneShowcase3D.tsx) the phone — at this
 // camera's fixed framing (fov 32 at z=4.6), the full vertical frustum is
 // about 2.64 world units tall, so this keeps the phone itself to roughly
-// half that.
-const SHOWCASE_SCALE = 0.52;
+// half that. Bigger on mobile, where the phone is the only visual — on
+// desktop the side caption needs the room instead.
+const SHOWCASE_SCALE_DESKTOP = 0.52;
+const SHOWCASE_SCALE_MOBILE = 0.66;
 
-// Nudges the phone up within the frame on mobile, leaving clean room below
-// it for the caption stacked underneath (see PhoneShowcase3D.tsx). At lg+
-// the caption moves beside the phone instead of below it, so there's no
-// gap left to reserve — the phone sits fully centered there.
-const VERTICAL_OFFSET_MOBILE = 0.42;
+// Nudges the phone up within the frame on mobile, leaving room below it for
+// the caption stacked underneath (see PhoneShowcase3D.tsx) — kept small now
+// that the phone itself is bigger (SHOWCASE_SCALE_MOBILE), so there's no
+// dead gap of empty starfield between the two. At lg+ the caption moves
+// beside the phone instead of below it, so there's no gap to reserve at
+// all — the phone sits fully centered there.
+const VERTICAL_OFFSET_MOBILE = 0.2;
 const VERTICAL_OFFSET_DESKTOP = 0;
 
 // One full turn per feature — rotation is a direct function of the
@@ -73,6 +77,11 @@ const FLOAT_Y_AMPLITUDE = 0.05;
 function PhoneModel({ activeIndex, isDesktop }: PhoneModelProps) {
   const groupRef = useRef<THREE.Group>(null);
   const entranceRef = useRef(0); // 0..1, eases up once on mount — never resets
+  const prevCarouselRef = useRef(0); // last frame's phoneCarouselX.value, to derive turn speed
+  const tiltXRef = useRef(0);
+  const tiltZRef = useRef(0);
+  const accentLightRef = useRef<THREE.PointLight>(null);
+  const hudColorRef = useRef(new THREE.Color("#4fa8d5"));
 
   // Flat-sided body: a rounded-rect face extruded to the phone's thickness —
   // RoundedBox's uniform rounding reads as a rounded pebble instead of the
@@ -120,7 +129,28 @@ function PhoneModel({ activeIndex, isDesktop }: PhoneModelProps) {
     // whole pinned scroll, one per feature, so scrolling forward always
     // turns the phone the same direction and it comes to rest facing the
     // camera exactly when phoneCarouselX lands on an integer.
-    group.rotation.y = phoneCarouselX.value * ROTATION_PER_FEATURE;
+    const carousel = phoneCarouselX.value;
+    group.rotation.y = carousel * ROTATION_PER_FEATURE;
+
+    // How fast the carousel value is currently changing — used purely to
+    // drive a liquid wobble on top of the turn (below); this is never
+    // itself an autonomous motion, so it settles back to 0 the instant
+    // scrolling stops, same as the rest of the phone's motion.
+    const carouselVelocity = (carousel - prevCarouselRef.current) / Math.max(delta, 1 / 120);
+    prevCarouselRef.current = carousel;
+
+    // A small lean into the turn — like the phone has actual mass and
+    // liquid give rather than spinning as a rigid, mechanical prop. Tilts
+    // opposite the turn direction (banking into it) and pitches slightly
+    // forward the faster it's currently turning, both damped back to level
+    // the moment scroll velocity drops, so it never reads as its own
+    // independent spin.
+    const targetTiltZ = THREE.MathUtils.clamp(-carouselVelocity * 0.05, -0.16, 0.16);
+    const targetTiltX = THREE.MathUtils.clamp(Math.abs(carouselVelocity) * 0.025, 0, 0.09);
+    tiltZRef.current = THREE.MathUtils.damp(tiltZRef.current, targetTiltZ, 5, delta);
+    tiltXRef.current = THREE.MathUtils.damp(tiltXRef.current, targetTiltX, 5, delta);
+    group.rotation.z = tiltZRef.current;
+    group.rotation.x = tiltXRef.current;
 
     // Small idle bob, always on, small enough not to compete with the
     // scroll-driven rotation above.
@@ -132,8 +162,21 @@ function PhoneModel({ activeIndex, isDesktop }: PhoneModelProps) {
     group.position.x = 0;
     group.position.z = 0;
 
+    const showcaseScale = isDesktop ? SHOWCASE_SCALE_DESKTOP : SHOWCASE_SCALE_MOBILE;
     const entranceScale = THREE.MathUtils.lerp(0.82, 1, entrance);
-    group.scale.setScalar(entranceScale * SHOWCASE_SCALE);
+    group.scale.setScalar(entranceScale * showcaseScale);
+
+    // Accent-light color eases toward the current feature's accent rather
+    // than snapping, so a feature change reads as a smooth retint.
+    const targetAccent = ACCENT_HEX[FEATURES[activeIndex].accent] ?? "#4fa8d5";
+    hudColorRef.current.lerp(new THREE.Color(targetAccent), Math.min(1, delta * 2));
+    const c = hudColorRef.current;
+    if (accentLightRef.current) {
+      accentLightRef.current.color.copy(c);
+      // Breathes gently so the glow reads as alive even while the phone
+      // sits still between scroll input, without being a distracting pulse.
+      accentLightRef.current.intensity = 1.4 + Math.sin(elapsed * 1.1) * 0.35;
+    }
   });
 
   const feature = FEATURES[activeIndex];
@@ -182,6 +225,13 @@ function PhoneModel({ activeIndex, isDesktop }: PhoneModelProps) {
 
   return (
     <group ref={groupRef}>
+      {/* Colored accent glow — a soft point light matching the current
+          feature's accent, breathing gently in useFrame. Gives the metal
+          rail a warm/cool colored kiss of light as it turns, on top of the
+          neutral studio lighting in Scene.tsx, so each feature reads with
+          its own distinct lighting mood rather than one fixed setup. */}
+      <pointLight ref={accentLightRef} position={[0, 0, 1.4]} distance={5} decay={2} intensity={1.4} />
+
       {/* Body / frame — polished titanium rail, catching a bright highlight
           as it turns rather than sitting flat and matte. */}
       <mesh geometry={bodyGeometry} castShadow receiveShadow>
@@ -265,7 +315,7 @@ function PhoneModel({ activeIndex, isDesktop }: PhoneModelProps) {
           clearcoat={0.6}
           clearcoatRoughness={0.15}
           emissive={new THREE.Color(accentHex)}
-          emissiveIntensity={0.14}
+          emissiveIntensity={0.22}
         />
       </mesh>
 

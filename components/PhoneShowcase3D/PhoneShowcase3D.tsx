@@ -6,7 +6,7 @@ import { ArrowRight } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Scene from "./Scene";
-import { FEATURES } from "../FeatureShowcase/featuresData";
+import { FEATURES, ACCENT_HEX } from "../FeatureShowcase/featuresData";
 import { phoneCarouselX, lenisRef, galleryCaptureControl } from "../store";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -17,18 +17,20 @@ gsap.registerPlugin(ScrollTrigger);
 // that a full turn doesn't fly by in a single wheel notch.
 const PIN_VH_MULTIPLIER = 7;
 
-// Where the feature copy's entrance animation originates from — a
-// different corner each time, so the text visibly flies in off-screen like
-// a video title card rather than just fading in place. It always lands in
-// the same resting spot (beside the phone on desktop — see textSide below —
-// or the stacked caption on mobile), so only the entrance/exit direction
-// varies, not the resting layout.
-const ENTRY_CORNERS: { x: number; y: number }[] = [
-  { x: -340, y: -160 }, // top-left
-  { x: 340, y: -160 }, // top-right
-  { x: -340, y: 160 }, // bottom-left
-  { x: 340, y: 160 }, // bottom-right
-];
+// The caption's own entrance — each line rises and settles in turn rather
+// than the whole block moving/scaling/blurring together, which read as
+// chaotic swooping in earlier passes. A plain, restrained rise+fade instead,
+// with the container staggering each child slightly behind the last — the
+// same cascading-reveal pattern most premium product sites use for a
+// heading-then-detail entrance.
+const CAPTION_CONTAINER_VARIANTS = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.09, delayChildren: 0.04 } },
+};
+const CAPTION_LINE_VARIANTS = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] as const } },
+};
 
 function goToClosing() {
   galleryCaptureControl.release?.(1600);
@@ -121,8 +123,12 @@ export default function PhoneShowcase3D() {
 
   const feature = FEATURES[activeIndex];
   const Icon = feature.icon;
-  const corner = ENTRY_CORNERS[activeIndex % ENTRY_CORNERS.length];
   const textIsLeft = feature.textSide === "left";
+  // Mirrors PhoneModel.tsx's own accent lookup — the DOM-side HUD chrome
+  // (corner brackets, scan sweep, neon title glow) retints to the same
+  // color as the 3D halo/light around the phone, so the whole section reads
+  // as one synced system rather than two coincidentally similar palettes.
+  const accentHex = ACCENT_HEX[feature.accent] ?? "#4fa8d5";
 
   return (
     <section
@@ -132,12 +138,11 @@ export default function PhoneShowcase3D() {
       style={{ zIndex: 33 }}
     >
       <div className="pointer-events-none absolute inset-0 vignette-edge" />
-      <div className="pointer-events-none absolute top-1/2 left-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2">
-        <div className="h-full w-full rounded-full bg-[color:var(--accent-1)]/8 blur-[140px] animate-float-slow" />
-      </div>
 
       {/* Full-bleed centered stage — the phone stays put in the middle and
-          only turns in place now; nothing slides to a corner anymore. */}
+          only turns in place now; nothing slides to a corner anymore. No
+          extra background glow layered in here — the page's own
+          CosmicBackground starfield shows through behind it. */}
       <div ref={canvasWrapRef} className="absolute inset-0">
         <Scene activeIndex={activeIndex} isDesktop={isDesktop} frameloop={inView ? "always" : "never"} />
       </div>
@@ -145,9 +150,9 @@ export default function PhoneShowcase3D() {
       {/* Feature copy — stacked below the phone on mobile (no room for a
           side panel there), but beside it on desktop, alternating left/right
           per feature (feature.textSide) since the phone itself now stays
-          fixed in the center rather than moving to meet the text. Flies in
-          from a different corner each time (ENTRY_CORNERS) rather than
-          fading in place, like a video title card. */}
+          fixed in the center rather than moving to meet the text. Each line
+          rises and fades in on its own beat (staggerChildren below) rather
+          than the whole block flying in from a corner. */}
       <div
         className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center px-8 pb-6 sm:pb-9 lg:inset-y-0 lg:bottom-auto lg:h-full lg:items-center lg:px-12 lg:pb-0 xl:px-24 ${
           textIsLeft ? "lg:justify-start" : "lg:justify-end"
@@ -156,33 +161,55 @@ export default function PhoneShowcase3D() {
         <AnimatePresence mode="wait">
           <motion.div
             key={feature.title}
-            initial={{ opacity: 0, x: corner.x, y: corner.y, scale: 0.72, filter: "blur(14px)" }}
-            animate={{ opacity: 1, x: 0, y: 0, scale: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, x: -corner.x * 0.5, y: -corner.y * 0.5, scale: 0.85, filter: "blur(10px)" }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            variants={CAPTION_CONTAINER_VARIANTS}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
             className={`pointer-events-auto flex max-w-md flex-col items-center text-center lg:max-w-sm ${
               textIsLeft ? "lg:items-start lg:text-left" : "lg:items-end lg:text-right"
             }`}
           >
-            <p className="mb-1.5 text-[9px] tracking-[0.4em] text-[color:var(--accent-warm)]/70 uppercase lg:mb-3 lg:text-xs">
-              What Noorva Becomes
-            </p>
-            <div
+            <motion.div
+              variants={CAPTION_LINE_VARIANTS}
+              className={`mb-1.5 flex items-center gap-2 lg:mb-3 ${textIsLeft ? "" : "lg:flex-row-reverse"}`}
+            >
+              <span
+                className="h-1 w-1 rounded-full transition-colors duration-700"
+                style={{ background: accentHex, boxShadow: `0 0 6px ${accentHex}` }}
+              />
+              <p className="text-[9px] tracking-[0.4em] text-[color:var(--accent-warm)]/70 uppercase lg:text-xs">
+                What Noorva Becomes
+              </p>
+              <span className="font-mono text-[9px] tracking-widest text-white/25 lg:text-[10px]">
+                0{activeIndex + 1}/0{FEATURES.length}
+              </span>
+            </motion.div>
+            <motion.div
+              variants={CAPTION_LINE_VARIANTS}
               className={`mb-1.5 flex items-center gap-2 lg:mb-4 lg:flex-col lg:items-start lg:gap-4 ${
                 textIsLeft ? "" : "lg:items-end"
               }`}
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 lg:h-11 lg:w-11">
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-full border bg-white/5 backdrop-blur-sm transition-colors duration-700 lg:h-11 lg:w-11"
+                style={{ borderColor: `${accentHex}55`, boxShadow: `0 0 18px ${accentHex}33` }}
+              >
                 <Icon className="h-3.5 w-3.5 lg:h-5 lg:w-5" style={{ color: feature.accent }} strokeWidth={1.5} />
               </div>
-              <h3 className="font-playfair text-2xl font-light text-white/95 md:text-3xl lg:text-5xl">
+              <h3
+                className="font-playfair text-2xl font-light text-white/95 transition-[text-shadow] duration-700 md:text-3xl lg:text-5xl"
+                style={{ textShadow: `0 0 30px ${accentHex}4d, 0 0 64px ${accentHex}26` }}
+              >
                 {feature.title}
               </h3>
-            </div>
-            <p className="mb-3 max-w-sm text-xs leading-relaxed font-light text-white/55 md:text-sm lg:mb-7 lg:text-base">
+            </motion.div>
+            <motion.p
+              variants={CAPTION_LINE_VARIANTS}
+              className="mb-3 max-w-sm text-xs leading-relaxed font-light text-white/55 md:text-sm lg:mb-7 lg:text-base"
+            >
               {feature.body}
-            </p>
-            <div className="flex items-center gap-4 lg:flex-col lg:items-stretch lg:gap-6">
+            </motion.p>
+            <motion.div variants={CAPTION_LINE_VARIANTS} className="flex items-center gap-4 lg:flex-col lg:items-stretch lg:gap-6">
               <button
                 onClick={goToClosing}
                 className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[10px] font-medium tracking-[0.14em] text-white/80 uppercase backdrop-blur-xl transition-colors duration-300 hover:border-[color:var(--accent-warm)]/40 hover:text-white lg:justify-center lg:px-5 lg:py-2.5 lg:text-[11px]"
@@ -200,11 +227,12 @@ export default function PhoneShowcase3D() {
                     style={{
                       width: i === activeIndex ? 20 : 6,
                       background: i === activeIndex ? "var(--accent-warm)" : "rgba(255,255,255,0.18)",
+                      boxShadow: i === activeIndex ? "0 0 10px var(--accent-warm)" : "none",
                     }}
                   />
                 ))}
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         </AnimatePresence>
       </div>

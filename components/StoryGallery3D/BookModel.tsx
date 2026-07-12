@@ -60,6 +60,15 @@ function useBakedCoverTextures(sources: [string, string]) {
     // value directly, but not array elements reached via .forEach).
     textures.forEach((t) => {
       t.colorSpace = THREE.SRGBColorSpace;
+      // Without this, the cover reads fine face-on but the smaller text
+      // (eyebrow, chapter count) dissolves into an illegible blur the
+      // instant the book turns to an oblique angle — default texture
+      // filtering only samples along the screen-space minor axis, and a
+      // cover viewed edge-on has one axis compressed far more than the
+      // other. Anisotropic filtering samples along the actual view
+      // direction instead, which is exactly the case a constantly-
+      // rotating book preview hits on every single frame.
+      t.anisotropy = 16;
       t.needsUpdate = true;
     });
   }, [textures]);

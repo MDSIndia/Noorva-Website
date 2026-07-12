@@ -54,6 +54,37 @@ function useFlareTexture() {
   }, []);
 }
 
+// A single comet-like trail, as a 1D gradient strip: a bright head, a long
+// fading tail, then a dark gap before it wraps back around to the head
+// again. Mapped along a torus's own angle-around-the-main-circle UV
+// (wrapS repeat), then animated by sliding `texture.offset.x` in useFrame —
+// so the BRIGHTNESS travels around the ring over time (the actual "light
+// moving" effect), rather than spinning the whole mesh as a rigid object.
+function useEnergyTrailTexture() {
+  return useMemo(() => {
+    if (typeof document === "undefined") return null;
+    const w = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = 8;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    const grad = ctx.createLinearGradient(0, 0, w, 0);
+    grad.addColorStop(0, "rgba(255,255,255,0)");
+    grad.addColorStop(0.02, "rgba(255,255,255,1)");
+    grad.addColorStop(0.06, "rgba(255,255,255,0.75)");
+    grad.addColorStop(0.34, "rgba(255,255,255,0.22)");
+    grad.addColorStop(0.64, "rgba(255,255,255,0.035)");
+    grad.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, 8);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }, []);
+}
+
 // Soft round glow (no spikes) — used behind the logo and as the base bloom,
 // distinct from the flares' star shape.
 function useGlowTexture() {
@@ -87,19 +118,21 @@ interface FlareSpec {
   color: string;
 }
 
-// Six orbiting lights on mismatched tilted orbits (not one flat ring) — this
-// is the actual "lights that rotate like a flare around it" in true 3D:
-// each swings toward and away from the camera on its own tilted plane, so
-// they grow/shrink and pass in front of or behind the logo as they turn,
-// which a flat CSS animation can't produce.
-const FLARE_SPECS: FlareSpec[] = Array.from({ length: 6 }, (_, i) => ({
-  radius: round3(0.85 + prng(i * 9 + 1) * 0.5),
-  tilt: round3((prng(i * 9 + 2) - 0.5) * Math.PI * 0.7),
+// Reference image's halo reads as a dense field of star-point sparkles
+// woven through the strands — a handful of standout "hero" points (large,
+// bright) plus many smaller ones — not a sparse ring of 6 uniform dots.
+const FLARE_PALETTE = ["#9fd8f5", "#c084fc", "#f0abfc", "#5eead4", "#7dd3fc", "#e0aaff", "#ffffff", "#bae6fd"];
+const FLARE_COUNT = 16;
+const FLARE_SPECS: FlareSpec[] = Array.from({ length: FLARE_COUNT }, (_, i) => ({
+  radius: round3(0.7 + prng(i * 9 + 1) * 0.55),
+  tilt: round3((prng(i * 9 + 2) - 0.5) * Math.PI * 0.9),
   planeRotation: round3(prng(i * 9 + 3) * Math.PI * 2),
-  speed: round3(0.35 + prng(i * 9 + 4) * 0.55) * (i % 2 === 0 ? 1 : -1),
+  speed: round3(0.3 + prng(i * 9 + 4) * 0.6) * (i % 2 === 0 ? 1 : -1),
   phase: round3(prng(i * 9 + 5) * Math.PI * 2),
-  size: round3(0.16 + prng(i * 9 + 6) * 0.22),
-  color: ["#9fd8f5", "#c084fc", "#f0abfc", "#5eead4", "#7dd3fc", "#e0aaff"][i],
+  // Every 5th one is a big "hero" sparkle, like the few standout bright
+  // points in the reference — the rest are small, scattered fill.
+  size: round3(i % 5 === 0 ? 0.36 + prng(i * 9 + 6) * 0.16 : 0.09 + prng(i * 9 + 6) * 0.15),
+  color: FLARE_PALETTE[i % FLARE_PALETTE.length],
 }));
 
 // Rounded the same way as the (now-removed) DOM version's STARS did — kept
@@ -205,10 +238,79 @@ function Flare({ spec, texture }: { spec: FlareSpec; texture: THREE.Texture | nu
   );
 }
 
+interface RingSpec {
+  radius: number;
+  tube: number;
+  tiltX: number; // radians — tips the ring's plane toward/away from the camera
+  tiltZ: number; // radians — spins that tilted plane's own orientation
+  speed: number; // texture-offset units/sec — how fast the light travels around it, and which direction
+  color: string;
+  opacity: number;
+}
+
+// The reference image isn't 2-3 clean, separable rings — it's a dense,
+// tangled sphere of thin light strands at every orientation, like a
+// wireframe ball of magnetic field lines, with a blue/cyan bias on one
+// side fading to purple/pink on the other. A dozen-plus strands, tiltX
+// spanning the FULL 0..π range (not clustered near-equatorial) and every
+// tiltZ, is what actually produces that "woven ball" coverage instead of
+// a handful of obviously distinct ellipses.
+const RING_PALETTE = ["#7dd3fc", "#5eb8f5", "#93c5fd", "#a78bfa", "#c084fc", "#d8b4fe", "#e879f9", "#f0abfc"];
+const RING_COUNT = 16;
+const RING_SPECS: RingSpec[] = Array.from({ length: RING_COUNT }, (_, i) => ({
+  radius: round3(0.72 + prng(i * 17 + 1) * 0.46),
+  tube: round3(0.005 + prng(i * 17 + 2) * 0.009),
+  tiltX: round3(prng(i * 17 + 3) * Math.PI),
+  tiltZ: round3(prng(i * 17 + 4) * Math.PI * 2),
+  speed: round3(0.1 + prng(i * 17 + 5) * 0.28) * (i % 2 === 0 ? 1 : -1),
+  color: RING_PALETTE[i % RING_PALETTE.length],
+  opacity: round3(0.5 + prng(i * 17 + 6) * 0.4),
+}));
+
+function EnergyRing({ spec, texture }: { spec: RingSpec; texture: THREE.Texture | null }) {
+  // Each ring needs its own Texture instance — `.offset` is what animates
+  // the light traveling around it, and that's a property of the Texture
+  // itself, not the material, so sharing one Texture across rings would
+  // make them all animate in lockstep instead of at their own speed.
+  const ringTexture = useMemo(() => {
+    if (!texture) return null;
+    const t = texture.clone();
+    t.wrapS = THREE.RepeatWrapping;
+    t.needsUpdate = true;
+    return t;
+  }, [texture]);
+
+  useFrame((_, delta) => {
+    if (ringTexture) ringTexture.offset.x += delta * spec.speed;
+  });
+
+  if (!ringTexture) return null;
+
+  return (
+    <mesh rotation={[spec.tiltX, 0, spec.tiltZ]}>
+      <torusGeometry args={[spec.radius, spec.tube, 6, 96]} />
+      <meshBasicMaterial
+        map={ringTexture}
+        color={spec.color}
+        transparent
+        opacity={spec.opacity}
+        toneMapped={false}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
 function PortalScene() {
   const flareTexture = useFlareTexture();
+  const ringTexture = useEnergyTrailTexture();
   return (
     <>
+      {RING_SPECS.map((spec, i) => (
+        <EnergyRing key={i} spec={spec} texture={ringTexture} />
+      ))}
       <LogoPlane />
       {FLARE_SPECS.map((spec, i) => (
         <Flare key={i} spec={spec} texture={flareTexture} />
