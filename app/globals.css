@@ -171,3 +171,86 @@ html.lenis          { height: auto; }
 .animate-book-sheen {
   animation: book-sheen 9s ease-in-out infinite;
 }
+
+/* ── LOGO LIGHT FLOW ─────────────────────────────────────────────── */
+/* Soft band of light sweeping through the logo mark, masked to its own
+   alpha so it reads as light traveling through the glyph, not a generic
+   button shine. */
+@keyframes logo-light-flow {
+  0%   { background-position: 220% 50%; }
+  100% { background-position: -120% 50%; }
+}
+
+.animate-logo-light-flow {
+  animation: logo-light-flow 3.4s linear infinite;
+}
+
+/* ── PHONE PODIUM SHOWCASE ───────────────────────────────────────── */
+/* Flat CSS/DOM stand-in for the WebGL phone carousel: a central podium
+   with four phone mockups crossfaded per scroll-selected feature. */
+
+/* Jellyfish float: a jellyfish's motion never reads as one mechanical
+   up/down cycle because its drift and its rhythmic pulse run on their own
+   independent clocks. Two nested elements, two different-duration loops
+   (drift on the outer, tilt+pulse on the inner) approximate that instead
+   of a single keyframe doing both at once. */
+@keyframes phone-jelly-drift {
+  0%   { transform: translate(0, 0); }
+  22%  { transform: translate(1.4%, -4%); }
+  48%  { transform: translate(-0.8%, -7%); }
+  74%  { transform: translate(-1.6%, -2.5%); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes phone-jelly-tilt {
+  0%   { transform: rotate(0deg) scale(1); }
+  30%  { transform: rotate(1.6deg) scale(1.018); }
+  62%  { transform: rotate(-1.2deg) scale(0.985); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+.phone-jelly-outer {
+  animation: phone-jelly-drift 7.5s ease-in-out infinite;
+}
+.phone-jelly-inner {
+  animation: phone-jelly-tilt 5.5s ease-in-out infinite;
+}
+
+/* Diagonal sheen sweeping across each phone's bezel — clipped to the
+   frame's own rounded corners by its parent's overflow-hidden, so no mask
+   image is needed the way the header logo's shimmer requires. */
+@keyframes phone-sheen-sweep {
+  0%   { background-position: 200% 0%; }
+  100% { background-position: -100% 0%; }
+}
+.phone-sheen {
+  background-image: linear-gradient(115deg, transparent 44%, rgba(255,255,255,0.45) 50%, transparent 56%);
+  background-size: 320% 320%;
+  animation: phone-sheen-sweep 6s ease-in-out infinite;
+  mix-blend-mode: plus-lighter;
+}
+
+/* Slow ambient breathing on the podium's glow/beam — color itself comes
+   from an inline `backgroundColor` set per active feature; transitioning
+   that (rather than a CSS custom property feeding a gradient) is what lets
+   the accent shift animate smoothly on a feature change, since gradients
+   can't interpolate through a CSS transition the way solid colors can. */
+@keyframes podium-breathe {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+.podium-glow {
+  transition: background-color 0.9s ease;
+  animation: podium-breathe 3.4s ease-in-out infinite;
+}
+.podium-beam {
+  transition: background-color 0.9s ease;
+  animation: podium-breathe 3.4s ease-in-out infinite reverse;
+}
+.podium-ring {
+  transition: border-color 0.9s ease, box-shadow 0.9s ease;
+}
+
+/* Crossfade between the four phones — opacity/transform only, so it never
+   fights the jellyfish loops running on the nested elements inside. */
+.phone-slot {
+  transition: opacity 1s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+}

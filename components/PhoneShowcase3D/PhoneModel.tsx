@@ -9,11 +9,18 @@ import ScreenContent from "./ScreenContent";
 import { roundedRectShape } from "./geometry";
 
 interface PhoneModelProps {
-  /** Which feature this specific phone instance shows — fixed for its
-   *  whole lifetime. A new feature means a whole new PhoneModel mounts
-   *  (see PhoneShowcase3D.tsx's renderIndices), not this prop changing on
-   *  an existing instance, so there's no in-place content swap to animate. */
+  /** Which feature is currently showing on the phone's screen. A single
+   *  PhoneModel instance stays mounted for the section's whole lifetime now
+   *  (see PhoneShowcase3D.tsx) and this prop changes in place as the user
+   *  scrolls — the screen's own texture (ScreenContent) swaps reactively
+   *  when it does, timed to happen while the phone's rotation has it
+   *  facing away from the camera (see the rotation math below), so the
+   *  swap itself is never actually seen. */
   activeIndex: number;
+  /** Whether the caption sits beside the phone (lg+) or stacked below it
+   *  (mobile) — see VERTICAL_OFFSET below for why this changes the phone's
+   *  own vertical position. */
+  isDesktop: boolean;
 }
 
 // iPhone 16 Pro's real dimensions (149.6 x 71.5 x 8.25mm), normalized so the
@@ -34,36 +41,36 @@ const SCREEN_R = 9.5 * MM;
 // against the dark site background.
 const TITANIUM = "#b0b0b4";
 
-// Scene.tsx's camera is fixed (not a dynamic fitTarget), so the whole phone
-// is shrunk uniformly around its own center to free up real headroom below
-// it for a properly-defined podium (Podium.tsx) instead of the sliver-thin
-// stack that was previously the only thing that fit under the frustum edge.
-// Deliberately generous margin here (not just barely enough) — real browser
-// windows vary in effective viewport height (chrome/taskbar/zoom eat into
-// it in ways a fixed test viewport doesn't capture), so the podium needs
-// slack beyond the one-viewport check to stay clear of the frustum edge.
-const SHOWCASE_SCALE = 0.8;
+// Sized to leave clear canvas space both above (header clearance) and below
+// (the bottom-anchored caption in PhoneShowcase3D.tsx) the phone — at this
+// camera's fixed framing (fov 32 at z=4.6), the full vertical frustum is
+// about 2.64 world units tall, so this keeps the phone itself to roughly
+// half that.
+const SHOWCASE_SCALE = 0.52;
 
-// Carousel spacing — how far apart (in world units) each feature's phone
-// sits along the X axis. Reused as-is from the old single-phone entrance's
-// own off-screen offset (2.6), which was already proven to clear this
-// camera's frustum at every breakpoint, so a neighboring slot at exactly
-// this distance is guaranteed off-screen rather than peeking into frame.
-const SLOT_SPACING = 2.6;
+// Nudges the phone up within the frame on mobile, leaving clean room below
+// it for the caption stacked underneath (see PhoneShowcase3D.tsx). At lg+
+// the caption moves beside the phone instead of below it, so there's no
+// gap left to reserve — the phone sits fully centered there.
+const VERTICAL_OFFSET_MOBILE = 0.42;
+const VERTICAL_OFFSET_DESKTOP = 0;
 
-// Mount entrance — every phone instance (not just the very first) eases in
-// from this extra offset added on top of its own carousel position. For the
-// very first phone this produces the classic "slides in from the right"
-// reveal (carousel position is 0 at mount, so the offset alone carries it
-// off-screen to start). For every later phone, its carousel position is
-// already off-screen (it only ever mounts as the upcoming slot, one full
-// SLOT_SPACING to the right) by the time this runs, so the extra offset
-// just makes it briefly even further off-screen — invisible either way,
-// and resolved back to its true carousel position well before a real
-// scroll gesture brings it into view. Simpler than gating this per-instance.
-const ENTRANCE_X_OFFSET = 2.6;
+// One full turn per feature — rotation is a direct function of the
+// scroll-driven carousel value (phoneCarouselX, written by
+// PhoneShowcase3D.tsx's ScrollTrigger), not of elapsed time, so the phone
+// only turns while the user is actually scrolling and always lands back
+// facing the camera exactly when scroll settles on a feature. The screen's
+// own content swap (see ScreenContent via the activeIndex prop) is timed by
+// the parent to happen at rotation = π — the exact moment this formula puts
+// the screen facing away from the camera — so the swap is never visible.
+const ROTATION_PER_FEATURE = Math.PI * 2;
 
-function PhoneModel({ activeIndex }: PhoneModelProps) {
+// Small idle bob, always on — just enough to read as "alive" without
+// competing with the scroll-driven rotation, which is the phone's primary
+// motion now.
+const FLOAT_Y_AMPLITUDE = 0.05;
+
+function PhoneModel({ activeIndex, isDesktop }: PhoneModelProps) {
   const groupRef = useRef<THREE.Group>(null);
   const entranceRef = useRef(0); // 0..1, eases up once on mount — never resets
 
@@ -108,27 +115,24 @@ function PhoneModel({ activeIndex }: PhoneModelProps) {
     entranceRef.current = Math.min(1, entranceRef.current + entranceDelta * 1.1);
     const entrance = 1 - Math.pow(1 - entranceRef.current, 3); // easeOutCubic
 
-    // Carousel position: this instance's own fixed feature index minus the
-    // continuously scroll-driven carousel value, scaled to world units.
-    // Positive while this phone is still "upcoming" (off to the right),
-    // zero once it's the fully-centered active one, negative once it's
-    // become the "outgoing" phone sliding away to the left — the actual
-    // "new phone from the right, old phone to the left" motion, driven by
-    // the same single scrubbed value for every mounted phone at once.
-    const carouselOffset = (activeIndex - phoneCarouselX.value) * SLOT_SPACING;
+    // Rotation reads directly off the scroll-driven carousel value — no
+    // idle autonomous spin. FEATURES.length-1 full turns happen across the
+    // whole pinned scroll, one per feature, so scrolling forward always
+    // turns the phone the same direction and it comes to rest facing the
+    // camera exactly when phoneCarouselX lands on an integer.
+    group.rotation.y = phoneCarouselX.value * ROTATION_PER_FEATURE;
 
-    // Always facing forward — no more scroll-driven spin. The carousel
-    // slide is the whole transition now; a still-spinning phone on top of
-    // that would look chaotic rather than like a clean product swap.
-    group.rotation.y = 0;
+    // Small idle bob, always on, small enough not to compete with the
+    // scroll-driven rotation above.
+    const elapsed = state.clock.getElapsedTime();
+    const floatY = Math.sin(elapsed * 0.5) * FLOAT_Y_AMPLITUDE;
 
-    // Subtle idle float, always on, small enough to read as "alive"
-    // without looking animated.
-    const t = state.clock.getElapsedTime();
-    group.position.y = Math.sin(t * 0.55) * 0.045 - (1 - entrance) * 0.35;
-    group.position.x = carouselOffset + (1 - entrance) * ENTRANCE_X_OFFSET;
+    const verticalOffset = isDesktop ? VERTICAL_OFFSET_DESKTOP : VERTICAL_OFFSET_MOBILE;
+    group.position.y = floatY + verticalOffset - (1 - entrance) * 0.3;
+    group.position.x = 0;
+    group.position.z = 0;
 
-    const entranceScale = THREE.MathUtils.lerp(0.8, 1, entrance);
+    const entranceScale = THREE.MathUtils.lerp(0.82, 1, entrance);
     group.scale.setScalar(entranceScale * SHOWCASE_SCALE);
   });
 

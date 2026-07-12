@@ -1,19 +1,21 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { Environment, ContactShadows } from "@react-three/drei";
+import { Environment } from "@react-three/drei";
 import PhoneModel from "./PhoneModel";
-import Podium from "./Podium";
 
 interface SceneProps {
-  /** Which feature indices currently have a mounted phone — 1 entry when
-   *  settled on a feature, 2 during a carousel transition (outgoing +
-   *  incoming), driven by PhoneShowcase3D.tsx's scroll-scrubbed timeline. */
-  renderIndices: number[];
+  /** Which feature is currently showing on the phone's screen — see
+   *  PhoneModel.tsx's own prop doc for how/when this changes in place. */
+  activeIndex: number;
+  /** Whether the caption sits beside the phone (lg+, so it can sit fully
+   *  centered) or stacked below it (mobile, so it needs to be raised to
+   *  leave room) — see PhoneModel.tsx's own vertical-offset logic. */
+  isDesktop: boolean;
   frameloop?: "always" | "never" | "demand";
 }
 
-export default function Scene({ renderIndices, frameloop = "always" }: SceneProps) {
+export default function Scene({ activeIndex, isDesktop, frameloop = "always" }: SceneProps) {
   return (
     <Canvas
       frameloop={frameloop}
@@ -39,31 +41,14 @@ export default function Scene({ renderIndices, frameloop = "always" }: SceneProp
           backdrop — the page's own cosmic background stays what's seen. */}
       <Environment preset="city" background={false} environmentIntensity={1.6} />
 
-      {renderIndices.map((idx) => (
-        <PhoneModel key={idx} activeIndex={idx} />
-      ))}
-
-      {/* This camera (fixed at z=4.6, fov=32, not a dynamic fitTarget like
-          other Scene components in this repo) only shows about 1.32 world
-          units below center before its own frustum edge. PhoneModel.tsx
-          applies a 0.8 SHOWCASE_SCALE to the whole phone to buy back
-          headroom here: rest-bottom shrinks from -1.255 to about -1.01,
-          leaving ~0.3 units free. Podium.tsx's stack is ~0.126 tall — base =
-          phone rest-bottom (-1.01) minus a 0.04 gap minus that height lands
-          at -1.18, about 0.14 units clear of the frustum bottom (~-1.32) —
-          deliberately more margin than the bare minimum, since real browser
-          windows (chrome/taskbar/zoom) render a shorter effective viewport
-          than a clean test window, which was eating into a tighter margin
-          and clipping most of the podium down to a thin visible sliver. */}
-      {/* Podium.tsx now owns its own dedicated stage lighting internally
-          (as children of its own group, positioned relative to it) so that
-          lighting can be recolored per-frame to match whichever feature's
-          accent is active/incoming — it needs a ref to each light to do
-          that, which only works cleanly if Podium.tsx renders them itself
-          rather than Scene.tsx holding them at arm's length. */}
-      <Podium position={[0, -1.18, 0]} />
-
-      <ContactShadows position={[0, -1.18, 0]} opacity={0.55} scale={4} blur={2.4} far={2} resolution={256} frames={1} color="#000000" />
+      {/* A single, persistently-mounted phone now (no podium, no
+          outgoing/incoming pair arcing past each other) — it just turns in
+          place, and its screen content swaps via the activeIndex prop
+          rather than a whole new instance mounting per feature. No ground
+          contact shadow either — without a podium there's no surface for
+          the phone to look grounded on; it reads as floating in the page's
+          own starfield instead. */}
+      <PhoneModel activeIndex={activeIndex} isDesktop={isDesktop} />
     </Canvas>
   );
 }
