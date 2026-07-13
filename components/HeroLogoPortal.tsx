@@ -58,31 +58,6 @@ const RING_MASK = `radial-gradient(circle at ${CENTER_X}% ${CENTER_Y}%, black ${
 // left by the rotating layer's erased pool region.
 const BASE_MASK = `radial-gradient(circle at ${CENTER_X}% ${CENTER_Y}%, black 55%, transparent 66%)`;
 
-// Light rays escaping the ring's edge, rotating together with it. A
-// repeating-conic-gradient makes the wedge pattern; the radial mask keeps
-// it invisible under the ring itself (RING_MASK already covers that area
-// opaquely) and only lets it show as a fading band starting right at the
-// ring's outer edge — so it reads as light being flung outward by the
-// spin, not a static sunburst sitting behind the whole graphic.
-//
-// This layer needs to fade out well past ROUND_RADIUS, but the portal's
-// own box is barely bigger than the ball (CENTER_Y sits close to the top
-// edge — only ~38% of box height above it), so a mask sized to the box
-// itself (inset-0, like every other layer) hits the box's rectangular
-// edge and hard-clips the ray tips before they finish fading — confirmed
-// visually (a flat cut line appeared exactly at the box edge). Fixed by
-// giving this one layer its own oversized (2x), independently-centered
-// box via explicit inset math instead of inset-0, so CENTER_X/Y sits at
-// its exact geometric middle with equal room in every direction. Every
-// percentage below is expressed in THIS box's own coordinate space (2x
-// the portal's), which is why the same radii are all halved.
-const RAYS_SCALE = 2;
-const RAYS_ROUND_RADIUS = ROUND_RADIUS / RAYS_SCALE;
-const RAY_COUNT = 12;
-const RAY_STEP_DEG = 360 / RAY_COUNT;
-const RAYS_BG = `repeating-conic-gradient(from 0deg at 50% 50%, rgba(196,168,255,0) 0deg, rgba(196,168,255,0.55) ${RAY_STEP_DEG * 0.1}deg, rgba(140,180,255,0) ${RAY_STEP_DEG * 0.32}deg, rgba(140,180,255,0) ${RAY_STEP_DEG}deg)`;
-const RAYS_MASK = `radial-gradient(circle at 50% 50%, transparent ${RAYS_ROUND_RADIUS - 3}%, black ${RAYS_ROUND_RADIUS + 1.5}%, black ${RAYS_ROUND_RADIUS + 7}%, transparent ${RAYS_ROUND_RADIUS + 19}%)`;
-
 // A handful of twinkling points woven through the ring — fixed angle/radius/
 // timing (not Math.random(), which this repo's react-hooks/purity lint rule
 // forbids during render) so they're deterministic across renders but still
@@ -244,28 +219,6 @@ export default function HeroLogoPortal() {
             height={IMAGE_HEIGHT}
             className="h-auto w-full"
             style={{ maskImage: BASE_MASK, WebkitMaskImage: BASE_MASK }}
-          />
-
-          {/* Light rays — sits behind the ring layer (painted first here, so
-              the opaque ring covers its own interior) and rotates on the
-              exact same duration/easing so the rays stay locked to the
-              ring's spin instead of drifting out of phase with it.
-              mix-blend-mode: screen adds light additively over the black
-              backdrop instead of a flat-colored wedge sitting on top. */}
-          <motion.div
-            className="absolute"
-            style={{
-              top: `${CENTER_Y - 50 * RAYS_SCALE}%`,
-              left: `${CENTER_X - 50 * RAYS_SCALE}%`,
-              width: `${100 * RAYS_SCALE}%`,
-              height: `${100 * RAYS_SCALE}%`,
-              background: RAYS_BG,
-              maskImage: RAYS_MASK,
-              WebkitMaskImage: RAYS_MASK,
-              mixBlendMode: "screen",
-            }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
           />
 
           {/* Whole ball — ring, outer wisps, AND logo — rotates together as
