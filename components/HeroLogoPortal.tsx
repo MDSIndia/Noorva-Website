@@ -1,418 +1,222 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { useTexture } from "@react-three/drei";
-import * as THREE from "three";
-import { motion } from "framer-motion";
+import { useEffect, useRef } from "react";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 
-// Deterministic seeded PRNG (not Math.random) — this repo's react-hooks/purity
-// lint rule forbids impure calls during render. Same hash function already
-// used in CosmicCanvas.tsx.
-function prng(n: number) {
-  let s = (n * 1664525 + 1013904223) | 0;
-  s = Math.imul(s, s ^ (s >> 16));
-  return (s >>> 0) / 0xffffffff;
+// The portal was previously a from-scratch Three.js reconstruction of the
+// reference art (rings + sparkle flares + baked textures), rebuilt across
+// several rounds trying to match it — but a procedural approximation kept
+// falling short of the actual reference photo. Using the real photo
+// (public/hero-portal.png, already includes the swirl halo, logo, and
+// reflection pool baked in as one flattened image) guarantees pixel-exact
+// fidelity.
+//
+// A single flat photo has no internal motion on its own, so it's split into
+// TWO stacked copies of the SAME image:
+//   1. Static base — full image, motionless, grounds the reflection pool.
+//      The pool must stay put: it isn't centered on the round's pivot, so
+//      spinning it would swing it through an arc instead of leaving it
+//      sitting flat on the ground (tried rotating everything including the
+//      pool — confirmed unwanted, reverted).
+//   2. Rotating disc — the whole ball, wisps, AND logo together, masked to
+//      a plain disc (no inner hole) so it spins as one piece. Rotation
+//      (unlike scale) never changes a circle's extent, so this mask
+//      boundary stays put at every angle — no gaps, no ghosting, no
+//      separate transparent source assets needed.
+// Center/radius were found by testing composited alignment guides in Node
+// against the actual pixels (see conversation).
+const IMAGE_WIDTH = 296;
+const IMAGE_HEIGHT = 277;
+const CENTER_X = (150 / IMAGE_WIDTH) * 100;
+const CENTER_Y = (108 / IMAGE_HEIGHT) * 100;
+const LOGO_RADIUS = (63 / IMAGE_WIDTH) * 100;
+// At radius 110 (the old value) the rotating layer already reached into
+// where the reflection pool's glow bleeds into the ball in the source
+// photo — confirmed with a pixel-level Node/sharp probe (brightness
+// samples straight down from center were already ~250/255 by r=70px).
+// Rotating that shared photo drags the pool's own bright pixels around
+// through the full circle, so at 90/180/270° the pool visibly reappeared
+// as a stray glowing blob at the side instead of staying grounded — the
+// real reason the rotation kept reading as "a thin ring", not the fault
+// of the radius choice itself. Fixed by rotating a SEPARATE source image
+// (hero-portal-ball.png) with the pool region pre-erased (see the erase
+// step in conversation), which lets this radius go much wider — now
+// covering nearly the whole ball's visible wisps — without ever
+// reintroducing pool pixels at other angles.
+const ROUND_RADIUS = (140 / IMAGE_WIDTH) * 100;
+const FEATHER = 1.3; // % — soft cross-fade width between mask boundaries
+
+// Plain disc, no inner logo hole — logo now rotates together with the
+// ball as a single piece.
+const RING_MASK = `radial-gradient(circle at ${CENTER_X}% ${CENTER_Y}%, black ${ROUND_RADIUS}%, transparent ${ROUND_RADIUS + FEATHER}%)`;
+// The source photo's corners are dark navy, not pure black, so laid
+// directly on the page's #000 background it reads as a faint visible
+// rectangle. Fading the outer margin to transparent (not a crop — content
+// stays intact) removes that box outline. This layer also has to stay
+// fully opaque under the whole rotating disc now (not just outside it,
+// like before) — it's what shows the real, static pool through the hole
+// left by the rotating layer's erased pool region.
+const BASE_MASK = `radial-gradient(circle at ${CENTER_X}% ${CENTER_Y}%, black 55%, transparent 66%)`;
+
+// A handful of twinkling points woven through the ring — fixed angle/radius/
+// timing (not Math.random(), which this repo's react-hooks/purity lint rule
+// forbids during render) so they're deterministic across renders but still
+// scattered at irregular-looking positions and offsets.
+const SPARKLE_FIELD_RADIUS = ROUND_RADIUS;
+interface SparkleSpec {
+  angleDeg: number;
+  radiusFactor: number; // fraction of SPARKLE_FIELD_RADIUS
+  size: number; // px at the lg breakpoint's ~420px box
+  delay: number;
+  duration: number;
 }
-
-// Radial-glow + 4-point cross-spike, baked into one canvas texture — a real
-// camera lens-flare silhouette (bright core + thin crossed spikes), not a
-// plain blurred dot. Drawn once in near-white so each flare instance can
-// tint it via material.color instead of needing a separate texture per hue.
-function useFlareTexture() {
-  return useMemo(() => {
-    if (typeof document === "undefined") return null;
-    const size = 128;
-    const c = size / 2;
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.globalCompositeOperation = "lighter";
-    const glow = ctx.createRadialGradient(c, c, 0, c, c, c);
-    glow.addColorStop(0, "rgba(255,255,255,1)");
-    glow.addColorStop(0.35, "rgba(255,255,255,0.55)");
-    glow.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, size, size);
-    const hBar = ctx.createLinearGradient(0, c, size, c);
-    hBar.addColorStop(0, "rgba(255,255,255,0)");
-    hBar.addColorStop(0.5, "rgba(255,255,255,0.9)");
-    hBar.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = hBar;
-    ctx.fillRect(0, c - 1, size, 2);
-    const vBar = ctx.createLinearGradient(c, 0, c, size);
-    vBar.addColorStop(0, "rgba(255,255,255,0)");
-    vBar.addColorStop(0.5, "rgba(255,255,255,0.9)");
-    vBar.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = vBar;
-    ctx.fillRect(c - 1, 0, 2, size);
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
-  }, []);
-}
-
-// A single comet-like trail, as a 1D gradient strip: a bright head, a long
-// fading tail, then a dark gap before it wraps back around to the head
-// again. Mapped along a torus's own angle-around-the-main-circle UV
-// (wrapS repeat), then animated by sliding `texture.offset.x` in useFrame —
-// so the BRIGHTNESS travels around the ring over time (the actual "light
-// moving" effect), rather than spinning the whole mesh as a rigid object.
-function useEnergyTrailTexture() {
-  return useMemo(() => {
-    if (typeof document === "undefined") return null;
-    const w = 512;
-    const h = 64;
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    // U axis (around the ring): bright comet head, long fading tail, dark
-    // gap before it wraps back to the head again.
-    const uGrad = ctx.createLinearGradient(0, 0, w, 0);
-    uGrad.addColorStop(0, "rgba(255,255,255,0)");
-    uGrad.addColorStop(0.02, "rgba(255,255,255,1)");
-    uGrad.addColorStop(0.06, "rgba(255,255,255,0.8)");
-    uGrad.addColorStop(0.34, "rgba(255,255,255,0.3)");
-    uGrad.addColorStop(0.64, "rgba(255,255,255,0.06)");
-    uGrad.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = uGrad;
-    ctx.fillRect(0, 0, w, h);
-
-    // V axis (across the tube's own cross-section): a full-height canvas
-    // plus a soft round falloff punched through it via destination-in —
-    // this is what turns the tube into a thick, soft-edged glowing wave
-    // instead of a thin hard-edged wireframe line.
-    ctx.globalCompositeOperation = "destination-in";
-    const vGrad = ctx.createLinearGradient(0, 0, 0, h);
-    vGrad.addColorStop(0, "rgba(255,255,255,0)");
-    vGrad.addColorStop(0.5, "rgba(255,255,255,1)");
-    vGrad.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = vGrad;
-    ctx.fillRect(0, 0, w, h);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
-  }, []);
-}
-
-// Soft round glow (no spikes) — used behind the logo and as the base bloom,
-// distinct from the flares' star shape.
-function useGlowTexture() {
-  return useMemo(() => {
-    if (typeof document === "undefined") return null;
-    const size = 128;
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-    gradient.addColorStop(0, "rgba(255,255,255,1)");
-    gradient.addColorStop(0.4, "rgba(255,255,255,0.4)");
-    gradient.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, size, size);
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
-  }, []);
-}
-
-interface FlareSpec {
-  radius: number;
-  tilt: number; // radians, how much the orbit plane tips toward/away from camera
-  planeRotation: number; // radians, orientation of the orbit ellipse in-plane
-  speed: number; // rad/sec
-  phase: number; // rad, starting angle
-  size: number;
-  color: string;
-}
-
-// Reference image's halo reads as a dense field of star-point sparkles
-// woven through the strands — a handful of standout "hero" points (large,
-// bright) plus many smaller ones — not a sparse ring of 6 uniform dots.
-const FLARE_PALETTE = ["#9fd8f5", "#c084fc", "#f0abfc", "#5eead4", "#7dd3fc", "#e0aaff", "#ffffff", "#bae6fd"];
-const FLARE_COUNT = 16;
-const FLARE_SPECS: FlareSpec[] = Array.from({ length: FLARE_COUNT }, (_, i) => ({
-  radius: round3(0.7 + prng(i * 9 + 1) * 0.55),
-  tilt: round3((prng(i * 9 + 2) - 0.5) * Math.PI * 0.9),
-  planeRotation: round3(prng(i * 9 + 3) * Math.PI * 2),
-  speed: round3(0.3 + prng(i * 9 + 4) * 0.6) * (i % 2 === 0 ? 1 : -1),
-  phase: round3(prng(i * 9 + 5) * Math.PI * 2),
-  // Every 5th one is a big "hero" sparkle, like the few standout bright
-  // points in the reference — the rest are small, scattered fill.
-  size: round3(i % 5 === 0 ? 0.36 + prng(i * 9 + 6) * 0.16 : 0.09 + prng(i * 9 + 6) * 0.15),
-  color: FLARE_PALETTE[i % FLARE_PALETTE.length],
-}));
-
-// Rounded the same way as the (now-removed) DOM version's STARS did — kept
-// here even though this data never touches an SSR'd style string, purely so
-// FLARE_SPECS stays readable/debuggable with short numbers.
-function round3(n: number) {
-  return Math.round(n * 1000) / 1000;
-}
-
-function LogoPlane() {
-  // Passed as a single-element array, not a bare string — react-hooks/
-  // immutability forbids mutating a hook's own return value directly
-  // (texture.colorSpace = ...), but not properties reached by iterating an
-  // array the hook returned; matches the identical, already-lint-clean
-  // workaround in BookModel.tsx's useBakedCoverTextures.
-  const [texture] = useTexture(["/NoorvaLogo.png"]);
-  const glowTexture = useGlowTexture();
-  const groupRef = useRef<THREE.Group>(null);
-
-  useEffect(() => {
-    [texture].forEach((t) => {
-      t.colorSpace = THREE.SRGBColorSpace;
-    });
-  }, [texture]);
-
-  useFrame((state) => {
-    const group = groupRef.current;
-    if (!group) return;
-    group.position.y = Math.sin(state.clock.getElapsedTime() * 0.6) * 0.05;
-  });
-
-  // Real image is 350x317 — matching that aspect keeps the logo from
-  // looking squashed/stretched on the plane.
-  const aspect = 350 / 317;
-  const width = 0.62;
-  const height = width / aspect;
-
-  return (
-    <group ref={groupRef}>
-      <mesh position={[0, 0, -0.02]}>
-        <planeGeometry args={[1.4, 1.4]} />
-        <meshBasicMaterial
-          map={glowTexture}
-          color="#c084fc"
-          transparent
-          opacity={0.55}
-          depthWrite={false}
-          toneMapped={false}
-          blending={THREE.AdditiveBlending}
-        />
-      </mesh>
-      <mesh>
-        <planeGeometry args={[width, height]} />
-        <meshBasicMaterial map={texture} transparent toneMapped={false} depthWrite={false} />
-      </mesh>
-    </group>
-  );
-}
-
-function Flare({ spec, texture }: { spec: FlareSpec; texture: THREE.Texture | null }) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
-
-  useFrame((state) => {
-    const mesh = meshRef.current;
-    const material = materialRef.current;
-    if (!mesh || !material) return;
-    const t = spec.phase + state.clock.getElapsedTime() * spec.speed;
-    const bx = Math.cos(t);
-    const by = Math.sin(t);
-    // Rotate the unit circle in-plane, then tip it around the X axis so
-    // part of the orbit swings toward the camera (+z) and part away (-z) —
-    // the actual 3D depth motion, not a flat screen-space circle.
-    const rx = bx * Math.cos(spec.planeRotation) - by * Math.sin(spec.planeRotation);
-    const ry = bx * Math.sin(spec.planeRotation) + by * Math.cos(spec.planeRotation);
-    const x = spec.radius * rx;
-    const y = spec.radius * ry * Math.cos(spec.tilt);
-    const z = spec.radius * ry * Math.sin(spec.tilt);
-    mesh.position.set(x, y, z);
-
-    // Nearer the camera (+z) reads bigger/brighter, farther (-z) smaller/
-    // dimmer — perspective already does some of this, but exaggerating it
-    // a bit sells the depth more clearly at this small a scale.
-    const depth = THREE.MathUtils.clamp((z / (spec.radius || 1) + 1) / 2, 0, 1);
-    const scale = spec.size * (0.7 + depth * 0.6);
-    mesh.scale.setScalar(scale);
-    material.opacity = 0.5 + depth * 0.5;
-  });
-
-  return (
-    <mesh ref={meshRef}>
-      <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial
-        ref={materialRef}
-        map={texture ?? undefined}
-        color={spec.color}
-        transparent
-        toneMapped={false}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
-    </mesh>
-  );
-}
-
-interface RingSpec {
-  radius: number;
-  tube: number;
-  tiltX: number; // radians — tips the ring's plane toward/away from the camera
-  tiltZ: number; // radians — spins that tilted plane's own orientation
-  speed: number; // texture-offset units/sec — how fast the light travels around it, and which direction
-  color: string;
-  opacity: number;
-}
-
-// A dense, tangled sphere of light at every orientation, like a wireframe
-// ball of magnetic field lines, with a blue/cyan bias on one side fading to
-// purple/pink on the other — tiltX spans the FULL 0..π range (not clustered
-// near-equatorial) and every tiltZ, so the strands weave into a "woven ball"
-// rather than a handful of obviously distinct ellipses. Each strand itself
-// is a thick, soft-edged wave (see useEnergyTrailTexture's V-axis falloff),
-// not a thin wireframe hairline — fewer, chunkier strands than a hairline
-// version needs, or the overlaps blow out to a solid white blob.
-const RING_PALETTE = ["#7dd3fc", "#5eb8f5", "#93c5fd", "#a78bfa", "#c084fc", "#d8b4fe", "#e879f9", "#f0abfc"];
-const RING_COUNT = 11;
-const RING_SPECS: RingSpec[] = Array.from({ length: RING_COUNT }, (_, i) => ({
-  radius: round3(0.7 + prng(i * 17 + 1) * 0.48),
-  tube: round3(0.028 + prng(i * 17 + 2) * 0.032),
-  tiltX: round3(prng(i * 17 + 3) * Math.PI),
-  tiltZ: round3(prng(i * 17 + 4) * Math.PI * 2),
-  speed: round3(0.1 + prng(i * 17 + 5) * 0.28) * (i % 2 === 0 ? 1 : -1),
-  color: RING_PALETTE[i % RING_PALETTE.length],
-  opacity: round3(0.4 + prng(i * 17 + 6) * 0.32),
-}));
-
-function EnergyRing({ spec, texture }: { spec: RingSpec; texture: THREE.Texture | null }) {
-  // Each ring needs its own Texture instance — `.offset` is what animates
-  // the light traveling around it, and that's a property of the Texture
-  // itself, not the material, so sharing one Texture across rings would
-  // make them all animate in lockstep instead of at their own speed.
-  const ringTexture = useMemo(() => {
-    if (!texture) return null;
-    const t = texture.clone();
-    t.wrapS = THREE.RepeatWrapping;
-    t.needsUpdate = true;
-    return t;
-  }, [texture]);
-
-  useFrame((_, delta) => {
-    if (ringTexture) ringTexture.offset.x += delta * spec.speed;
-  });
-
-  if (!ringTexture) return null;
-
-  return (
-    <mesh rotation={[spec.tiltX, 0, spec.tiltZ]}>
-      <torusGeometry args={[spec.radius, spec.tube, 12, 96]} />
-      <meshBasicMaterial
-        map={ringTexture}
-        color={spec.color}
-        transparent
-        opacity={spec.opacity}
-        toneMapped={false}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
-  );
-}
-
-function PortalScene() {
-  const flareTexture = useFlareTexture();
-  const ringTexture = useEnergyTrailTexture();
-  return (
-    <>
-      {RING_SPECS.map((spec, i) => (
-        <EnergyRing key={i} spec={spec} texture={ringTexture} />
-      ))}
-      <LogoPlane />
-      {FLARE_SPECS.map((spec, i) => (
-        <Flare key={i} spec={spec} texture={flareTexture} />
-      ))}
-    </>
-  );
-}
+const SPARKLES: SparkleSpec[] = [
+  { angleDeg: 18, radiusFactor: 0.6, size: 4, delay: 0, duration: 2.6 },
+  { angleDeg: 64, radiusFactor: 0.97, size: 3, delay: 0.6, duration: 3.1 },
+  { angleDeg: 112, radiusFactor: 0.74, size: 5, delay: 1.2, duration: 2.3 },
+  { angleDeg: 158, radiusFactor: 1.02, size: 3, delay: 0.3, duration: 2.9 },
+  { angleDeg: 206, radiusFactor: 0.66, size: 4, delay: 1.7, duration: 2.7 },
+  { angleDeg: 252, radiusFactor: 0.92, size: 3, delay: 0.9, duration: 3.3 },
+  { angleDeg: 298, radiusFactor: 0.58, size: 5, delay: 2.1, duration: 2.4 },
+  { angleDeg: 336, radiusFactor: 0.88, size: 3, delay: 1.4, duration: 3.0 },
+];
+// Placed with real trigonometry (not just equal width/height offsets) since
+// the source image isn't square (296x277) — converting the sine term by the
+// width/height ratio keeps points on an actual circle around the ring
+// instead of a slightly squashed ellipse.
+const SPARKLE_POSITIONS = SPARKLES.map((s) => {
+  const rad = (s.angleDeg * Math.PI) / 180;
+  const radiusPct = SPARKLE_FIELD_RADIUS * s.radiusFactor;
+  return {
+    ...s,
+    left: CENTER_X + Math.cos(rad) * radiusPct,
+    top: CENTER_Y + Math.sin(rad) * radiusPct * (IMAGE_WIDTH / IMAGE_HEIGHT),
+  };
+});
 
 export default function HeroLogoPortal() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(true);
+  // Cursor parallax — subtle 3D tilt that follows the pointer anywhere on
+  // the page (not just over the portal, which is pointer-events-none so it
+  // never blocks clicks on the hero text/buttons behind/beside it). Springs
+  // smooth the raw pointer delta into an easing follow instead of a snap.
+  const rawX = useMotionValue(0);
+  const rawY = useMotionValue(0);
+  const springX = useSpring(rawX, { stiffness: 55, damping: 16, mass: 0.6 });
+  const springY = useSpring(rawY, { stiffness: 55, damping: 16, mass: 0.6 });
+  const rotateX = useTransform(springY, [-1, 1], [5, -5]);
+  const rotateY = useTransform(springX, [-1, 1], [-5, 5]);
 
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
-      rootMargin: "200px 0px",
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+    function handleMove(e: MouseEvent) {
+      rawX.set(Math.max(-1, Math.min(1, (e.clientX / window.innerWidth) * 2 - 1)));
+      rawY.set(Math.max(-1, Math.min(1, (e.clientY / window.innerHeight) * 2 - 1)));
+    }
+    window.addEventListener("mousemove", handleMove, { passive: true });
+    return () => window.removeEventListener("mousemove", handleMove);
+  }, [rawX, rawY]);
 
   return (
-    <div ref={containerRef} className="pointer-events-none flex flex-col items-center">
-      {/* Portal + logo — real 3D scene (not CSS/DOM), so the orbiting lights
-          genuinely move in depth (toward/away from camera, in front of or
-          behind the logo) rather than a flat animated ring. */}
-      <div className="relative h-[220px] w-[220px] sm:h-[270px] sm:w-[270px] lg:h-[320px] lg:w-[320px]">
-        <Canvas
-          frameloop={inView ? "always" : "never"}
-          camera={{ position: [0, 0, 3.2], fov: 40, near: 0.1, far: 20 }}
-          style={{ background: "transparent" }}
-          gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}
-          dpr={[1, 1.8]}
+    <div className="pointer-events-none flex flex-col items-center">
+      <div ref={containerRef} style={{ perspective: 900 }}>
+        <motion.div
+          className="relative w-[280px] sm:w-[340px] lg:w-[420px]"
+          style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+          animate={{ y: [0, -8, 0] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         >
-          <PortalScene />
-        </Canvas>
-      </div>
-
-      {/* Light beam connecting the logo down to the reflection pool — a
-          bright core line plus a wider soft glow behind it, rather than a
-          single thin flat line. */}
-      <div className="relative h-14 sm:h-16 lg:h-[76px]">
-        <div
-          className="absolute top-0 left-1/2 h-full w-3 -translate-x-1/2 blur-md"
-          style={{ background: "linear-gradient(to bottom, rgba(192,132,252,0.55), rgba(124,92,252,0))" }}
-        />
-        <div
-          className="absolute top-0 left-1/2 h-full w-px -translate-x-1/2"
-          style={{ background: "linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(192,132,252,0.15))" }}
-        />
-      </div>
-
-      {/* Reflection pool — concentric rippled rings with a bright core and a
-          horizontal light streak, plus a faint tail continuing below. */}
-      <div className="relative h-[50px] w-[235px] sm:h-[62px] sm:w-[290px] lg:h-[72px] lg:w-[340px]">
-        <div
-          className="absolute top-1/2 left-1/2 h-[28%] w-full -translate-x-1/2 -translate-y-1/2 blur-lg"
-          style={{ background: "linear-gradient(to right, transparent, rgba(124,92,252,0.5), rgba(255,255,255,0.6), rgba(124,92,252,0.5), transparent)" }}
-        />
-        {[1, 0.84, 0.68, 0.52, 0.38, 0.24, 0.12].map((scale, i) => (
+          {/* Ambient glow breathing behind the image — kept small/tight and
+              radial so it reads as light bleeding off the ring, not a soft
+              rectangular halo sitting on the page's flat black background.
+              Earlier versions stacked this with two expanding "light
+              release" rings and a much bigger logo halo — all fighting for
+              the same dark space around the logo made it read as a muddy
+              smudge rather than clean light, so it's pared back to just
+              this one soft wash plus a small, tight glow on the logo. */}
           <motion.div
-            key={i}
-            className="absolute top-1/2 left-1/2 rounded-[50%] border"
+            className="absolute h-[58%] w-[58%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
             style={{
-              width: `${scale * 100}%`,
-              height: `${scale * 100}%`,
-              borderColor: `rgba(124,92,252,${0.55 - i * 0.06})`,
-              x: "-50%",
-              y: "-50%",
+              top: `${CENTER_Y}%`,
+              left: `${CENTER_X}%`,
+              background: "radial-gradient(circle, rgba(124,92,252,0.22), transparent 72%)",
             }}
-            animate={{ opacity: [0.45, 0.9, 0.45] }}
-            transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: i * 0.12 }}
+            animate={{ opacity: [0.4, 0.7, 0.4] }}
+            transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
           />
-        ))}
-        <div
-          className="absolute top-1/2 left-1/2 h-[26%] w-[18%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-md"
-          style={{ background: "radial-gradient(circle, rgba(255,255,255,0.95), rgba(192,132,252,0.5) 55%, transparent 80%)" }}
-        />
-        {/* Faint reflection tail continuing below the pool */}
-        <div
-          className="absolute top-full left-1/2 h-10 w-px -translate-x-1/2 sm:h-14"
-          style={{ background: "linear-gradient(to bottom, rgba(219,69,215,0.4), transparent)" }}
-        />
+
+          {/* Logo glow — small and tight, sitting close behind the logo
+              disc so it reads as a rim-light, not a wash bleeding into the
+              dark gap between the icon and the ring (which is part of the
+              source photo, not something to cover up). */}
+          <motion.div
+            className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full blur-lg"
+            style={{
+              top: `${CENTER_Y}%`,
+              left: `${CENTER_X}%`,
+              width: `${LOGO_RADIUS * 1.35}%`,
+              height: `${LOGO_RADIUS * 1.35}%`,
+              background: "radial-gradient(circle, rgba(192,132,252,0.5), rgba(124,92,252,0.2) 60%, transparent 80%)",
+            }}
+            animate={{ opacity: [0.5, 0.9, 0.5], scale: [0.96, 1.06, 0.96] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          />
+
+          {/* Static base — grounds the reflection pool. Next's Image
+              component never resolved (currentSrc/naturalWidth stayed empty
+              indefinitely) once the container passed ~1024px width,
+              confirmed with a Playwright probe; a plain img loads reliably
+              at every breakpoint and the source is already a small baked
+              composite that doesn't need Next's resize pipeline. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/hero-portal.png"
+            alt=""
+            aria-hidden
+            width={IMAGE_WIDTH}
+            height={IMAGE_HEIGHT}
+            className="h-auto w-full"
+            style={{ maskImage: BASE_MASK, WebkitMaskImage: BASE_MASK }}
+          />
+
+          {/* Whole ball — ring, outer wisps, AND logo — rotates together as
+              one piece. Uses hero-portal-ball.png — the same photo with the
+              reflection pool's region pre-erased — instead of the plain
+              hero-portal.png, so rotating a wide radius never drags pool
+              pixels around to other angles (see ROUND_RADIUS comment
+              above). The static base layer beneath shows the real pool
+              through the erased hole. */}
+          <motion.img
+            src="/hero-portal-ball.png"
+            alt="Noorva"
+            width={IMAGE_WIDTH}
+            height={IMAGE_HEIGHT}
+            className="absolute inset-0 h-auto w-full"
+            style={{
+              maskImage: RING_MASK,
+              WebkitMaskImage: RING_MASK,
+              transformOrigin: `${CENTER_X}% ${CENTER_Y}%`,
+            }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+          />
+
+          {/* Twinkling sparkle points woven through the ring. */}
+          {SPARKLE_POSITIONS.map((s, i) => (
+            <motion.div
+              key={i}
+              className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+              style={{
+                top: `${s.top}%`,
+                left: `${s.left}%`,
+                width: s.size,
+                height: s.size,
+                boxShadow: "0 0 4px 1px rgba(216,180,254,0.7), 0 0 8px 2px rgba(139,124,246,0.35)",
+              }}
+              animate={{ opacity: [0, 0.85, 0], scale: [0.4, 1.2, 0.4] }}
+              transition={{ duration: s.duration, repeat: Infinity, ease: "easeInOut", delay: s.delay }}
+            />
+          ))}
+        </motion.div>
       </div>
     </div>
   );
