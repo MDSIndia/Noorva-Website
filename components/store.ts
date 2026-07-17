@@ -11,6 +11,18 @@ export const scrollProgress = { value: 0 };
 // would otherwise re-render the whole 3D tree.
 export const phoneCarouselX = { value: 0 };
 
+// Shared singleton — DesertShowcase3D's own ScrollTrigger writes the same
+// kind of continuous scrubbed position here (0 at the first feature's
+// waypoint, up through FEATURES.length - 1 + a fractional finale tail),
+// written in the same onUpdate tick as phoneCarouselX so both stay in
+// perfect sync. Kept as its own singleton (rather than reusing
+// phoneCarouselX directly) since its range/semantics differ — it also
+// covers the finale tail beyond the last feature, and is read by things
+// that have nothing to do with the phone (CameraRig, Terrain, the scene
+// constructs) — so a reader shouldn't have to reason about phoneCarouselX's
+// phone-carousel-specific doc comment to understand it.
+export const desertFlightProgress = { value: 0 };
+
 // Shared singleton — set by SmoothScroll once Lenis initializes, read by Header's
 // nav links so anchor navigation goes through Lenis instead of a native jump.
 export const lenisRef: { current: import("lenis").default | null } = { current: null };

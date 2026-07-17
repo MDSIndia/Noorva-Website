@@ -321,8 +321,18 @@ export default function StoryGallerySection() {
         <p className="mb-5 text-[10px] font-light tracking-[0.5em] text-[color:var(--accent-warm)]/80 uppercase md:text-xs">
           The Noorva Story
         </p>
-        <h2 className="font-playfair mb-14 max-w-2xl text-3xl leading-[1.2] font-light text-white/95 md:mb-16 md:text-5xl">
-          A story worth turning the page for.
+        <h2 className="font-playfair text-balance mb-14 max-w-xl text-4xl leading-[1.2] font-light whitespace-normal text-white/95 md:mb-16 md:max-w-none md:whitespace-nowrap md:text-5xl">
+          The Book Preserved since Ancient Times
+          <br />
+          <span
+            className="bg-clip-text text-transparent"
+            style={{
+              backgroundImage: "linear-gradient(135deg, #e8b478 0%, #f4d9a8 50%, #e8b478 100%)",
+              filter: "drop-shadow(0 0 24px rgba(232,180,120,0.4))",
+            }}
+          >
+            with Unwavering Care.
+          </span>
         </h2>
 
         <button

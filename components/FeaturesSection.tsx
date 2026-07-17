@@ -1,7 +1,7 @@
 "use client";
 
-import PhoneShowcase3D from "./PhoneShowcase3D/PhoneShowcase3D";
+import DesertShowcase3D from "./DesertShowcase3D/DesertShowcase3D";
 
 export default function FeaturesSection() {
-  return <PhoneShowcase3D />;
+  return <DesertShowcase3D />;
 }

@@ -62,6 +62,23 @@ export default function CinematicIntro() {
     return () => releaseScrollLock("cosmic-intro");
   }, []);
 
+  const startTyping = useCallback(() => {
+    let i = 0;
+    const type = () => {
+      i++;
+      setTypedText(HEADING_FULL.slice(0, i));
+      if (i < HEADING_FULL.length) {
+        // Slightly slower on spaces/newlines for a natural rhythm
+        const ch = HEADING_FULL[i - 1];
+        const delay = ch === " " || ch === "\n" ? 60 : 38;
+        typingRef.current = setTimeout(type, delay);
+      } else {
+        setTypingDone(true);
+      }
+    };
+    typingRef.current = setTimeout(type, 0);
+  }, []);
+
   useEffect(() => {
     // Built paused — a click anywhere on the intro plays it once, replacing
     // the old scroll-scrubbed reveal with a click-triggered one. The
@@ -85,34 +102,30 @@ export default function CinematicIntro() {
 
     // hero text + phone fade in partway through the blast, then hold —
     // this becomes the static landing content once the reveal finishes.
+    // Typing used to wait for the WHOLE timeline (including the tail end
+    // of the star blast after the text had already faded in) before
+    // starting — the heading sat there fully visible but blank for that
+    // stretch, reading as a stall. Starting it off this tween's own
+    // onComplete instead means it begins the instant the text finishes
+    // fading in, not after the rest of the reveal also finishes.
     tl.fromTo(
       "#ci-text-1",
       { opacity: 0, y: 24, filter: "blur(12px)" },
-      { opacity: 1, y: 0, filter: "blur(0px)", duration: REVEAL_DURATION * 0.5, ease: "power2.out" },
+      {
+        opacity: 1,
+        y: 0,
+        filter: "blur(0px)",
+        duration: REVEAL_DURATION * 0.5,
+        ease: "power2.out",
+        onComplete: startTyping,
+      },
       REVEAL_DURATION * 0.35
     );
 
     return () => {
       tl.kill();
     };
-  }, []);
-
-  const startTyping = useCallback(() => {
-    let i = 0;
-    const type = () => {
-      i++;
-      setTypedText(HEADING_FULL.slice(0, i));
-      if (i < HEADING_FULL.length) {
-        // Slightly slower on spaces/newlines for a natural rhythm
-        const ch = HEADING_FULL[i - 1];
-        const delay = ch === " " || ch === "\n" ? 60 : 38;
-        typingRef.current = setTimeout(type, delay);
-      } else {
-        setTypingDone(true);
-      }
-    };
-    typingRef.current = setTimeout(type, 0);
-  }, []);
+  }, [startTyping]);
 
   const handleReveal = useCallback(() => {
     if (hasPlayedRef.current) return;
@@ -120,10 +133,9 @@ export default function CinematicIntro() {
     gsap.to("#ci-click-hint", { opacity: 0, duration: 0.3 });
     tlRef.current?.eventCallback("onComplete", () => {
       releaseScrollLock("cosmic-intro");
-      startTyping();
     });
     tlRef.current?.play();
-  }, [startTyping]);
+  }, []);
 
   // Cleanup typing timer on unmount
   useEffect(() => () => { if (typingRef.current) clearTimeout(typingRef.current); }, []);
@@ -149,6 +161,13 @@ export default function CinematicIntro() {
 
         <CosmicCanvas frameloop={inView ? "always" : "never"} />
 
+        {/* Full-screen hero video — layers on top of the star canvas
+            behind it; the heading/buttons below sit on top of this in
+            turn via z-10. */}
+        <div className="absolute inset-0 z-[5]">
+          <HeroLogoPortal />
+        </div>
+
         {/* Click hint */}
         <div
           id="ci-click-hint"
@@ -162,19 +181,31 @@ export default function CinematicIntro() {
         </div>
 
         {/* Hero content — fades in as the star blast settles, then stays put
-            as the page's static landing once the reveal finishes. */}
-        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+            as the page's static landing once the reveal finishes. On
+            mobile the content starts from the vertical middle of the
+            screen rather than being dead-centered — the portrait hero
+            clip's own busiest imagery (the hand/energy-ring subject)
+            sits in its upper half, with a calmer blurred continuation
+            below, so anchoring the text block's top edge at mid-screen
+            lands it over that calmer lower portion instead of
+            overlapping the subject. Desktop keeps the original
+            dead-center framing (its landscape clip doesn't have that
+            same upper/lower split). */}
+        <div className="absolute inset-0 flex items-start justify-center pt-[46vh] z-10 pointer-events-none md:items-center md:pt-0">
           <div
             id="ci-text-1"
-            className="flex flex-col-reverse items-center gap-10 px-8 text-center lg:flex-row lg:gap-16"
+            className="flex flex-col items-center gap-10 px-8 text-center"
             style={{ opacity: 0, filter: "blur(12px)" }}
           >
             <div className="flex flex-col items-center gap-9">
               <p
-                className="max-w-md bg-clip-text text-3xl font-bold tracking-[0.1em] text-transparent uppercase md:max-w-xl md:text-5xl lg:max-w-2xl lg:text-6xl whitespace-pre-line"
+                className="max-w-md text-3xl font-bold tracking-[0.1em] text-white uppercase md:max-w-xl md:text-5xl lg:max-w-2xl lg:text-6xl whitespace-pre-line"
                 style={{
-                  backgroundImage:
-                    "linear-gradient(135deg, #ffffff 0%, #3965e5 35%, #7c5cfc 65%, #db45d7 100%)",
+                  // Highlights the heading against the busy video behind
+                  // it — a soft brand-color glow plus a dark contact
+                  // shadow for a hard edge of contrast.
+                  textShadow:
+                    "0 0 40px rgba(124,92,252,0.65), 0 0 80px rgba(0,85,255,0.4), 0 4px 24px rgba(0,0,0,0.85)",
                 }}
               >
                 {typedText || ""}
@@ -184,7 +215,7 @@ export default function CinematicIntro() {
                       display: "inline-block",
                       width: "2px",
                       marginLeft: "2px",
-                      background: "linear-gradient(135deg, #ffffff, #7c5cfc)",
+                      background: "#ffffff",
                       animation: "ci-blink 0.75s step-end infinite",
                       verticalAlign: "middle",
                       height: "0.85em",
@@ -231,10 +262,6 @@ export default function CinematicIntro() {
                   </span>
                 </button>
               </div>
-            </div>
-
-            <div className="relative shrink-0">
-              <HeroLogoPortal />
             </div>
           </div>
         </div>

@@ -173,30 +173,58 @@ export default function WelcomeOverlay() {
             style={{ background: "radial-gradient(ellipse at center, rgba(124,92,252,0.12), transparent 60%)" }}
           />
 
-          <div className="relative mb-8 flex h-20 w-20 items-center justify-center md:h-24 md:w-24">
-            <motion.div
-              className="pointer-events-none absolute inset-0 -z-10 rounded-full"
-              style={{ background: "radial-gradient(circle, rgba(124,92,252,0.55), transparent 70%)" }}
-              animate={{ opacity: [0.45, 1, 0.45], scale: [1, 1.55, 1] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.div
-              animate={{ rotate: 360, scale: [1, 1.35, 1] }}
-              transition={{
-                rotate: { duration: 3, repeat: Infinity, ease: "linear" },
-                scale: { duration: 1.6, repeat: Infinity, ease: "easeInOut" },
-              }}
-            >
-              <Image src="/NoorvaLogo.png" alt="Noorva" width={40} height={40} className="opacity-95" />
-            </motion.div>
+          <div className="relative mb-8 flex flex-col items-center">
+            <div className="relative flex h-20 w-20 items-center justify-center md:h-24 md:w-24">
+              <motion.div
+                className="pointer-events-none absolute inset-[-8%] -z-10 rounded-full blur-3xl"
+                style={{ background: "radial-gradient(circle, rgba(124,92,252,0.55), transparent 70%)" }}
+                animate={{ opacity: [0.45, 1, 0.45], scale: [1, 1.45, 1] }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <motion.div
+                animate={{ rotate: 360, scale: [1, 1.35, 1] }}
+                transition={{
+                  rotate: { duration: 3, repeat: Infinity, ease: "linear" },
+                  scale: { duration: 1.6, repeat: Infinity, ease: "easeInOut" },
+                }}
+              >
+                <Image src="/NoorvaLogo.png" alt="Noorva" width={40} height={40} className="opacity-95" />
+              </motion.div>
+            </div>
+
+            <p className="relative px-8 text-center font-playfair text-3xl font-light tracking-[0.05em] text-white/90 md:text-5xl">
+              {TEXT.slice(0, revealCount)}
+              {phase === "typing" && (
+                <span className="ml-1 inline-block h-[0.9em] w-[2px] translate-y-[0.1em] animate-pulse bg-white/70 align-middle" />
+              )}
+            </p>
           </div>
 
-          <p className="relative px-8 text-center font-playfair text-3xl font-light tracking-[0.05em] text-white/90 md:text-5xl">
-            {TEXT.slice(0, revealCount)}
-            {phase === "typing" && (
-              <span className="ml-1 inline-block h-[0.9em] w-[2px] translate-y-[0.1em] animate-pulse bg-white/70 align-middle" />
+          <AnimatePresence>
+            {phase === "ready" && (
+              <motion.p
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="relative mt-4 px-8 text-center text-xs font-medium uppercase tracking-[0.25em] text-white/90 md:text-sm"
+              >
+                <span className="relative inline-block overflow-hidden px-1 py-1">
+                  <motion.span
+                    className="absolute inset-y-0 left-0 w-[40%]"
+                    animate={{ x: ["-140%", "240%"] }}
+                    transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+                    style={{
+                      background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 20%, rgba(255,255,255,0.38) 45%, rgba(255,255,255,0.12) 80%, transparent 100%)",
+                      filter: "blur(0.6px)",
+                    }}
+                  />
+                  <span className="relative z-10 text-white/90">
+                    The future of Human-AI companionship
+                  </span>
+                </span>
+              </motion.p>
             )}
-          </p>
+          </AnimatePresence>
 
           <AnimatePresence>
             {phase === "ready" && (
