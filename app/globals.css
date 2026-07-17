@@ -95,6 +95,7 @@ html.lenis          { height: auto; }
 /* ── TYPOGRAPHY UTILITIES ───────────────────────────────────────── */
 .font-playfair { font-family: var(--font-playfair); }
 .font-jakarta  { font-family: var(--font-jakarta); }
+.font-hand     { font-family: var(--font-caveat); }
 
 /* ── PREMIUM GLOW BUTTON ────────────────────────────────────────── */
 .btn-glow {

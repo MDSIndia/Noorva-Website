@@ -43,7 +43,7 @@ const CHAPTERS = [
 // .sheet dimensions — the actual crop is driven by each element's own
 // screenshot() call below, not this viewport.
 const VARIANTS = [
-  { name: "portrait", template: "bake-story-textures.portrait.template.html", viewport: { width: 1300, height: 1850 }, targets: ["cover-front", "cover-back", "spine", ...CHAPTERS.map((c) => `page-${c.i}`)] },
+  { name: "portrait", template: "bake-story-textures.portrait.template.html", viewport: { width: 1300, height: 1850 }, targets: ["cover-front", "cover-back", "cover-front-emissive", "cover-back-emissive", "spine", ...CHAPTERS.map((c) => `page-${c.i}`)] },
   // Closed-book back cover is portrait-only (the idle preview never goes
   // landscape), so it's skipped here.
   { name: "landscape", template: "bake-story-textures.landscape.template.html", viewport: { width: 1850, height: 1200 }, targets: ["cover-front", "spine", ...CHAPTERS.map((c) => `page-${c.i}`)] },

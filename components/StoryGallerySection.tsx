@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import gsap from "gsap";
 import { X } from "lucide-react";
 import BookPreview3D from "./StoryGallery3D/BookPreview3D";
+import BookLandingScene from "./StoryGallery3D/BookLandingScene";
 import StoryCinematic from "./StoryCinematic";
 import { galleryCaptureControl, acquireScrollLock, releaseScrollLock } from "./store";
 import { storyChapters } from "./storyData";
@@ -26,6 +27,11 @@ const SWIPE_THRESHOLD = 30; // px, minimum touch swipe to count as a gesture
 const GESTURE_IDLE_MS = 180;
 
 export default function StoryGallerySection() {
+  // Observed so BookLandingScene (see warmLanding below) can start
+  // mounting well before the user could plausibly reach the "open" click —
+  // scrolling, reading the heading/copy above the book takes several
+  // seconds on its own, which is the whole window this is racing to fill.
+  const sectionRef = useRef<HTMLElement>(null);
   // The clickable, idly-rotating book sitting in normal page flow before
   // it's opened — its measured rect is the FLIP-animation's start point.
   const previewWrapRef = useRef<HTMLDivElement>(null);
@@ -36,9 +42,26 @@ export default function StoryGallerySection() {
   // the earlier WebGL reader there's no Canvas/ResizeObserver measurement
   // race to guard against; the zoom can start as soon as this mounts.
   const zoomWrapRef = useRef<HTMLDivElement>(null);
+  // The fullscreen "book falls onto the desk and opens" cinematic that
+  // plays ahead of the DOM reader — its own fixed layer, crossfaded out
+  // once BookLandingScene reports the cover is opening (handleLandingOpened).
+  const landingWrapRef = useRef<HTMLDivElement>(null);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [entered, setEntered] = useState(false);
+  const [showLanding, setShowLanding] = useState(false);
+  // Flips true once, the first time this section comes near the viewport,
+  // and never resets — it's what actually mounts BookLandingScene (well
+  // ahead of `showLanding`, which just toggles that already-mounted
+  // scene's visibility). Its Canvas/Environment/cover textures take real
+  // time to spin up (a second independent WebGL context warming up its own
+  // GPU-side texture/shadow state, even when the underlying files are
+  // browser-cached from the idle preview's own identical assets) — mounted
+  // fresh at click time, that cost landed as a dead multi-second freeze
+  // between the click and any visible motion. Mounting it early instead
+  // means that cost is paid while the user is still scrolling/reading, not
+  // after they've already clicked expecting something to happen.
+  const [warmLanding, setWarmLanding] = useState(false);
   const enteredRef = useRef(false);
 
   const currentIndexRef = useRef(0);
@@ -62,6 +85,27 @@ export default function StoryGallerySection() {
 
   useEffect(() => {
     reducedMotionRef.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }, []);
+
+  useEffect(() => {
+    // Reduced-motion visitors never mount BookLandingScene at all (see
+    // handleEnter below), so there's nothing worth pre-warming for them.
+    if (reducedMotionRef.current) return;
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setWarmLanding(true);
+          observer.disconnect();
+        }
+      },
+      // Generous head start — triggers well before the section is
+      // actually on screen, not just as it crosses the fold.
+      { rootMargin: "600px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -234,18 +278,142 @@ export default function StoryGallerySection() {
     };
   }, []);
 
-  // Click on the idly-rotating preview book: measures where it currently
-  // sits, mounts the fullscreen overlay, then GSAP-tweens the (now
-  // full-viewport-sized) cinematic wrapper from that measured rect back down
-  // to its natural size/position — reading as the small book zooming up to
-  // fill the screen, rather than an abrupt cut.
+  // Click on the idly-rotating preview book. Two paths:
+  // - Normal: play the fall-onto-the-desk-and-open cinematic
+  //   (BookLandingScene, a separate fullscreen WebGL scene) and crossfade
+  //   into the DOM reader once its cover is partway open — see
+  //   handleLandingOpened below.
+  // - prefers-reduced-motion: skip straight to the original FLIP zoom from
+  //   the preview's own measured screen position (handleEnterZoom),
+  //   unchanged from before the landing cinematic existed — a book
+  //   tumbling/falling in from off-screen is exactly the kind of motion
+  //   that setting exists to avoid.
   function handleEnter() {
     if (enteredRef.current || isTransitioningRef.current) return;
+    isTransitioningRef.current = true;
+
+    if (reducedMotionRef.current) {
+      handleEnterZoom();
+      return;
+    }
+
+    acquireScrollLock("story-gallery");
+    setShowLanding(true);
+  }
+
+  // Fires partway through BookLandingScene's cover-open swing (not on its
+  // full completion) — instead of a flat crossfade, the DOM reader grows
+  // OUT of the open book: it starts small, roughly where the book sits
+  // under BookLandingScene's own top-down framing (CAMERA_TOP in
+  // BookLandingScene.tsx), and scales up to fill the viewport, while the
+  // 3D landing layer dissolves away underneath it — reading as the camera
+  // diving into the page rather than a cut to a different screen. The
+  // landing layer's own fade and the zoom's completion are deliberately on
+  // separate timers (see below) so the chapter-one auto-advance can't start
+  // compounding with the zoom still visibly in progress.
+  function handleLandingOpened() {
+    flushSync(() => setEntered(true));
+    const overlay = overlayRef.current;
+    const landing = landingWrapRef.current;
+    const zoomWrap = zoomWrapRef.current;
+
+    // No reducedMotionRef branching in this function — handleEnter never
+    // calls BookLandingScene (and so never reaches this callback) for that
+    // preference, routing to handleEnterZoom instead.
+    const scheduleChapterOne = () => {
+      // A single click on the preview now takes the reader all the way to
+      // chapter one — land/open/zoom, then straight into the opening
+      // crossfade — instead of stopping on the cover slide and waiting for
+      // a second click. A short beat lets the zoom's arrival register
+      // before the first chapter appears. enteredRef is re-checked since
+      // the book could have been closed (Escape, nav-link escape) during
+      // this delay.
+      setTimeout(() => {
+        if (enteredRef.current) goToRef.current?.(1);
+      }, 220);
+    };
+
+    if (overlay && zoomWrap) {
+      gsap.set(overlay, { opacity: 1 });
+
+      // Approximates where the open book sits on screen during
+      // BookLandingScene's top-down shot — a centered rect matching the
+      // book's own portrait aspect ratio (BOOK_W/BOOK_H from BookModel.tsx)
+      // rather than a real measured element (there is none; the book is a
+      // WebGL object, not DOM). Pixel-perfect alignment isn't the goal —
+      // just growing from a plausible "on the table" size and position
+      // instead of popping in at full screen.
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const bookAspect = 1.2 / 1.78;
+      let startW = vh * 0.62 * bookAspect;
+      let startH = vh * 0.62;
+      if (startW > vw * 0.82) {
+        startW = vw * 0.82;
+        startH = startW / bookAspect;
+      }
+      const startLeft = (vw - startW) / 2;
+      const startTop = (vh - startH) / 2 + vh * 0.03;
+
+      const targetRect = zoomWrap.getBoundingClientRect();
+      const scaleX = startW / targetRect.width;
+      const scaleY = startH / targetRect.height;
+      const originX = startLeft + startW / 2 - (targetRect.left + targetRect.width / 2);
+      const originY = startTop + startH / 2 - (targetRect.top + targetRect.height / 2);
+
+      const zoomDuration = 1.15;
+      let zoomFinished = false;
+      // Guards against GSAP's onComplete never firing under heavy
+      // main-thread contention — the identical safety net used throughout
+      // this file's history for every GSAP-driven transition.
+      const finishZoom = () => {
+        if (zoomFinished) return;
+        zoomFinished = true;
+        gsap.killTweensOf(zoomWrap);
+        gsap.set(zoomWrap, { x: 0, y: 0, scaleX: 1, scaleY: 1 });
+        currentIndexRef.current = 0;
+        isTransitioningRef.current = false;
+        scheduleChapterOne();
+      };
+
+      gsap.fromTo(
+        zoomWrap,
+        { x: originX, y: originY, scaleX, scaleY, transformOrigin: "center center" },
+        {
+          x: 0,
+          y: 0,
+          scaleX: 1,
+          scaleY: 1,
+          duration: zoomDuration,
+          ease: "power3.inOut",
+          onComplete: finishZoom,
+        }
+      );
+      setTimeout(finishZoom, zoomDuration * 1000 + 2500);
+    } else {
+      currentIndexRef.current = 0;
+      isTransitioningRef.current = false;
+      scheduleChapterOne();
+    }
+
+    if (landing) {
+      gsap.to(landing, { opacity: 0, duration: 0.7, ease: "power2.out", onComplete: () => setShowLanding(false) });
+    } else {
+      setShowLanding(false);
+    }
+  }
+
+  // The original click -> FLIP zoom from the preview's own measured rect
+  // straight to fullscreen. Kept verbatim for prefers-reduced-motion, which
+  // bypasses the fall/open cinematic above entirely.
+  function handleEnterZoom() {
     const previewEl = previewWrapRef.current;
-    if (!previewEl) return;
+    if (!previewEl) {
+      isTransitioningRef.current = false;
+      return;
+    }
 
     const startRect = previewEl.getBoundingClientRect();
-    isTransitioningRef.current = true;
     acquireScrollLock("story-gallery");
     flushSync(() => setEntered(true));
 
@@ -313,7 +481,11 @@ export default function StoryGallerySection() {
   }
 
   return (
-    <section id="story-gallery" className="relative w-full overflow-hidden bg-[color:var(--bg)]/70 py-28 md:py-36">
+    <section
+      id="story-gallery"
+      ref={sectionRef}
+      className="relative w-full overflow-hidden bg-[color:var(--bg)]/70 py-28 md:py-36"
+    >
       <div className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color:var(--accent-warm)]/6 blur-[160px]" />
       <div className="pointer-events-none absolute inset-0 vignette-edge" />
 
@@ -348,7 +520,7 @@ export default function StoryGallerySection() {
           <div
             ref={previewWrapRef}
             className="relative h-[280px] w-[190px] md:h-[400px] md:w-[270px]"
-            style={{ visibility: entered ? "hidden" : "visible" }}
+            style={{ visibility: entered || showLanding ? "hidden" : "visible" }}
           >
             <BookPreview3D />
           </div>
@@ -371,6 +543,29 @@ export default function StoryGallerySection() {
           </span>
         </button>
       </div>
+
+      {/* Fullscreen fall/land/open cinematic. Mounted once `warmLanding`
+          fires (well before any click — see that state's own comment)
+          and stays mounted from then on; `showLanding` only toggles its
+          visibility, covering (and, once open, crossfading out to reveal)
+          the `entered` DOM reader beneath it. Kept invisible+non-
+          interactive rather than unmounted while idle specifically so its
+          Canvas never has to cold-start again on a second or third open in
+          the same visit. */}
+      {warmLanding && (
+        <div
+          ref={landingWrapRef}
+          className="fixed inset-0 overflow-hidden bg-[color:var(--bg)]"
+          style={{
+            zIndex: 33,
+            opacity: showLanding ? 1 : 0,
+            visibility: showLanding ? "visible" : "hidden",
+            pointerEvents: "none",
+          }}
+        >
+          <BookLandingScene active={showLanding} onOpened={handleLandingOpened} />
+        </div>
+      )}
 
       {entered && (
         <div

@@ -51,7 +51,7 @@ const SPINE_R = 0.024;
 const HINGE_OFFSET = 0.11;
 const HINGE_W = 0.05;
 
-function useBakedCoverTextures(sources: [string, string]) {
+function useBakedCoverTextures(sources: [string, string, string, string]) {
   const textures = useTexture(sources);
   useEffect(() => {
     // .forEach over the array, not a direct mutation of the hook's own
@@ -218,8 +218,24 @@ function HingeGroove() {
   );
 }
 
-export default function BookModel() {
-  const [frontTex, backTex] = useBakedCoverTextures(["/story-3d/portrait/cover-front.png", "/story-3d/portrait/cover-back.png"]);
+interface BookModelProps {
+  /** Exposes the front-cover hinge group to a parent animation (the landing
+   *  cinematic in BookLandingScene.tsx) so it can drive rotation.y on it
+   *  directly via GSAP/useFrame each tick, rather than going through React
+   *  state/props — matches this file's existing convention of refs mutated
+   *  imperatively for animation (see SpinningBook's identical pattern in
+   *  BookPreview3D.tsx) instead of re-rendering every frame. Left undefined
+   *  by the plain idle preview, which never opens the cover. */
+  hingeGroupRef?: React.RefObject<THREE.Group | null>;
+}
+
+export default function BookModel({ hingeGroupRef }: BookModelProps = {}) {
+  const [frontTex, backTex, frontGlowTex, backGlowTex] = useBakedCoverTextures([
+    "/story-3d/portrait/cover-front.png",
+    "/story-3d/portrait/cover-back.png",
+    "/story-3d/portrait/cover-front-emissive.png",
+    "/story-3d/portrait/cover-back-emissive.png",
+  ]);
   const paperEdgeTexture = usePaperEdgeTexture();
 
   // Page block — a real recessed volume (not a flat inset cap standing in
@@ -306,27 +322,70 @@ export default function BookModel() {
         <meshPhysicalMaterial color={PAGE_CREAM} map={paperEdgeTexture} metalness={0} roughness={0.88} />
       </mesh>
 
-      {/* Front/back boards — genuinely thick rigid covers, visible mostly
-          as the curved bevel rim at the very perimeter once the textured
-          art overlays (below) sit on top of their outer faces. */}
-      <mesh geometry={frontBoardGeometry} castShadow receiveShadow>
-        <meshPhysicalMaterial color="#3a2a1a" metalness={0.25} roughness={0.5} />
-      </mesh>
+      {/* Back board — genuinely thick rigid cover, visible mostly as the
+          curved bevel rim at the very perimeter once the textured art
+          overlay (below) sits on top of its outer face. Rigidly part of
+          the book's body (unlike the front board below), since only the
+          front cover swings open. */}
       <mesh geometry={backBoardGeometry} castShadow receiveShadow>
         <meshPhysicalMaterial color="#3a2a1a" metalness={0.25} roughness={0.5} />
       </mesh>
 
-      {/* Front/back cover art — positioned at depth/2 + the board's own
-          bevelThickness, since ExtrudeGeometry's bevel pushes its flat cap
-          face all the way out to `depth + bevelThickness`, not `depth` —
-          placing these at a smaller offset buried them behind the board's
-          own (untextured) cap face, which is exactly why the cover art
-          wasn't showing. */}
-      <mesh geometry={capGeometry} position={[0, 0, BOOK_D / 2 + BEVEL_R + 0.002]}>
-        <meshPhysicalMaterial map={frontTex} metalness={0.1} roughness={0.55} clearcoat={0.25} clearcoatRoughness={0.6} />
-      </mesh>
+      {/* Front board + its cover art, both children of a hinge group
+          pivoting at the spine edge (x = -BOOK_W/2) rather than the book's
+          center — each child is shifted +BOOK_W/2 in the hinge group's own
+          local space so it lands exactly back at its original world
+          position when hingeGroupRef's rotation.y is left at 0 (closed).
+          Animating that rotation.y is what swings the cover open like a
+          real hinge instead of the whole book rotating in place. */}
+      <group ref={hingeGroupRef} position={[-BOOK_W / 2, 0, 0]}>
+        <mesh geometry={frontBoardGeometry} position={[BOOK_W / 2, 0, 0]} castShadow receiveShadow>
+          <meshPhysicalMaterial color="#3a2a1a" metalness={0.25} roughness={0.5} />
+        </mesh>
+
+        {/* emissiveMap is a dedicated black-everywhere-but-the-gilt-linework
+            bake (see cover-front-emissive.png), not the visible cover art
+            reused as its own glow mask — self-illumination is additive and
+            independent of scene lighting/viewing angle, so it's what
+            actually keeps the frame/flourish/rule lines reading as true
+            gold instead of the washed-out gray the plain lit diffuse map
+            gave them off-angle. Using the full cover art for both would
+            also bloom the title text and medallion along with the lines,
+            which isn't the effect here. Positioned at depth/2 + the
+            board's own bevelThickness, since ExtrudeGeometry's bevel
+            pushes its flat cap face all the way out to
+            `depth + bevelThickness`, not `depth`. `side={THREE.DoubleSide}`
+            matters here specifically (unlike the static back cap below):
+            this face swings past 90° when the hinge opens, so the camera
+            can end up looking at what was originally its back — a
+            single-sided ShapeGeometry plane would just vanish past that
+            point under the material's default FrontSide culling. */}
+        <mesh geometry={capGeometry} position={[BOOK_W / 2, 0, BOOK_D / 2 + BEVEL_R + 0.002]}>
+          <meshPhysicalMaterial
+            map={frontTex}
+            emissiveMap={frontGlowTex}
+            emissive="#e8b478"
+            emissiveIntensity={1.6}
+            metalness={0.1}
+            roughness={0.55}
+            clearcoat={0.25}
+            clearcoatRoughness={0.6}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      </group>
+
       <mesh geometry={capGeometry} rotation={[0, Math.PI, 0]} position={[0, 0, -BOOK_D / 2 - BEVEL_R - 0.002]}>
-        <meshPhysicalMaterial map={backTex} metalness={0.1} roughness={0.55} clearcoat={0.25} clearcoatRoughness={0.6} />
+        <meshPhysicalMaterial
+          map={backTex}
+          emissiveMap={backGlowTex}
+          emissive="#e8b478"
+          emissiveIntensity={1.6}
+          metalness={0.1}
+          roughness={0.55}
+          clearcoat={0.25}
+          clearcoatRoughness={0.6}
+        />
       </mesh>
 
       {/* Spine — the real connecting volume, not a flat cap over an

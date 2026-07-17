@@ -23,15 +23,18 @@
   }
   .gilt-frame-outer {
     position: absolute; inset: 34px; border-radius: 16px;
-    border: 3px solid rgba(232,180,120,0.55);
+    border: 3px solid rgba(244,209,158,0.85);
+    box-shadow: 0 0 26px rgba(232,180,120,0.6), inset 0 0 26px rgba(232,180,120,0.35);
   }
   .gilt-frame-inner {
     position: absolute; inset: 46px; border-radius: 8px;
-    border: 2px solid rgba(232,180,120,0.25);
+    border: 2px solid rgba(232,180,120,0.45);
+    box-shadow: 0 0 18px rgba(232,180,120,0.4), inset 0 0 18px rgba(232,180,120,0.2);
   }
   .flourish {
     position: absolute; width: 26px; height: 26px; transform: rotate(45deg);
-    border: 2px solid rgba(232,180,120,0.5);
+    border: 2px solid rgba(244,209,158,0.8);
+    box-shadow: 0 0 16px rgba(232,180,120,0.65);
   }
 
   /* ---------- COVER FRONT content ---------- */
@@ -69,7 +72,8 @@
   }
   .cover-rule {
     position: absolute; left: 50%; transform: translateX(-50%); height: 2px; width: 190px;
-    background: linear-gradient(90deg, transparent, rgba(232,180,120,0.75), transparent);
+    background: linear-gradient(90deg, transparent, rgba(244,209,158,0.9), transparent);
+    box-shadow: 0 0 14px 1px rgba(232,180,120,0.7);
   }
   .cover-count {
     position: absolute; left: 0; right: 0; text-align: center;
@@ -106,6 +110,20 @@
   .page-body { font-size: 21px; line-height: 1.65; font-weight: 300; color: rgba(255,255,255,0.84); margin-top: 24px; max-width: 900px; text-shadow: 0 2px 12px rgba(0,0,0,0.6); }
   .page-footer { position: absolute; left: 64px; right: 64px; bottom: 48px; display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; }
   .page-footer span { font-size: 15px; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; color: rgba(255,255,255,0.6); text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+
+  /* ---------- COVER EMISSIVE MASK ----------
+     Baked separately from the leather cover art above: pure black
+     everywhere except the gilt frame/flourish/rule linework, which is
+     drawn near-white-gold with a heavy blur halo. Used as a three.js
+     emissiveMap in BookModel.tsx so those lines self-illuminate a true
+     gold regardless of scene lighting/viewing angle — the visible cover
+     texture alone can't do this, since under this file's ordinary
+     directional/environment lighting a merely-bright *diffuse* gold line
+     still reads as washed-out gray from off-angle views where specular
+     response doesn't favor it. Black stays black in an emissiveMap (no
+     light added), so nothing else on the cover is affected. */
+  .emissive-sheet { background: #000; }
+  .glow-line { border-color: #ffd9a0; }
 </style>
 </head>
 <body>
@@ -150,6 +168,28 @@
 
     <div class="cover-rule" style="top:calc(50% + 158px);"></div>
     <div class="cover-eyebrow" style="top:calc(50% + 184px);">MDS India</div>
+  </div>
+
+  <!-- ============ COVER FRONT EMISSIVE (glow mask) ============ -->
+  <div class="sheet emissive-sheet" id="cover-front-emissive">
+    <div class="gilt-frame-outer glow-line" style="box-shadow: 0 0 54px 16px rgba(255,196,110,1), inset 0 0 44px rgba(255,196,110,0.85);"></div>
+    <div class="gilt-frame-inner glow-line" style="box-shadow: 0 0 36px 8px rgba(255,196,110,0.9), inset 0 0 20px rgba(255,196,110,0.6);"></div>
+    <div class="flourish glow-line" style="top:70px;left:70px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
+    <div class="flourish glow-line" style="top:70px;right:90px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
+    <div class="flourish glow-line" style="bottom:70px;left:70px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
+    <div class="flourish glow-line" style="bottom:70px;right:90px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
+    <div class="cover-rule" style="top:1070px; background: linear-gradient(90deg, transparent, #ffe6bc, transparent); box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
+  </div>
+
+  <!-- ============ COVER BACK EMISSIVE (glow mask) ============ -->
+  <div class="sheet emissive-sheet" id="cover-back-emissive">
+    <div class="gilt-frame-outer glow-line" style="box-shadow: 0 0 54px 16px rgba(255,196,110,1), inset 0 0 44px rgba(255,196,110,0.85);"></div>
+    <div class="gilt-frame-inner glow-line" style="box-shadow: 0 0 36px 8px rgba(255,196,110,0.9), inset 0 0 20px rgba(255,196,110,0.6);"></div>
+    <div class="flourish glow-line" style="top:70px;left:70px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
+    <div class="flourish glow-line" style="top:70px;right:90px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
+    <div class="flourish glow-line" style="bottom:70px;left:70px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
+    <div class="flourish glow-line" style="bottom:70px;right:90px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
+    <div class="cover-rule" style="top:calc(50% + 158px); background: linear-gradient(90deg, transparent, #ffe6bc, transparent); box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
   </div>
 
   <!-- ============ SPINE ============ -->

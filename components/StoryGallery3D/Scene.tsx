@@ -1,8 +1,8 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, ContactShadows } from "@react-three/drei";
-import { Suspense, type ReactNode } from "react";
+import { Suspense, useEffect, type ReactNode } from "react";
 import * as THREE from "three";
 
 interface FitTarget {
@@ -30,6 +30,37 @@ interface SceneProps {
    *  own internal size measurement (see StoryGallerySection.tsx's
    *  handleEnter for why a blind delay wasn't robust enough). */
   onReady?: () => void;
+  /** Overrides the plain `[0, 0, cameraZ]` head-on camera position — needed
+   *  for BookLandingScene.tsx's tilted, slightly-elevated view down onto a
+   *  desk (a head-on camera can't see a horizontal tabletop at all). Left
+   *  undefined by every other caller, which all want the original
+   *  straight-on framing. */
+  cameraPosition?: [number, number, number];
+  /** Paired with `cameraPosition` — R3F only orients the default camera to
+   *  look at the origin when `cameraPosition` is itself on the Z axis (the
+   *  every-other-caller case); any other position needs an explicit
+   *  lookAt or it keeps the camera's default forward (-Z) orientation
+   *  regardless of where it's placed. */
+  cameraLookAt?: [number, number, number];
+  /** ContactShadows' own ground position/scale — defaults match every
+   *  existing caller's implicit ground at y=-1. BookLandingScene.tsx's desk
+   *  sits at a different height with a much larger footprint, so it needs
+   *  to move both. */
+  contactShadowPosition?: [number, number, number];
+  contactShadowScale?: number;
+}
+
+function CameraLookAt({ target }: { target: [number, number, number] }) {
+  const { camera } = useThree();
+  useEffect(() => {
+    camera.lookAt(...target);
+    camera.updateProjectionMatrix();
+    // target is a fresh array literal from the caller every render;
+    // comparing its contents isn't worth it for a one-time-per-mount
+    // orientation call.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [camera]);
+  return null;
 }
 
 function CameraFit({ width, height, margin = 0.08, baseZ, fov }: FitTarget & { baseZ: number; fov: number }) {
@@ -59,11 +90,23 @@ function CameraFit({ width, height, margin = 0.08, baseZ, fov }: FitTarget & { b
   return null;
 }
 
-export default function Scene({ children, frameloop = "always", dpr = [1, 1.8], cameraZ = 3.4, fov = 32, fitTarget, onReady }: SceneProps) {
+export default function Scene({
+  children,
+  frameloop = "always",
+  dpr = [1, 1.8],
+  cameraZ = 3.4,
+  fov = 32,
+  fitTarget,
+  onReady,
+  cameraPosition,
+  cameraLookAt,
+  contactShadowPosition = [0, -1, 0],
+  contactShadowScale = 4,
+}: SceneProps) {
   return (
     <Canvas
       frameloop={frameloop}
-      camera={{ position: [0, 0, cameraZ], fov, near: 0.1, far: 100 }}
+      camera={{ position: cameraPosition ?? [0, 0, cameraZ], fov, near: 0.1, far: 100 }}
       style={{ background: "transparent" }}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       dpr={dpr}
@@ -71,6 +114,7 @@ export default function Scene({ children, frameloop = "always", dpr = [1, 1.8], 
       onCreated={onReady}
     >
       {fitTarget && <CameraFit {...fitTarget} baseZ={cameraZ} fov={fov} />}
+      {cameraLookAt && <CameraLookAt target={cameraLookAt} />}
       <ambientLight intensity={0.9} />
       <directionalLight position={[2.4, 3.6, 5.5]} intensity={2.6} castShadow shadow-mapSize={[1024, 1024]} />
       <pointLight position={[0, 0.4, 4]} intensity={1.8} distance={10} decay={2} />
@@ -80,7 +124,16 @@ export default function Scene({ children, frameloop = "always", dpr = [1, 1.8], 
 
       <Suspense fallback={null}>{children}</Suspense>
 
-      <ContactShadows position={[0, -1, 0]} opacity={0.5} scale={4} blur={2.2} far={2} resolution={256} frames={1} color="#000000" />
+      <ContactShadows
+        position={contactShadowPosition}
+        opacity={0.5}
+        scale={contactShadowScale}
+        blur={2.2}
+        far={2}
+        resolution={256}
+        frames={1}
+        color="#000000"
+      />
     </Canvas>
   );
 }

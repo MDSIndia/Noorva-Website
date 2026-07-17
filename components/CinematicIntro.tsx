@@ -27,6 +27,11 @@ const REVEAL_DURATION = 3.4; // seconds, click -> fully settled
 const HEADING_LINES = ["Intelligence Like", "Never Before In", "Your Hands"];
 const HEADING_FULL = HEADING_LINES.join("\n");
 
+// How much of the click-to-begin transition clip actually plays before
+// cutting to the star-blast/glow reveal underneath — the source file is
+// ~19s, but only the first burst of it is used here.
+const TRANSITION_VIDEO_SECONDS = 5;
+
 export default function CinematicIntro() {
   const containerRef = useRef<HTMLDivElement>(null);
   const hasPlayedRef = useRef(false);
@@ -34,6 +39,15 @@ export default function CinematicIntro() {
   const [typedText, setTypedText] = useState("");
   const [typingDone, setTypingDone] = useState(false);
   const typingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Click -> transition clip plays -> fades out -> star-blast/glow reveal
+  // starts underneath -> hero content fades in. `showTransition` gates
+  // the clip's own mount/visibility; the fade-out + handoff to the
+  // existing reveal timeline happens on a fixed timer (below) rather
+  // than the video's own `ended` event, since only the first few seconds
+  // of the (much longer) source clip are meant to play.
+  const [showTransition, setShowTransition] = useState(false);
+  const transitionVideoRef = useRef<HTMLVideoElement>(null);
+  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function goTo(target: string) {
     galleryCaptureControl.release?.(target === "#story-gallery" ? 0 : 1600);
@@ -131,11 +145,34 @@ export default function CinematicIntro() {
     if (hasPlayedRef.current) return;
     hasPlayedRef.current = true;
     gsap.to("#ci-click-hint", { opacity: 0, duration: 0.3 });
-    tlRef.current?.eventCallback("onComplete", () => {
-      releaseScrollLock("cosmic-intro");
-    });
-    tlRef.current?.play();
+    setShowTransition(true);
   }, []);
+
+  // Drives the transition clip once it mounts: play it, then after
+  // TRANSITION_VIDEO_SECONDS fade it out and hand off to the existing
+  // star-blast/glow timeline underneath (which still owns releasing the
+  // scroll lock on its own completion, unchanged from before).
+  useEffect(() => {
+    if (!showTransition) return;
+    transitionVideoRef.current?.play().catch(() => {});
+    transitionTimerRef.current = setTimeout(() => {
+      gsap.to("#ci-transition-video", {
+        opacity: 0,
+        duration: 0.6,
+        ease: "power1.out",
+        onComplete: () => {
+          setShowTransition(false);
+          tlRef.current?.eventCallback("onComplete", () => {
+            releaseScrollLock("cosmic-intro");
+          });
+          tlRef.current?.play();
+        },
+      });
+    }, TRANSITION_VIDEO_SECONDS * 1000);
+    return () => {
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    };
+  }, [showTransition]);
 
   // Cleanup typing timer on unmount
   useEffect(() => () => { if (typingRef.current) clearTimeout(typingRef.current); }, []);
@@ -161,43 +198,44 @@ export default function CinematicIntro() {
 
         <CosmicCanvas frameloop={inView ? "always" : "never"} />
 
-        {/* Full-screen hero video — layers on top of the star canvas
-            behind it; the heading/buttons below sit on top of this in
-            turn via z-10. */}
-        <div className="absolute inset-0 z-[5]">
-          <HeroLogoPortal />
-        </div>
+        {/* Desktop (md+): unchanged — full-bleed video with the heading/
+            buttons overlaid on top of it via the absolute inset-0 panel
+            further down.
+            Mobile: the video is no longer cropped to fill the screen —
+            it sits in a block sized to its own 16:9 aspect ratio (so the
+            whole frame is visible, nothing cut off), with the content
+            panel following below it in normal flow instead of overlaid,
+            which is why the same #ci-text-1 panel switches from
+            `md:absolute md:inset-0` (overlay) to a plain flow block
+            beneath the video on mobile. */}
+        <div className="relative flex h-full flex-col md:block">
+          <div className="relative w-full aspect-video overflow-hidden md:absolute md:inset-0 md:aspect-auto md:h-full">
+            <HeroLogoPortal />
 
-        {/* Click hint */}
-        <div
-          id="ci-click-hint"
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3 pointer-events-none"
-          style={{ opacity: 1 }}
-        >
-          <span className="text-[10px] tracking-[0.44em] uppercase text-white/35 font-light">
-            Click anywhere to begin
-          </span>
-          <div className="h-2 w-2 rounded-full border border-white/40 animate-ping" />
-        </div>
+            {/* Click hint — pinned to the bottom edge of the video block
+                itself, so it sits correctly whether that block is the
+                small mobile aspect-ratio box or the full-screen desktop
+                background. */}
+            <div
+              id="ci-click-hint"
+              className="absolute inset-x-0 bottom-4 z-20 flex flex-col items-center gap-3 pointer-events-none md:bottom-10"
+              style={{ opacity: 1 }}
+            >
+              <span className="text-[10px] tracking-[0.44em] uppercase text-white/35 font-light">
+                Click anywhere to begin
+              </span>
+              <div className="h-2 w-2 rounded-full border border-white/40 animate-ping" />
+            </div>
+          </div>
 
-        {/* Hero content — fades in as the star blast settles, then stays put
-            as the page's static landing once the reveal finishes. On
-            mobile the content starts from the vertical middle of the
-            screen rather than being dead-centered — the portrait hero
-            clip's own busiest imagery (the hand/energy-ring subject)
-            sits in its upper half, with a calmer blurred continuation
-            below, so anchoring the text block's top edge at mid-screen
-            lands it over that calmer lower portion instead of
-            overlapping the subject. Desktop keeps the original
-            dead-center framing (its landscape clip doesn't have that
-            same upper/lower split). */}
-        <div className="absolute inset-0 flex items-start justify-center pt-[46vh] z-10 pointer-events-none md:items-center md:pt-0">
+          {/* Hero content — fades in as the star blast settles, then stays
+              put as the page's static landing once the reveal finishes. */}
           <div
             id="ci-text-1"
-            className="flex flex-col items-center gap-10 px-8 text-center"
+            className="relative z-10 flex flex-1 flex-col items-center justify-center gap-10 px-8 py-8 text-center pointer-events-auto md:absolute md:inset-0 md:flex-none md:py-0 md:pointer-events-none"
             style={{ opacity: 0, filter: "blur(12px)" }}
           >
-            <div className="flex flex-col items-center gap-9">
+            <div className="flex flex-col items-center gap-9 md:pointer-events-auto">
               <p
                 className="max-w-md text-3xl font-bold tracking-[0.1em] text-white uppercase md:max-w-xl md:text-5xl lg:max-w-2xl lg:text-6xl whitespace-pre-line"
                 style={{
@@ -230,7 +268,7 @@ export default function CinematicIntro() {
                 }
               `}</style>
 
-              <div className="pointer-events-auto flex flex-col items-center gap-4 sm:flex-row lg:flex-row">
+              <div className="flex flex-col items-center gap-4 sm:flex-row lg:flex-row">
                 <button
                   onClick={() => goTo("#story-gallery")}
                   className="group relative shrink-0 rounded-full p-[1.5px] transition-transform duration-300 hover:scale-105"
@@ -265,6 +303,23 @@ export default function CinematicIntro() {
             </div>
           </div>
         </div>
+
+        {/* Click-to-begin transition clip — covers everything else
+            (highest z-index in this section) while it plays, then fades
+            out to reveal the star-blast/glow timeline starting
+            underneath. Mounted only once actually needed, not
+            preloaded ahead of the click. */}
+        {showTransition && (
+          <div id="ci-transition-video" className="absolute inset-0 z-50 bg-black">
+            <video
+              ref={transitionVideoRef}
+              src="/entry-animation-video.mp4"
+              muted
+              playsInline
+              className="h-full w-full object-cover"
+            />
+          </div>
+        )}
       </div>
     </section>
   );

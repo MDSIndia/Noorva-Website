@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans, Playfair_Display, Oxanium } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans, Playfair_Display, Oxanium, Caveat } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/SmoothScroll";
 const inter = Inter({
@@ -29,6 +29,16 @@ const oxanium = Oxanium({
   subsets: ["latin"],
   display: "swap",
   weight: ["300", "400", "500"],
+});
+
+// Storybook-page handwriting used only by the story chapter pages
+// (StoryCinematic.tsx's ChapterSlide) — a warm, casual print-hand rather
+// than a cursive script, so chapter headlines stay legible at size.
+const caveat = Caveat({
+  variable: "--font-caveat",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -65,7 +75,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${jakarta.variable} ${playfair.variable} ${oxanium.variable} antialiased`}>
+      <body className={`${inter.variable} ${jakarta.variable} ${playfair.variable} ${oxanium.variable} ${caveat.variable} antialiased`}>
         <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>
