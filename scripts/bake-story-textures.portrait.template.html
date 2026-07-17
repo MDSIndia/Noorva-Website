@@ -23,18 +23,18 @@
   }
   .gilt-frame-outer {
     position: absolute; inset: 34px; border-radius: 16px;
-    border: 3px solid rgba(244,209,158,0.85);
-    box-shadow: 0 0 26px rgba(232,180,120,0.6), inset 0 0 26px rgba(232,180,120,0.35);
+    border: 1.5px solid rgba(244,209,158,0.85);
+    box-shadow: 0 0 16px rgba(232,180,120,0.55), inset 0 0 14px rgba(232,180,120,0.3);
   }
   .gilt-frame-inner {
     position: absolute; inset: 46px; border-radius: 8px;
-    border: 2px solid rgba(232,180,120,0.45);
-    box-shadow: 0 0 18px rgba(232,180,120,0.4), inset 0 0 18px rgba(232,180,120,0.2);
+    border: 1px solid rgba(232,180,120,0.45);
+    box-shadow: 0 0 11px rgba(232,180,120,0.35), inset 0 0 10px rgba(232,180,120,0.18);
   }
   .flourish {
     position: absolute; width: 26px; height: 26px; transform: rotate(45deg);
-    border: 2px solid rgba(244,209,158,0.8);
-    box-shadow: 0 0 16px rgba(232,180,120,0.65);
+    border: 1.25px solid rgba(244,209,158,0.8);
+    box-shadow: 0 0 10px rgba(232,180,120,0.6);
   }
 
   /* ---------- COVER FRONT content ---------- */
@@ -71,9 +71,9 @@
     -webkit-background-clip: text; background-clip: text; color: transparent;
   }
   .cover-rule {
-    position: absolute; left: 50%; transform: translateX(-50%); height: 2px; width: 190px;
+    position: absolute; left: 50%; transform: translateX(-50%); height: 1px; width: 190px;
     background: linear-gradient(90deg, transparent, rgba(244,209,158,0.9), transparent);
-    box-shadow: 0 0 14px 1px rgba(232,180,120,0.7);
+    box-shadow: 0 0 9px 0.5px rgba(232,180,120,0.65);
   }
   .cover-count {
     position: absolute; left: 0; right: 0; text-align: center;
@@ -172,24 +172,24 @@
 
   <!-- ============ COVER FRONT EMISSIVE (glow mask) ============ -->
   <div class="sheet emissive-sheet" id="cover-front-emissive">
-    <div class="gilt-frame-outer glow-line" style="box-shadow: 0 0 54px 16px rgba(255,196,110,1), inset 0 0 44px rgba(255,196,110,0.85);"></div>
-    <div class="gilt-frame-inner glow-line" style="box-shadow: 0 0 36px 8px rgba(255,196,110,0.9), inset 0 0 20px rgba(255,196,110,0.6);"></div>
-    <div class="flourish glow-line" style="top:70px;left:70px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
-    <div class="flourish glow-line" style="top:70px;right:90px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
-    <div class="flourish glow-line" style="bottom:70px;left:70px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
-    <div class="flourish glow-line" style="bottom:70px;right:90px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
-    <div class="cover-rule" style="top:1070px; background: linear-gradient(90deg, transparent, #ffe6bc, transparent); box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
+    <div class="gilt-frame-outer glow-line" style="box-shadow: 0 0 30px 6px rgba(255,196,110,1), inset 0 0 24px rgba(255,196,110,0.75);"></div>
+    <div class="gilt-frame-inner glow-line" style="box-shadow: 0 0 20px 3px rgba(255,196,110,0.9), inset 0 0 12px rgba(255,196,110,0.5);"></div>
+    <div class="flourish glow-line" style="top:70px;left:70px; box-shadow: 0 0 18px 3px rgba(255,196,110,1);"></div>
+    <div class="flourish glow-line" style="top:70px;right:90px; box-shadow: 0 0 18px 3px rgba(255,196,110,1);"></div>
+    <div class="flourish glow-line" style="bottom:70px;left:70px; box-shadow: 0 0 18px 3px rgba(255,196,110,1);"></div>
+    <div class="flourish glow-line" style="bottom:70px;right:90px; box-shadow: 0 0 18px 3px rgba(255,196,110,1);"></div>
+    <div class="cover-rule" style="top:1070px; background: linear-gradient(90deg, transparent, #ffe6bc, transparent); box-shadow: 0 0 18px 3px rgba(255,196,110,1);"></div>
   </div>
 
   <!-- ============ COVER BACK EMISSIVE (glow mask) ============ -->
   <div class="sheet emissive-sheet" id="cover-back-emissive">
-    <div class="gilt-frame-outer glow-line" style="box-shadow: 0 0 54px 16px rgba(255,196,110,1), inset 0 0 44px rgba(255,196,110,0.85);"></div>
-    <div class="gilt-frame-inner glow-line" style="box-shadow: 0 0 36px 8px rgba(255,196,110,0.9), inset 0 0 20px rgba(255,196,110,0.6);"></div>
-    <div class="flourish glow-line" style="top:70px;left:70px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
-    <div class="flourish glow-line" style="top:70px;right:90px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
-    <div class="flourish glow-line" style="bottom:70px;left:70px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
-    <div class="flourish glow-line" style="bottom:70px;right:90px; box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
-    <div class="cover-rule" style="top:calc(50% + 158px); background: linear-gradient(90deg, transparent, #ffe6bc, transparent); box-shadow: 0 0 32px 8px rgba(255,196,110,1);"></div>
+    <div class="gilt-frame-outer glow-line" style="box-shadow: 0 0 30px 6px rgba(255,196,110,1), inset 0 0 24px rgba(255,196,110,0.75);"></div>
+    <div class="gilt-frame-inner glow-line" style="box-shadow: 0 0 20px 3px rgba(255,196,110,0.9), inset 0 0 12px rgba(255,196,110,0.5);"></div>
+    <div class="flourish glow-line" style="top:70px;left:70px; box-shadow: 0 0 18px 3px rgba(255,196,110,1);"></div>
+    <div class="flourish glow-line" style="top:70px;right:90px; box-shadow: 0 0 18px 3px rgba(255,196,110,1);"></div>
+    <div class="flourish glow-line" style="bottom:70px;left:70px; box-shadow: 0 0 18px 3px rgba(255,196,110,1);"></div>
+    <div class="flourish glow-line" style="bottom:70px;right:90px; box-shadow: 0 0 18px 3px rgba(255,196,110,1);"></div>
+    <div class="cover-rule" style="top:calc(50% + 158px); background: linear-gradient(90deg, transparent, #ffe6bc, transparent); box-shadow: 0 0 18px 3px rgba(255,196,110,1);"></div>
   </div>
 
   <!-- ============ SPINE ============ -->

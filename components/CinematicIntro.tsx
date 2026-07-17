@@ -209,7 +209,13 @@ export default function CinematicIntro() {
             `md:absolute md:inset-0` (overlay) to a plain flow block
             beneath the video on mobile. */}
         <div className="relative flex h-full flex-col md:block">
-          <div className="relative w-full aspect-video overflow-hidden md:absolute md:inset-0 md:aspect-auto md:h-full">
+          {/* mt-20 (reset at md, where the video is a full-bleed background
+              the header is meant to float over) — Header.tsx's logo/nav
+              pills are a `fixed top-3` overlay independent of this section's
+              own layout, so without this the mobile video block's own top
+              edge (aspect-video box starting at y=0) sits directly under/
+              behind them instead of clearing them. */}
+          <div className="relative mt-20 w-full aspect-video overflow-hidden md:absolute md:inset-0 md:mt-0 md:aspect-auto md:h-full">
             <HeroLogoPortal />
 
             {/* Click hint — pinned to the bottom edge of the video block
