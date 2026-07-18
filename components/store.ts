@@ -1,28 +1,6 @@
 // Shared singleton — CosmicCanvas reads scroll progress directly without cyclic dependency.
 export const scrollProgress = { value: 0 };
 
-// Shared singleton — PhoneShowcase3D's ScrollTrigger writes a continuous
-// "which feature, fractionally" position here every scrubbed scroll tick
-// (0 at the first feature, 1 at the second, 1.5 halfway into the turn from
-// second to third, etc). Each mounted PhoneModel instance reads this inside
-// useFrame and compares it against its own fixed feature index to compute
-// how far off-center to slide — the whole carousel is driven by this one
-// value. Kept out of React state since it updates on every scroll frame and
-// would otherwise re-render the whole 3D tree.
-export const phoneCarouselX = { value: 0 };
-
-// Shared singleton — DesertShowcase3D's own ScrollTrigger writes the same
-// kind of continuous scrubbed position here (0 at the first feature's
-// waypoint, up through FEATURES.length - 1 + a fractional finale tail),
-// written in the same onUpdate tick as phoneCarouselX so both stay in
-// perfect sync. Kept as its own singleton (rather than reusing
-// phoneCarouselX directly) since its range/semantics differ — it also
-// covers the finale tail beyond the last feature, and is read by things
-// that have nothing to do with the phone (CameraRig, Terrain, the scene
-// constructs) — so a reader shouldn't have to reason about phoneCarouselX's
-// phone-carousel-specific doc comment to understand it.
-export const desertFlightProgress = { value: 0 };
-
 // Shared singleton — set by SmoothScroll once Lenis initializes, read by Header's
 // nav links so anchor navigation goes through Lenis instead of a native jump.
 export const lenisRef: { current: import("lenis").default | null } = { current: null };

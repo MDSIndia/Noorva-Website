@@ -6,14 +6,15 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 // Hero visual: public/hero-right.jpg (tablet with a holographic data
 // sphere), plain and untouched — plus two small decorative layers on top:
 // a slowly rotating dashed ring over the sphere, and a handful of particles
-// that fly outward from it and fade. Center below is where the sphere's
-// dense core actually sits in the source photo (found by probing the
-// pixels), so both line up with the art instead of the image's geometric
-// center.
+// that fly outward from it and fade. Center below is the sphere's actual
+// brightness-weighted centroid (found by probing the pixels), not just its
+// single brightest point — an earlier version centered on a local hotspot
+// near the top of the core, which put the ring visibly too high relative
+// to the ball's real visual mass.
 const IMAGE_WIDTH = 989;
 const IMAGE_HEIGHT = 702;
-const SPHERE_CENTER_X = (490 / IMAGE_WIDTH) * 100;
-const SPHERE_CENTER_Y = (310 / IMAGE_HEIGHT) * 100;
+const SPHERE_CENTER_X = (492 / IMAGE_WIDTH) * 100;
+const SPHERE_CENTER_Y = (337 / IMAGE_HEIGHT) * 100;
 const SPHERE_RADIUS = (195 / IMAGE_WIDTH) * 100;
 // Particles flying outward from the sphere — fixed angle/timing (not
 // Math.random(), which this repo's react-hooks/purity lint rule forbids
