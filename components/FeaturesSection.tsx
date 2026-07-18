@@ -89,7 +89,7 @@ const FEATURES: Feature[] = [
 
 // How much scroll distance the pinned sequence consumes, in viewport
 // heights, spread across the 5 hand-offs between 6 images. Tune by feel.
-const PIN_VH_MULTIPLIER = 14;
+const PIN_VH_MULTIPLIER = 7;
 
 // Each image gets a full-opacity "dwell" window centered on its own index
 // (0, 1, 2…), and fades linearly over the gap between dwell windows — since
@@ -124,7 +124,7 @@ export default function FeaturesSection() {
         start: "top top",
         end: () => "+=" + window.innerHeight * PIN_VH_MULTIPLIER,
         pin: true,
-        scrub: 0.7,
+        scrub: 0.35,
         anticipatePin: 1,
         invalidateOnRefresh: true,
       },

@@ -15,6 +15,12 @@ const NAV_ITEMS = [
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  // FeaturesSection pins the viewport and goes full-bleed edge-to-edge with
+  // its own images — the logo pill sitting on top of that read as clutter,
+  // so it hides for as long as that section is pinned in view. The nav/menu
+  // pill is untouched and stays up regardless, so navigation is always
+  // reachable.
+  const [hideLogo, setHideLogo] = useState(false);
 
   // Escape closes the mobile menu, matching this site's existing convention
   // (the story reader closes on Escape too).
@@ -26,6 +32,20 @@ export default function Header() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [mobileOpen]);
+
+  useEffect(() => {
+    const el = document.getElementById("features");
+    if (!el) return;
+    // FeaturesSection's own GSAP ScrollTrigger pins it in place at the top
+    // of the viewport for the whole scroll-through, so a plain intersection
+    // check (rather than tracking its scroll progress) is enough to know
+    // "currently showing".
+    const observer = new IntersectionObserver(([entry]) => setHideLogo(entry.isIntersecting), {
+      threshold: 0.6,
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   function goTo(target: string, external?: boolean) {
     if (external) {
@@ -52,8 +72,9 @@ export default function Header() {
       {/* Logo — glowing badge + brand text, pinned top-left, independent of the nav pill */}
       <motion.div
         className="fixed top-3 left-3 sm:top-4 sm:left-4 md:top-6 md:left-6 z-50 flex items-center gap-2.5 sm:gap-3 cursor-pointer group"
+        style={{ pointerEvents: hideLogo ? "none" : "auto" }}
         initial={{ opacity: 0, y: -20, scale: 0.85 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        animate={{ opacity: hideLogo ? 0 : 1, y: 0, scale: 1 }}
         transition={{ type: "spring", stiffness: 260, damping: 24 }}
         onClick={() => goTo("home")}
       >
