@@ -14,6 +14,75 @@ import { storyChapters } from "./storyData";
 // ordering StoryCinematic.tsx expects.
 const TOTAL_SLIDES = storyChapters.length + 1;
 
+// The podium's own top-center point (where the book preview should rest),
+// as a fraction (0-1) of each backdrop's full image — found by probing the
+// actual pixels (sharp). Also each image's native aspect ratio and roughly
+// how wide the podium's stone top reads as a fraction of the image's own
+// width, used to size the book preview proportionally to it.
+const PODIUM_DESKTOP = { x: 0.5007, y: 0.534, widthFrac: 0.207 };
+const PODIUM_PHONE = { x: 0.4995, y: 0.5532, widthFrac: 0.2125 };
+const BACKDROP_DESKTOP_ASPECT = 1448 / 1086;
+const BACKDROP_PHONE_ASPECT = 941 / 1672;
+const MD_BREAKPOINT = 768; // matches the md: Tailwind breakpoint used below
+
+/** Where the podium's top-center point actually lands on screen, in pixels
+ *  relative to the section, plus how wide the book preview should render
+ *  there — both account for the backdrop's own object-cover crop. A full-
+ *  screen backdrop gets scaled up by the browser until it covers the
+ *  container and whichever axis overflows gets cropped; a plain
+ *  percentage-of-container point only lines up with the art when the
+ *  container's aspect ratio happens to match the image's own, which isn't
+ *  true at most real window sizes (see FeaturesSection.tsx's useScreenRect
+ *  for the same fix applied to a full rectangle instead of a point). */
+function usePodiumPoint(containerRef: React.RefObject<HTMLElement | null>) {
+  const [point, setPoint] = useState({ x: 0, y: 0, bookWidth: 0 });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    function update() {
+      if (!el) return;
+      const { width: cw, height: ch } = el.getBoundingClientRect();
+      if (cw === 0 || ch === 0) return;
+      const isDesktop = window.innerWidth >= MD_BREAKPOINT;
+      const imgAspect = isDesktop ? BACKDROP_DESKTOP_ASPECT : BACKDROP_PHONE_ASPECT;
+      const podium = isDesktop ? PODIUM_DESKTOP : PODIUM_PHONE;
+      const containerAspect = cw / ch;
+
+      let renderedW: number, renderedH: number, offsetX: number, offsetY: number;
+      if (containerAspect > imgAspect) {
+        renderedW = cw;
+        renderedH = cw / imgAspect;
+        offsetX = 0;
+        offsetY = (renderedH - ch) / 2;
+      } else {
+        renderedH = ch;
+        renderedW = ch * imgAspect;
+        offsetY = 0;
+        offsetX = (renderedW - cw) / 2;
+      }
+
+      setPoint({
+        x: podium.x * renderedW - offsetX,
+        y: podium.y * renderedH - offsetY,
+        bookWidth: podium.widthFrac * renderedW,
+      });
+    }
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, [containerRef]);
+
+  return point;
+}
+
 const SLIDE_DURATION = 1.05; // seconds, one crossfade between slides — matches StoryCinematic's own transition duration
 const ZOOM_DURATION = 0.9; // seconds, preview -> fullscreen
 const WHEEL_THRESHOLD = 2; // ignore near-zero wheel noise
@@ -32,6 +101,10 @@ export default function StoryGallerySection() {
   // scrolling, reading the heading/copy above the book takes several
   // seconds on its own, which is the whole window this is racing to fill.
   const sectionRef = useRef<HTMLElement>(null);
+  // The full-screen podium stage — usePodiumPoint measures this to place
+  // the book preview on the backdrop's podium regardless of viewport size.
+  const stageRef = useRef<HTMLDivElement>(null);
+  const podiumPoint = usePodiumPoint(stageRef);
   // The clickable, idly-rotating book sitting in normal page flow before
   // it's opened — its measured rect is the FLIP-animation's start point.
   const previewWrapRef = useRef<HTMLDivElement>(null);
@@ -484,64 +557,99 @@ export default function StoryGallerySection() {
     <section
       id="story-gallery"
       ref={sectionRef}
-      className="relative w-full overflow-hidden bg-[color:var(--bg)]/70 py-28 md:py-36"
+      className="relative w-full overflow-hidden bg-[color:var(--bg)]/70"
     >
-      <div className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color:var(--accent-warm)]/6 blur-[160px]" />
       <div className="pointer-events-none absolute inset-0 vignette-edge" />
 
-      <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-center px-8 text-center">
-        <p className="mb-5 text-[10px] font-light tracking-[0.5em] text-[color:var(--accent-warm)]/80 uppercase md:text-xs">
-          The Noorva Story
-        </p>
-        <h2 className="font-playfair text-balance mb-14 max-w-xl text-4xl leading-[1.2] font-light whitespace-normal text-white/95 md:mb-16 md:max-w-none md:whitespace-nowrap md:text-5xl">
-          The Book Preserved since Ancient Times
-          <br />
-          <span
-            className="bg-clip-text text-transparent"
-            style={{
-              backgroundImage: "linear-gradient(135deg, #e8b478 0%, #f4d9a8 50%, #e8b478 100%)",
-              filter: "drop-shadow(0 0 24px rgba(232,180,120,0.4))",
-            }}
-          >
-            with Unwavering Care.
-          </span>
-        </h2>
+      {/* Stage — public/book_bg_desktop.png (book_bg_mobile.png below md) is
+          a temple chamber with a stone podium built into the art itself,
+          filling the full viewport. The heading and "Click to Open" button
+          overlay the bottom of this same image (a scrim behind them keeps
+          them legible) rather than sitting in their own flow block above
+          it — that previously pushed the image mostly below the fold,
+          since the section's total height was heading-height + a full
+          100vh image stacked after it. Since the backdrop is
+          object-cover'd edge-to-edge, the browser crops whichever axis
+          overflows depending on the viewport's aspect ratio —
+          usePodiumPoint redoes that same crop math by hand so the book
+          preview stays exactly on the podium's surface (and sized to it)
+          at any viewport size, instead of drifting the way a plain
+          percentage position would (see that hook's own comment, and
+          FeaturesSection.tsx's useScreenRect for the same fix applied to a
+          full rectangle instead of a point). */}
+      <div ref={stageRef} className="relative z-10 h-screen w-full">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/book_bg_mobile.png"
+          alt="A stone podium inside an ancient torch-lit temple chamber"
+          className="absolute inset-0 block h-full w-full object-cover md:hidden"
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/book_bg_desktop.png"
+          alt="A stone podium inside an ancient torch-lit temple chamber"
+          className="absolute inset-0 hidden h-full w-full object-cover md:block"
+        />
+
+        {/* Bottom scrim — keeps the overlaid heading/button legible
+            against the (often bright, torch-lit) floor in the art. */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/60 to-transparent" />
 
         <button
           type="button"
           onClick={handleEnter}
           aria-label="Open the Noorva story book"
-          className="group relative cursor-pointer border-none bg-transparent p-0"
+          className="group absolute -translate-x-1/2 -translate-y-full cursor-pointer border-none bg-transparent p-0"
+          style={{ left: podiumPoint.x, top: podiumPoint.y, width: podiumPoint.bookWidth || undefined }}
         >
           <div
-            className="pointer-events-none absolute inset-0 -z-10 scale-110 rounded-full opacity-60 blur-[70px] transition-opacity duration-500 group-hover:opacity-90"
+            className="pointer-events-none absolute inset-0 -z-10 scale-150 rounded-full opacity-60 blur-[70px] transition-opacity duration-500 group-hover:opacity-90"
             style={{ background: "radial-gradient(circle, rgba(232,180,120,0.35), transparent 70%)" }}
           />
           <div
             ref={previewWrapRef}
-            className="relative h-[280px] w-[190px] md:h-[400px] md:w-[270px]"
+            className="relative aspect-[190/280] w-full"
             style={{ visibility: entered || showLanding ? "hidden" : "visible" }}
           >
             <BookPreview3D />
           </div>
         </button>
 
-        <button
-          type="button"
-          onClick={handleEnter}
-          className="group relative mt-16 shrink-0 rounded-full p-[1.5px] transition-transform duration-300 hover:scale-105 md:mt-20"
-          style={{
-            background: "linear-gradient(135deg, #e8b478, #db45d7, #7c5cfc)",
-            boxShadow: "0 0 28px rgba(232,180,120,0.35)",
-          }}
-        >
-          <span
-            className="btn-glow flex items-center gap-2 rounded-full bg-black/85 px-7 py-3 text-[11px] font-semibold tracking-[0.28em] uppercase backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70"
-            style={{ color: "var(--accent-warm)" }}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 mx-auto flex max-w-6xl flex-col items-center px-8 pb-12 text-center md:pb-16">
+          <p className="mb-5 text-[10px] font-light tracking-[0.5em] text-[color:var(--accent-warm)]/80 uppercase md:text-xs">
+            The Noorva Story
+          </p>
+          <h2 className="font-playfair text-balance mb-8 max-w-xl text-4xl leading-[1.2] font-light whitespace-normal text-white/95 md:max-w-none md:whitespace-nowrap md:text-5xl">
+            The Book Preserved since Ancient Times
+            <br />
+            <span
+              className="bg-clip-text text-transparent"
+              style={{
+                backgroundImage: "linear-gradient(135deg, #e8b478 0%, #f4d9a8 50%, #e8b478 100%)",
+                filter: "drop-shadow(0 0 24px rgba(232,180,120,0.4))",
+              }}
+            >
+              with Unwavering Care.
+            </span>
+          </h2>
+
+          <button
+            type="button"
+            onClick={handleEnter}
+            className="group pointer-events-auto relative shrink-0 rounded-full p-[1.5px] transition-transform duration-300 hover:scale-105"
+            style={{
+              background: "linear-gradient(135deg, #e8b478, #db45d7, #7c5cfc)",
+              boxShadow: "0 0 28px rgba(232,180,120,0.35)",
+            }}
           >
-            Click to Open
-          </span>
-        </button>
+            <span
+              className="btn-glow flex items-center gap-2 rounded-full bg-black/85 px-7 py-3 text-[11px] font-semibold tracking-[0.28em] uppercase backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70"
+              style={{ color: "var(--accent-warm)" }}
+            >
+              Click to Open
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Fullscreen fall/land/open cinematic. Mounted once `warmLanding`
