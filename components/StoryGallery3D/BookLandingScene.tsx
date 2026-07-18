@@ -5,7 +5,7 @@ import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
 import * as THREE from "three";
 import Scene from "./Scene";
-import BookModel, { BOOK_D } from "./BookModel";
+import BookModel, { BOOK_D, BOOK_W, BOOK_H } from "./BookModel";
 
 // The book's resting center height once landed, and the desk surface it
 // sits on (offset down by half the book's own closed thickness so it reads
@@ -35,6 +35,68 @@ const CAMERA_ESTABLISH: [number, number, number] = [0, 1.3, 3.5];
 // enough of an angle for that motion to still read while unmistakably
 // reading as "looking down at the book."
 const CAMERA_TOP: [number, number, number] = [0, 2.75, 0.85];
+// Matches Scene's own `fov` prop below — shared for the same reason as
+// CAMERA_ESTABLISH above, and because fitScale() needs it too.
+const BOOK_FOV = 34;
+
+// The book's 8 corners once landed and lying flat. outer.rotation.x =
+// -PI/2 maps its modeled width/height/thickness axes onto world X/-Z/Y (a
+// point at modeled (0, BOOK_H/2, 0) — top edge — rotates to world
+// (0, 0, -BOOK_H/2); modeled Z — thickness — rotates onto world +Y, which
+// is why the closed cover ends up facing straight up off the desk). Kept
+// at module scope, not recomputed per call — the flat pose never changes.
+const BOOK_CORNERS: THREE.Vector3[] = (() => {
+  const hw = BOOK_W / 2;
+  const hh = BOOK_H / 2;
+  const hd = BOOK_D / 2;
+  const corners: THREE.Vector3[] = [];
+  for (const sx of [-1, 1]) {
+    for (const sy of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        corners.push(new THREE.Vector3(sx * hw, sz * hd + REST_Y, -sy * hh));
+      }
+    }
+  }
+  return corners;
+})();
+
+// Scratch instances reused across calls (this only ever runs from the
+// fall/open effect below, not a hot per-frame loop, but there's still no
+// reason to allocate a fresh camera/vector on every call).
+const fitScaleCamera = new THREE.PerspectiveCamera();
+const fitScaleVec = new THREE.Vector3();
+
+/** How much to scale the book down so all 8 of its landed corners stay
+ *  within `fov`'s frame at the given aspect ratio (1 if it already fits).
+ *  Both CAMERA_ESTABLISH and CAMERA_TOP were tuned by eye against a
+ *  landscape aspect ratio and don't automatically stay in frame at
+ *  narrower ones — CAMERA_TOP's steep overhead angle in particular
+ *  overflows vertically even at 16:10 (that axis turns out to be
+ *  aspect-*independent*, a straight FOV/distance shortfall, not something
+ *  narrowing the viewport alone caused), and both poses' horizontal
+ *  framing narrows further still on portrait/mobile aspects — on a phone
+ *  viewport the two compound into the book and its desk badly overflowing
+ *  top and bottom. A fixed or mobile-only-conditional scale can't track
+ *  that correctly across every breakpoint; this recomputes the exact
+ *  figure from the real projection math for whatever aspect the visitor's
+ *  screen actually is. */
+function fitScale(cameraPos: [number, number, number], lookAt: [number, number, number], aspect: number, fov: number, margin = 0.05): number {
+  fitScaleCamera.fov = fov;
+  fitScaleCamera.aspect = aspect;
+  fitScaleCamera.near = 0.1;
+  fitScaleCamera.far = 100;
+  fitScaleCamera.position.set(...cameraPos);
+  fitScaleCamera.lookAt(...lookAt);
+  fitScaleCamera.updateMatrixWorld(true);
+  fitScaleCamera.updateProjectionMatrix();
+
+  let worst = 0;
+  for (const corner of BOOK_CORNERS) {
+    fitScaleVec.copy(corner).project(fitScaleCamera);
+    worst = Math.max(worst, Math.abs(fitScaleVec.x), Math.abs(fitScaleVec.y));
+  }
+  return Math.min(1, 1 / (worst * (1 + margin)));
+}
 
 /** Procedural wood-grain texture for the desk the book lands on — a canvas
  *  gradient plus wavy grain lines and a few plank seams, generated inline
@@ -126,11 +188,27 @@ function FallOpenSequence({
 }) {
   const invalidate = useThree((state) => state.invalidate);
   const camera = useThree((state) => state.camera);
+  const size = useThree((state) => state.size);
 
   useEffect(() => {
     const outer = outerGroupRef.current;
     const hinge = hingeGroupRef.current;
     if (!outer || !hinge) return;
+
+    // Recomputed on every play (not memoized) since it only needs to be
+    // right at the moment the sequence actually starts/idles, and reads
+    // `size` fresh each time in case the viewport was resized since the
+    // last run. min() of the two poses' own fit scales, not a separate
+    // scale per pose — using just one across the whole idle/fall/landed
+    // sequence means there's no visible size pop between the fall ending
+    // and the top-down framing beginning, at the minor cost of the book
+    // being marginally smaller than strictly necessary during the fall on
+    // wider screens (where CAMERA_ESTABLISH alone would already fit at 1).
+    const aspect = size.width / size.height;
+    const bookScale = Math.min(
+      fitScale(CAMERA_ESTABLISH, CAMERA_TARGET, aspect, BOOK_FOV),
+      fitScale(CAMERA_TOP, CAMERA_TARGET, aspect, BOOK_FOV)
+    );
 
     if (!active) {
       // Idle/closed pose — also the pre-fall starting pose, set eagerly
@@ -143,7 +221,7 @@ function FallOpenSequence({
       gsap.killTweensOf([outer.position, outer.rotation, outer.scale, hinge.rotation, camera.position]);
       gsap.set(outer.position, { x: 0, y: FALL_START_Y, z: 0 });
       gsap.set(outer.rotation, { x: -Math.PI / 2 + 0.5, y: 0.45, z: 0.35 });
-      gsap.set(outer.scale, { x: 1, y: 1, z: 1 });
+      gsap.set(outer.scale, { x: bookScale, y: bookScale, z: bookScale });
       gsap.set(hinge.rotation, { y: 0 });
       gsap.set(camera.position, { x: CAMERA_ESTABLISH[0], y: CAMERA_ESTABLISH[1], z: CAMERA_ESTABLISH[2] });
       camera.lookAt(...CAMERA_TARGET);
@@ -168,8 +246,8 @@ function FallOpenSequence({
       // Landing thump — a quick squash-and-recover on the fall's own
       // vertical axis reads as impact weight better than the position/
       // rotation settle alone.
-      .to(outer.scale, { y: 0.88, duration: 0.09, ease: "power1.out" })
-      .to(outer.scale, { y: 1, duration: 0.42, ease: "elastic.out(1,0.5)" })
+      .to(outer.scale, { y: bookScale * 0.88, duration: 0.09, ease: "power1.out" })
+      .to(outer.scale, { y: bookScale, duration: 0.42, ease: "elastic.out(1,0.5)" })
       .to({}, { duration: 0.2 })
       // Camera pushes in from the establishing angle to a steep overhead
       // shot, framing the book like it's now sitting in front of the
@@ -204,7 +282,11 @@ function FallOpenSequence({
     };
     // Ref objects are stable identities for this component's whole
     // lifetime, and both `camera` and `invalidate` are R3F's own stable
-    // store accessors; only `active` is meant to re-trigger this.
+    // store accessors; only `active` is meant to re-trigger this. `size`
+    // is read fresh each time this runs (not tracked reactively) — a
+    // resize while the book is genuinely mid-animation isn't worth
+    // guarding, and the idle pose recomputes it every time `active` drops
+    // back to false anyway.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
@@ -270,7 +352,7 @@ export default function BookLandingScene({ active, onOpened }: BookLandingSceneP
       frameloop="demand"
       cameraPosition={CAMERA_ESTABLISH}
       cameraLookAt={CAMERA_TARGET}
-      fov={34}
+      fov={BOOK_FOV}
       contactShadowPosition={[0, DESK_Y + 0.002, 0]}
       contactShadowScale={6}
     >

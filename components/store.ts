@@ -1,6 +1,3 @@
-// Shared singleton — CosmicCanvas reads scroll progress directly without cyclic dependency.
-export const scrollProgress = { value: 0 };
-
 // Shared singleton — set by SmoothScroll once Lenis initializes, read by Header's
 // nav links so anchor navigation goes through Lenis instead of a native jump.
 export const lenisRef: { current: import("lenis").default | null } = { current: null };

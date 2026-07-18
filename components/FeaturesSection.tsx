@@ -7,85 +7,100 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Each source image (public/features/*_desktop.png, *_mobile.png) is
-// already a complete, fully-designed slide — title, copy, and CTA are baked
-// into the pixels. This section pins the viewport (same GSAP+Lenis pattern
-// SmoothScroll.tsx sets up for the rest of the site) and crossfades through
-// all six full-screen as the user scrolls, rather than adding any of our
-// own caption/icon chrome on top.
+// public/features/theatre_desktop.png (theatre_phone.png below md) is a
+// static backdrop — a crowd facing a big glowing screen in a neon city.
+// This section pins the viewport (same GSAP+Lenis pattern SmoothScroll.tsx
+// sets up for the rest of the site) and crossfades the six persona images
+// through *that screen's own rectangle* as the user scrolls, rather than
+// swapping the whole viewport like the previous version did.
 interface Feature {
   id: string;
   label: string;
-  desktopSrc: string;
-  desktopWidth: number;
-  desktopHeight: number;
-  mobileSrc: string;
-  mobileWidth: number;
-  mobileHeight: number;
+  src: string;
+  width: number;
+  height: number;
 }
 
 const FEATURES: Feature[] = [
-  {
-    id: "guide",
-    label: "Guide",
-    desktopSrc: "/features/guide_desktop.png",
-    desktopWidth: 1672,
-    desktopHeight: 941,
-    mobileSrc: "/features/guide_mobile.png",
-    mobileWidth: 864,
-    mobileHeight: 1821,
-  },
-  {
-    id: "mentor",
-    label: "Mentor",
-    desktopSrc: "/features/mentor_desktop.png",
-    desktopWidth: 1719,
-    desktopHeight: 915,
-    mobileSrc: "/features/mentor_mobile.png",
-    mobileWidth: 864,
-    mobileHeight: 1821,
-  },
-  {
-    id: "teacher",
-    label: "Teacher",
-    desktopSrc: "/features/teacher_desktop.png",
-    desktopWidth: 1672,
-    desktopHeight: 941,
-    mobileSrc: "/features/teacher_mobile.png",
-    mobileWidth: 853,
-    mobileHeight: 1844,
-  },
-  {
-    id: "strategist",
-    label: "Strategist",
-    desktopSrc: "/features/strategist_desktop.png",
-    desktopWidth: 1672,
-    desktopHeight: 941,
-    mobileSrc: "/features/strategist_mobile.png",
-    mobileWidth: 864,
-    mobileHeight: 1821,
-  },
-  {
-    id: "designer",
-    label: "Designer",
-    desktopSrc: "/features/designer_desktop.png",
-    desktopWidth: 1672,
-    desktopHeight: 941,
-    mobileSrc: "/features/designer_mobile.png",
-    mobileWidth: 853,
-    mobileHeight: 1844,
-  },
-  {
-    id: "companion",
-    label: "Companion",
-    desktopSrc: "/features/companion_desktop.png",
-    desktopWidth: 1672,
-    desktopHeight: 941,
-    mobileSrc: "/features/companion_mobile.png",
-    mobileWidth: 864,
-    mobileHeight: 1821,
-  },
+  { id: "guide", label: "Guide", src: "/features/guide_desktop.png", width: 1672, height: 941 },
+  { id: "mentor", label: "Mentor", src: "/features/mentor_desktop.png", width: 1719, height: 915 },
+  { id: "teacher", label: "Teacher", src: "/features/teacher_desktop.png", width: 1672, height: 941 },
+  { id: "strategist", label: "Strategist", src: "/features/strategist_desktop.png", width: 1672, height: 941 },
+  { id: "designer", label: "Designer", src: "/features/designer_desktop.png", width: 1672, height: 941 },
+  { id: "companion", label: "Companion", src: "/features/companion_desktop.png", width: 1672, height: 941 },
 ];
+
+// The screen's own black rectangle (inside its neon bezel), as a fraction
+// (0-1) of the full backdrop image — found by probing the actual pixels of
+// each crop (sharp). The desktop and phone backdrops frame the screen at
+// different sizes/positions, not just different aspect ratios, so both are
+// needed rather than one set of numbers reused across breakpoints.
+const SCREEN_DESKTOP = { left: 0.2214, top: 0.2441, width: 0.5599, height: 0.4248 };
+const SCREEN_PHONE = { left: 0.1231, top: 0.3525, width: 0.7503, height: 0.2251 };
+const BACKDROP_DESKTOP_ASPECT = 1536 / 1024;
+const BACKDROP_PHONE_ASPECT = 853 / 1844;
+const MD_BREAKPOINT = 768; // matches the md: Tailwind breakpoint used below
+
+/** Where the screen rectangle actually lands on screen, in pixels relative
+ *  to the section. `object-cover` scales the backdrop up until it fully
+ *  covers the container and crops whichever axis overflows — a plain
+ *  percentage-of-container overlay only lines up with the art when the
+ *  container's aspect ratio happens to match the image's own, which isn't
+ *  true at most real window sizes. This redoes that same cover math by
+ *  hand so the overlay can subtract out exactly the crop the browser
+ *  applied to the image. */
+function useScreenRect(containerRef: React.RefObject<HTMLElement | null>) {
+  const [rect, setRect] = useState({ left: 0, top: 0, width: 0, height: 0 });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    function update() {
+      if (!el) return;
+      const { width: cw, height: ch } = el.getBoundingClientRect();
+      if (cw === 0 || ch === 0) return;
+      const isDesktop = window.innerWidth >= MD_BREAKPOINT;
+      const imgAspect = isDesktop ? BACKDROP_DESKTOP_ASPECT : BACKDROP_PHONE_ASPECT;
+      const screen = isDesktop ? SCREEN_DESKTOP : SCREEN_PHONE;
+      const containerAspect = cw / ch;
+
+      let renderedW: number, renderedH: number, offsetX: number, offsetY: number;
+      if (containerAspect > imgAspect) {
+        // Container is relatively wider than the image — cover-scaling by
+        // width fills it exactly, so the image overflows (and gets
+        // cropped) top/bottom.
+        renderedW = cw;
+        renderedH = cw / imgAspect;
+        offsetX = 0;
+        offsetY = (renderedH - ch) / 2;
+      } else {
+        renderedH = ch;
+        renderedW = ch * imgAspect;
+        offsetY = 0;
+        offsetX = (renderedW - cw) / 2;
+      }
+
+      setRect({
+        left: screen.left * renderedW - offsetX,
+        top: screen.top * renderedH - offsetY,
+        width: screen.width * renderedW,
+        height: screen.height * renderedH,
+      });
+    }
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, [containerRef]);
+
+  return rect;
+}
 
 // How much scroll distance the pinned sequence consumes, in viewport
 // heights, spread across the 5 hand-offs between 6 images. Tune by feel.
@@ -112,6 +127,7 @@ function presence(index: number, progress: number) {
 export default function FeaturesSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(0);
+  const screenRect = useScreenRect(sectionRef);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -144,45 +160,68 @@ export default function FeaturesSection() {
 
   return (
     <section id="features" ref={sectionRef} className="relative h-screen w-full overflow-hidden bg-black">
-      {FEATURES.map((feature, i) => {
-        const p = presence(i, progress);
-        // Skip mounting fully-hidden slides — with all six stacked at
-        // inset-0, next/image would otherwise treat every one of them as
-        // "in viewport" and eagerly load all 12 desktop/mobile assets at
-        // once regardless of which is actually showing.
-        if (p <= 0.001 && i !== 0) return null;
-        return (
-          <div
-            key={feature.id}
-            className="absolute inset-0"
-            style={{
-              opacity: p,
-              zIndex: i,
-              transform: `scale(${1 + (1 - p) * 0.04})`,
-              filter: `blur(${(1 - p) * 6}px)`,
-            }}
-          >
-            <Image
-              src={feature.desktopSrc}
-              alt={`Noorva as ${feature.label}`}
-              width={feature.desktopWidth}
-              height={feature.desktopHeight}
-              priority={i === 0}
-              className="hidden h-full w-full object-cover md:block"
-              sizes="100vw"
-            />
-            <Image
-              src={feature.mobileSrc}
-              alt={`Noorva as ${feature.label}`}
-              width={feature.mobileWidth}
-              height={feature.mobileHeight}
-              priority={i === 0}
-              className="block h-full w-full object-cover md:hidden"
-              sizes="100vw"
-            />
-          </div>
-        );
-      })}
+      {/* Static backdrop */}
+      <Image
+        src="/features/theatre_desktop.png"
+        alt="A crowd facing a glowing screen in a neon city"
+        fill
+        priority
+        className="hidden object-cover md:block"
+        sizes="100vw"
+      />
+      <Image
+        src="/features/theatre_phone.png"
+        alt="A crowd facing a glowing screen in a neon city"
+        fill
+        priority
+        className="block object-cover md:hidden"
+        sizes="100vw"
+      />
+
+      {/* The screen's own rectangle — positioned in pixels from
+          useScreenRect, which redoes the backdrop's object-cover crop math
+          by hand so this lines up with the art at any viewport size (see
+          that hook's own comment for why plain percentages don't). */}
+      <div
+        className="absolute overflow-hidden"
+        style={{
+          left: screenRect.left,
+          top: screenRect.top,
+          width: screenRect.width,
+          height: screenRect.height,
+        }}
+      >
+        {FEATURES.map((feature, i) => {
+          const p = presence(i, progress);
+          // Skip mounting fully-hidden slides — with all six stacked at
+          // inset-0, next/image would otherwise treat every one of them as
+          // "in viewport" and eagerly load all 6 assets at once regardless
+          // of which is actually showing.
+          if (p <= 0.001 && i !== 0) return null;
+          return (
+            <div
+              key={feature.id}
+              className="absolute inset-0"
+              style={{
+                opacity: p,
+                zIndex: i,
+                transform: `scale(${1 + (1 - p) * 0.04})`,
+                filter: `blur(${(1 - p) * 6}px)`,
+              }}
+            >
+              <Image
+                src={feature.src}
+                alt={`Noorva as ${feature.label}`}
+                width={feature.width}
+                height={feature.height}
+                priority={i === 0}
+                className="h-full w-full object-cover"
+                sizes="60vw"
+              />
+            </div>
+          );
+        })}
+      </div>
 
       {/* Scroll-progress dots — purely a "you're partway through" cue, no
           labels, so nothing competes with the baked-in text in the art. */}

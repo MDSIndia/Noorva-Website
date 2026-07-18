@@ -1,27 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
 import gsap from "gsap";
 import { Library, ArrowUpRight } from "lucide-react";
 import {
-  scrollProgress,
   lenisRef,
   galleryCaptureControl,
   acquireScrollLock,
   releaseScrollLock,
   introRevealControl,
 } from "./store";
-import HeroLogoPortal from "./HeroLogoPortal";
 
-const CosmicCanvas = dynamic(() => import("./CosmicCanvas"), { ssr: false });
-
-// CosmicCanvas's own star-blast resolves into a calm resting field by its
-// internal progress ~0.45 (see CosmicCanvas.tsx). Scaling our 0-1 reveal
-// progress into that range means the reveal can take however long feels
-// right while always finishing on the same settled, calm frame.
-const BLAST_SETTLE_P = 0.45;
-const REVEAL_DURATION = 3.4; // seconds, click -> fully settled
+// Click -> the whole hero (backdrop + text) fades in from a blur, matching
+// the site's established "click to reveal" pacing (this used to be a
+// CosmicCanvas WebGL star-blast the text faded in over; that's gone now
+// that the backdrop is these two static images, but the click-gated reveal
+// itself is kept — see WelcomeOverlay.tsx's handoff via introRevealControl).
+const REVEAL_DURATION = 1.4; // seconds, click -> fully settled
 
 // Full heading text split into lines for the typewriter
 const HEADING_LINES = ["Intelligence Like", "Never Before In", "Your Hands"];
@@ -39,21 +34,6 @@ export default function CinematicIntro() {
     galleryCaptureControl.release?.(target === "#story-gallery" ? 0 : 1600);
     lenisRef.current?.scrollTo(target, { duration: 1.4 });
   }
-  // The WebGL scene is expensive to keep rendering forever — pause its render
-  // loop once the section scrolls out of view (it's the biggest lag source
-  // once the user is deep into the story chapters below).
-  const [inView, setInView] = useState(true);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setInView(entry.isIntersecting),
-      { rootMargin: "200px 0px" }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   // The intro is a fixed gate, not a scrollable section — nothing below it
   // should be reachable until the click reveal has actually played out.
@@ -63,33 +43,15 @@ export default function CinematicIntro() {
   }, []);
 
   useEffect(() => {
-    // Built paused — a click anywhere on the intro plays it once, replacing
-    // the old scroll-scrubbed reveal with a click-triggered one. The
-    // underlying CosmicCanvas is agnostic to what drives `scrollProgress`,
-    // so swapping the trigger is just a matter of who calls tl.play().
+    // Built paused — a click anywhere on the intro plays it once.
     const tl = gsap.timeline({ paused: true });
     tlRef.current = tl;
 
-    tl.to(
-      { v: 0 },
-      {
-        v: 1,
-        duration: REVEAL_DURATION,
-        ease: "power1.out",
-        onUpdate: function () {
-          scrollProgress.value = this.targets()[0].v * BLAST_SETTLE_P;
-        },
-      },
-      0
-    );
-
-    // hero text + phone fade in partway through the blast, then hold —
-    // this becomes the static landing content once the reveal finishes.
     tl.fromTo(
-      "#ci-text-1",
-      { opacity: 0, y: 24, filter: "blur(12px)" },
-      { opacity: 1, y: 0, filter: "blur(0px)", duration: REVEAL_DURATION * 0.5, ease: "power2.out" },
-      REVEAL_DURATION * 0.35
+      "#ci-reveal",
+      { opacity: 0, filter: "blur(16px)" },
+      { opacity: 1, filter: "blur(0px)", duration: REVEAL_DURATION, ease: "power2.out" },
+      0
     );
 
     return () => {
@@ -129,7 +91,7 @@ export default function CinematicIntro() {
   useEffect(() => () => { if (typingRef.current) clearTimeout(typingRef.current); }, []);
 
   // Let WelcomeOverlay trigger this same reveal from its own dismiss click,
-  // so the star blast starts immediately instead of needing a second click.
+  // so the reveal starts immediately instead of needing a second click.
   useEffect(() => {
     introRevealControl.play = handleReveal;
     return () => {
@@ -146,10 +108,8 @@ export default function CinematicIntro() {
       style={{ zIndex: 30 }}
     >
       <div className="absolute inset-0 overflow-hidden">
-
-        <CosmicCanvas frameloop={inView ? "always" : "never"} />
-
-        {/* Click hint */}
+        {/* Click hint — outside the reveal wrapper below since it's what's
+            visible BEFORE the reveal, and fades out on its own on click. */}
         <div
           id="ci-click-hint"
           className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3 pointer-events-none"
@@ -161,15 +121,28 @@ export default function CinematicIntro() {
           <div className="h-2 w-2 rounded-full border border-white/40 animate-ping" />
         </div>
 
-        {/* Hero content — fades in as the star blast settles, then stays put
-            as the page's static landing once the reveal finishes. */}
-        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-          <div
-            id="ci-text-1"
-            className="flex flex-col-reverse items-center gap-10 px-8 text-center lg:flex-row lg:gap-16"
-            style={{ opacity: 0, filter: "blur(12px)" }}
-          >
-            <div className="flex flex-col items-center gap-9">
+        {/* Backdrop + text fade in together on click, then hold as the
+            page's static landing. */}
+        <div id="ci-reveal" className="absolute inset-0" style={{ opacity: 0, filter: "blur(16px)" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/hero_section_desktop.png"
+            alt="A crowd gathered in a neon city around a glowing phone reading NOORVA — coming soon to your phone"
+            className="hidden h-full w-full object-cover md:block"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/hero_section_mobile.png"
+            alt="A crowd gathered in a neon city around a glowing phone reading NOORVA — coming soon to your phone"
+            className="block h-full w-full object-cover md:hidden"
+          />
+
+          {/* Text overlay — bottom-anchored and centered on mobile (the
+              mobile crop's own empty space sits below the crowd), left-
+              anchored and vertically centered on desktop (the desktop
+              crop's empty space is to the phone's left). */}
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-end px-6 pb-16 pointer-events-none md:items-start md:justify-center md:px-0 md:pb-0 md:pl-14 lg:pl-24">
+            <div id="ci-text-1" className="flex flex-col items-center gap-9 text-center md:items-start md:text-left">
               <p
                 className="max-w-md bg-clip-text text-3xl font-bold tracking-[0.1em] text-transparent uppercase md:max-w-xl md:text-5xl lg:max-w-2xl lg:text-6xl whitespace-pre-line"
                 style={{
@@ -199,7 +172,7 @@ export default function CinematicIntro() {
                 }
               `}</style>
 
-              <div className="pointer-events-auto flex flex-col items-center gap-4 sm:flex-row lg:flex-row">
+              <div className="pointer-events-auto flex flex-col items-center gap-4 sm:flex-row md:items-start md:justify-start">
                 <button
                   onClick={() => goTo("#story-gallery")}
                   className="group relative shrink-0 rounded-full p-[1.5px] transition-transform duration-300 hover:scale-105"
@@ -231,10 +204,6 @@ export default function CinematicIntro() {
                   </span>
                 </button>
               </div>
-            </div>
-
-            <div className="relative shrink-0">
-              <HeroLogoPortal />
             </div>
           </div>
         </div>
