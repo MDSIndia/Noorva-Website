@@ -59,10 +59,14 @@ html.lenis          { height: auto; }
 
 /* ── COSMIC INTRO SPECIFIC ──────────────────────────────────────── */
 /* Fixed-position layer stacking, in page/scroll order: intro=30,
-   story-gallery's fullscreen book overlay=32, features' pinned 3D phone
-   showcase=33, grain=35, header=40/50. Each section needs a higher z-index
-   than the one before it so it slides on top and covers it during the pin
-   handoff — reorder these together with the section order in app/page.tsx. */
+   story-gallery's fullscreen book overlay=32, features' pinned 3D desert
+   showcase=33, grain=35, WorldTransitionOverlay's warp-burst canvas=37,
+   header=40/50. Each section needs a higher z-index than the one before it
+   so it slides on top and covers it during the pin handoff — reorder these
+   together with the section order in app/page.tsx. WorldTransitionOverlay
+   sits above every section (so its burst is never hidden behind whichever
+   section is opaque at the moment) but below the header, which stays
+   usable through the transition. */
 #cosmic-intro canvas {
   position: absolute !important;
   inset: 0 !important;
