@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import { lenisRef, galleryCaptureControl } from "./store";
+import { lenisRef, galleryCaptureControl, storyGalleryOverlayControl } from "./store";
 
 const NAV_ITEMS = [
   { label: "Home", target: "home" },
@@ -52,7 +52,15 @@ export default function Header() {
       window.open(target, "_blank", "noopener,noreferrer");
       return;
     }
-    galleryCaptureControl.release?.(target === "#story-gallery" ? 0 : 1600);
+    if (target === "#story-gallery") {
+      // The story-gallery temple scene is a hidden overlay, not a normal
+      // scroll-flow section (see StoryGallerySection.tsx and
+      // storyGalleryOverlayControl's own comment in store.ts) — this reveals
+      // it directly instead of scrolling to an anchor that's no longer there.
+      storyGalleryOverlayControl.open?.();
+      return;
+    }
+    galleryCaptureControl.release?.(1600);
     if (target === "home") {
       // The intro is click-revealed, not scroll-scrubbed, so "Home" is just
       // the top of the page — whatever state the intro is already in.

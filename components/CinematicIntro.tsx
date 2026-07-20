@@ -11,6 +11,7 @@ import {
   acquireScrollLock,
   releaseScrollLock,
   introRevealControl,
+  storyGalleryOverlayControl,
 } from "./store";
 
 const CosmicCanvas = dynamic(() => import("./CosmicCanvas"), { ssr: false });
@@ -621,11 +622,7 @@ export default function CinematicIntro() {
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-end px-6 pb-16 pointer-events-none md:items-start md:justify-center md:px-0 md:pb-0 md:pl-14 lg:pl-24">
             <div id="ci-text-1" className="flex flex-col items-center gap-9 text-center md:items-start md:text-left">
               <p
-                className="max-w-md bg-clip-text text-3xl font-bold tracking-[0.1em] text-transparent uppercase md:max-w-xl md:text-5xl lg:max-w-2xl lg:text-6xl whitespace-pre-line"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(135deg, #ffffff 0%, #3965e5 35%, #7c5cfc 65%, #db45d7 100%)",
-                }}
+                className="max-w-md text-3xl font-bold tracking-[0.1em] text-white uppercase md:max-w-xl md:text-5xl lg:max-w-2xl lg:text-6xl whitespace-pre-line"
               >
                 {typedText || ""}
                 {!typingDone && (
@@ -634,7 +631,7 @@ export default function CinematicIntro() {
                       display: "inline-block",
                       width: "2px",
                       marginLeft: "2px",
-                      background: "linear-gradient(135deg, #ffffff, #7c5cfc)",
+                      background: "#ffffff",
                       animation: "ci-blink 0.75s step-end infinite",
                       verticalAlign: "middle",
                       height: "0.85em",
@@ -651,7 +648,11 @@ export default function CinematicIntro() {
 
               <div className="pointer-events-auto flex flex-col items-center gap-4 sm:flex-row md:items-start md:justify-start">
                 <button
-                  onClick={() => goTo("#story-gallery")}
+                  // The story-gallery temple scene is a hidden overlay, not
+                  // a normal scroll-flow section (see StoryGallerySection.tsx
+                  // and storyGalleryOverlayControl's own comment in store.ts)
+                  // — this reveals it directly instead of scrolling to it.
+                  onClick={() => storyGalleryOverlayControl.open?.()}
                   className="group relative shrink-0 rounded-full p-[1.5px] transition-transform duration-300 hover:scale-105"
                   style={{
                     background: "linear-gradient(135deg, #3965e5, #7c5cfc, #db45d7)",

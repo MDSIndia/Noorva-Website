@@ -13,6 +13,18 @@ import BookModel, { BOOK_D, BOOK_W, BOOK_H } from "./BookModel";
 const REST_Y = 0;
 const DESK_Y = REST_Y - BOOK_D / 2 - 0.02;
 const FALL_START_Y = REST_Y + 3.6;
+// The desk's top-surface footprint, and how thick its slab reads. A
+// paper-thin plane only barely larger than the book (the original 8x6) has
+// no visible edge, so from the establishing shot's fairly level angle its
+// far boundary shows up as a stark straight line against the plain black
+// void beyond it — nothing like an actual desk. Generously oversizing it
+// pushes that boundary well outside both camera framings below so the
+// surface recedes toward a natural perspective vanishing point instead;
+// the added thickness gives it a visible front edge up close, the one cue
+// that actually reads as "physical slab" rather than "floating sheet."
+const DESK_W = 30;
+const DESK_D = 30;
+const DESK_THICKNESS = 0.28;
 // Past vertical (-90°/-Math.PI/2), so the cover settles leaning back
 // against where the pages would be rather than balancing exactly upright —
 // reads as a book that's naturally come to rest open, not one frozen
@@ -146,19 +158,34 @@ function useDeskWoodTexture() {
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1.4, 1.4);
+    // Grain density kept proportional to the original 1.4-tiles-over-8x6
+    // plane now that the surface is DESK_W x DESK_D — otherwise the same
+    // fixed tile count would stretch across the much larger area and read
+    // as a blurry smear instead of grain.
+    texture.repeat.set((1.4 / 8) * DESK_W, (1.4 / 6) * DESK_D);
     texture.colorSpace = THREE.SRGBColorSpace;
     return texture;
   }, []);
 }
 
+// Dark walnut for the slab's underside/edges — only the top face shows the
+// grain texture (a stretched copy of it on the thin edge faces would look
+// wrong); this is what actually sells the "edge" cue the old flat plane had
+// none of, visible on the front face nearest the establishing-shot camera.
+const DESK_EDGE_COLOR = "#3b2414";
+
 function Desk() {
   const texture = useDeskWoodTexture();
   if (!texture) return null;
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, DESK_Y, 0]} receiveShadow>
-      <planeGeometry args={[8, 6]} />
-      <meshPhysicalMaterial map={texture} roughness={0.55} metalness={0.05} clearcoat={0.15} clearcoatRoughness={0.5} />
+    <mesh position={[0, DESK_Y - DESK_THICKNESS / 2, 0]} receiveShadow>
+      <boxGeometry args={[DESK_W, DESK_THICKNESS, DESK_D]} />
+      <meshPhysicalMaterial attach="material-0" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
+      <meshPhysicalMaterial attach="material-1" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
+      <meshPhysicalMaterial attach="material-2" map={texture} roughness={0.55} metalness={0.05} clearcoat={0.15} clearcoatRoughness={0.5} />
+      <meshPhysicalMaterial attach="material-3" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
+      <meshPhysicalMaterial attach="material-4" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
+      <meshPhysicalMaterial attach="material-5" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
     </mesh>
   );
 }

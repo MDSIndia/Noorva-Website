@@ -27,6 +27,14 @@ export const galleryCaptureControl: { release: ((suppressMs?: number) => void) |
 // CinematicIntro registers `play` here on mount.
 export const introRevealControl: { play: (() => void) | null } = { play: null };
 
+// Shared singleton — the story-gallery temple/podium scene is a hidden
+// fixed overlay, not a normal-flow section (see StoryGallerySection.tsx),
+// so it can't be reached by scrolling or a plain anchor scrollTo. The
+// hero's "Noorva Book" button (CinematicIntro.tsx) and the header's
+// "Story" nav link (Header.tsx) both call this instead to reveal it.
+// StoryGallerySection registers `open` here on mount.
+export const storyGalleryOverlayControl: { open: (() => void) | null } = { open: null };
+
 // Reference-counted scroll lock, keyed by owner id. WelcomeOverlay and
 // CinematicIntro both need page scroll frozen during their own gated phase,
 // and their phases can overlap/outlive each other (e.g. the overlay can

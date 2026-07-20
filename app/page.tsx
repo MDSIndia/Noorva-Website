@@ -16,9 +16,13 @@ export default function Home() {
       <WelcomeOverlay />
       <Header />
       <CinematicIntro />
-      <StoryGallerySection />
       <FeaturesSection />
       <ClosingSection />
+      {/* Hidden by default — a fixed overlay revealed only via the hero's
+          "Noorva Book" button or the header's "Story" link, not normal
+          scroll flow. Rendered last so its DOM order matches how it stacks
+          visually on top of everything else. */}
+      <StoryGallerySection />
     </>
   );
 }
