@@ -127,15 +127,15 @@ function useDeskWoodTexture() {
     if (!ctx) return null;
 
     const base = ctx.createLinearGradient(0, 0, w, 0);
-    base.addColorStop(0, "#6b4324");
-    base.addColorStop(0.5, "#7c4f2c");
-    base.addColorStop(1, "#5e3a1f");
+    base.addColorStop(0, "#4a2c16");
+    base.addColorStop(0.5, "#5c3a1e");
+    base.addColorStop(1, "#3f2513");
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, w, h);
 
     for (let i = 0; i < 46; i++) {
       const y0 = (i / 46) * h + Math.sin(i * 12.9) * 6;
-      ctx.strokeStyle = `rgba(30,16,6,${0.05 + (i % 5) * 0.02})`;
+      ctx.strokeStyle = `rgba(20,10,4,${0.1 + (i % 5) * 0.04})`;
       ctx.lineWidth = 1 + (i % 3);
       ctx.beginPath();
       ctx.moveTo(0, y0);
@@ -164,6 +164,13 @@ function useDeskWoodTexture() {
     // as a blurry smear instead of grain.
     texture.repeat.set((1.4 / 8) * DESK_W, (1.4 / 6) * DESK_D);
     texture.colorSpace = THREE.SRGBColorSpace;
+    // The establishing shot looks almost along the desk's own surface (a
+    // near-grazing angle), which without this stretches the mip selection
+    // hard in one UV direction and blurs the grain into a flat, washed-out
+    // band right where the camera's looking — anisotropic filtering keeps
+    // it resolved at exactly the shallow angles a flat "cover" plane like
+    // this is always going to be viewed at.
+    texture.anisotropy = 16;
     return texture;
   }, []);
 }
@@ -182,7 +189,7 @@ function Desk() {
       <boxGeometry args={[DESK_W, DESK_THICKNESS, DESK_D]} />
       <meshPhysicalMaterial attach="material-0" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
       <meshPhysicalMaterial attach="material-1" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
-      <meshPhysicalMaterial attach="material-2" map={texture} roughness={0.55} metalness={0.05} clearcoat={0.15} clearcoatRoughness={0.5} />
+      <meshPhysicalMaterial attach="material-2" map={texture} roughness={0.85} metalness={0.05} envMapIntensity={0.35} />
       <meshPhysicalMaterial attach="material-3" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
       <meshPhysicalMaterial attach="material-4" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
       <meshPhysicalMaterial attach="material-5" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
@@ -383,6 +390,17 @@ export default function BookLandingScene({ active, onOpened }: BookLandingSceneP
       contactShadowPosition={[0, DESK_Y + 0.002, 0]}
       contactShadowScale={6}
     >
+      {/* The desk is oversized (30x30, see DESK_W/DESK_D above) specifically
+          so its edge never enters frame — but with nothing at all fading
+          the distance out, that leaves an endless, flat-lit plane with zero
+          depth cues once the wood grain itself blurs out toward the
+          establishing shot's shallow, near-grazing sightline: no vanishing
+          point, no darkening, nothing to read as "table" rather than "wall
+          of color." Fog matching the page's own near-black background
+          recedes the far reaches into the same darkness the rest of the
+          site already sits in, giving the eye an actual horizon instead of
+          an infinite flat wash. */}
+      <fog attach="fog" args={["#050505", 1.8, 10]} />
       <Desk />
       <group ref={outerGroupRef}>
         <BookModel hingeGroupRef={hingeGroupRef} />
