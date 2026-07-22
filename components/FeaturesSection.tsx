@@ -7,39 +7,100 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// public/features/theatre_desktop.png (theatre_phone.png below md) is a
-// static backdrop — a crowd facing a big glowing screen in a neon city.
-// This section pins the viewport (same GSAP+Lenis pattern SmoothScroll.tsx
-// sets up for the rest of the site) and crossfades the six persona images
-// through *that screen's own rectangle* as the user scrolls, rather than
-// swapping the whole viewport like the previous version did.
+// public/features/theatre_desktop.png is a static backdrop — a crowd facing
+// a big glowing screen in a neon city. On desktop, this section pins the
+// viewport (same GSAP+Lenis pattern SmoothScroll.tsx sets up for the rest of
+// the site) and crossfades the six persona images through *that screen's own
+// rectangle* as the user scrolls.
+//
+// Below md, there's no theatre backdrop at all: the *_mobile.png assets are
+// their own fully-designed vertical slides (title, copy, CTA, and stat cards
+// baked into the pixels top-to-bottom) built for a full-bleed portrait
+// crop, not a landscape screen-within-a-screen — forcing them (or the
+// desktop crop) into the theatre's tiny screen rectangle just clips the
+// baked-in text off the sides. So mobile crossfades the plain images
+// full-viewport instead, the way this section originally worked.
 interface Feature {
   id: string;
   label: string;
-  src: string;
-  width: number;
-  height: number;
+  desktopSrc: string;
+  desktopWidth: number;
+  desktopHeight: number;
+  mobileSrc: string;
+  mobileWidth: number;
+  mobileHeight: number;
 }
 
 const FEATURES: Feature[] = [
-  { id: "guide", label: "Guide", src: "/features/guide_desktop.png", width: 1672, height: 941 },
-  { id: "mentor", label: "Mentor", src: "/features/mentor_desktop.png", width: 1719, height: 915 },
-  { id: "teacher", label: "Teacher", src: "/features/teacher_desktop.png", width: 1672, height: 941 },
-  { id: "strategist", label: "Strategist", src: "/features/strategist_desktop.png", width: 1672, height: 941 },
-  { id: "designer", label: "Designer", src: "/features/designer_desktop.png", width: 1672, height: 941 },
-  { id: "companion", label: "Companion", src: "/features/companion_desktop.png", width: 1672, height: 941 },
+  {
+    id: "guide",
+    label: "Guide",
+    desktopSrc: "/features/guide_desktop.png",
+    desktopWidth: 1672,
+    desktopHeight: 941,
+    mobileSrc: "/features/guide_mobile.png",
+    mobileWidth: 864,
+    mobileHeight: 1821,
+  },
+  {
+    id: "mentor",
+    label: "Mentor",
+    desktopSrc: "/features/mentor_desktop.png",
+    desktopWidth: 1719,
+    desktopHeight: 915,
+    mobileSrc: "/features/mentor_mobile.png",
+    mobileWidth: 864,
+    mobileHeight: 1821,
+  },
+  {
+    id: "teacher",
+    label: "Teacher",
+    desktopSrc: "/features/teacher_desktop.png",
+    desktopWidth: 1672,
+    desktopHeight: 941,
+    mobileSrc: "/features/teacher_mobile.png",
+    mobileWidth: 853,
+    mobileHeight: 1844,
+  },
+  {
+    id: "strategist",
+    label: "Strategist",
+    desktopSrc: "/features/strategist_desktop.png",
+    desktopWidth: 1672,
+    desktopHeight: 941,
+    mobileSrc: "/features/strategist_mobile.png",
+    mobileWidth: 864,
+    mobileHeight: 1821,
+  },
+  {
+    id: "designer",
+    label: "Designer",
+    desktopSrc: "/features/designer_desktop.png",
+    desktopWidth: 1672,
+    desktopHeight: 941,
+    mobileSrc: "/features/designer_mobile.png",
+    mobileWidth: 853,
+    mobileHeight: 1844,
+  },
+  {
+    id: "companion",
+    label: "Companion",
+    desktopSrc: "/features/companion_desktop.png",
+    desktopWidth: 1672,
+    desktopHeight: 941,
+    mobileSrc: "/features/companion_mobile.png",
+    mobileWidth: 864,
+    mobileHeight: 1821,
+  },
 ];
 
 // The screen's own black rectangle (inside its neon bezel), as a fraction
-// (0-1) of the full backdrop image — found by probing the actual pixels of
-// each crop (sharp). The desktop and phone backdrops frame the screen at
-// different sizes/positions, not just different aspect ratios, so both are
-// needed rather than one set of numbers reused across breakpoints.
+// (0-1) of the full desktop backdrop image — found by probing the actual
+// pixels of the crop (sharp). Desktop-only: below md there's no theatre
+// backdrop, so no screen rectangle to line up with (see the top-of-file
+// comment).
 const SCREEN_DESKTOP = { left: 0.2214, top: 0.2441, width: 0.5599, height: 0.4248 };
-const SCREEN_PHONE = { left: 0.1231, top: 0.3525, width: 0.7503, height: 0.2251 };
 const BACKDROP_DESKTOP_ASPECT = 1536 / 1024;
-const BACKDROP_PHONE_ASPECT = 853 / 1844;
-const MD_BREAKPOINT = 768; // matches the md: Tailwind breakpoint used below
 
 /** Where the screen rectangle actually lands on screen, in pixels relative
  *  to the section. `object-cover` scales the backdrop up until it fully
@@ -60,9 +121,8 @@ function useScreenRect(containerRef: React.RefObject<HTMLElement | null>) {
       if (!el) return;
       const { width: cw, height: ch } = el.getBoundingClientRect();
       if (cw === 0 || ch === 0) return;
-      const isDesktop = window.innerWidth >= MD_BREAKPOINT;
-      const imgAspect = isDesktop ? BACKDROP_DESKTOP_ASPECT : BACKDROP_PHONE_ASPECT;
-      const screen = isDesktop ? SCREEN_DESKTOP : SCREEN_PHONE;
+      const imgAspect = BACKDROP_DESKTOP_ASPECT;
+      const screen = SCREEN_DESKTOP;
       const containerAspect = cw / ch;
 
       let renderedW: number, renderedH: number, offsetX: number, offsetY: number;
@@ -160,7 +220,7 @@ export default function FeaturesSection() {
 
   return (
     <section id="features" ref={sectionRef} className="relative h-screen w-full overflow-hidden bg-black">
-      {/* Static backdrop */}
+      {/* Desktop: static theatre backdrop */}
       <Image
         src="/features/theatre_desktop.png"
         alt="A crowd facing a glowing screen in a neon city"
@@ -169,21 +229,13 @@ export default function FeaturesSection() {
         className="hidden object-cover md:block"
         sizes="100vw"
       />
-      <Image
-        src="/features/theatre_phone.png"
-        alt="A crowd facing a glowing screen in a neon city"
-        fill
-        priority
-        className="block object-cover md:hidden"
-        sizes="100vw"
-      />
 
-      {/* The screen's own rectangle — positioned in pixels from
+      {/* Desktop: the screen's own rectangle — positioned in pixels from
           useScreenRect, which redoes the backdrop's object-cover crop math
           by hand so this lines up with the art at any viewport size (see
           that hook's own comment for why plain percentages don't). */}
       <div
-        className="absolute overflow-hidden"
+        className="absolute hidden overflow-hidden md:block"
         style={{
           left: screenRect.left,
           top: screenRect.top,
@@ -210,13 +262,45 @@ export default function FeaturesSection() {
               }}
             >
               <Image
-                src={feature.src}
+                src={feature.desktopSrc}
                 alt={`Noorva as ${feature.label}`}
-                width={feature.width}
-                height={feature.height}
+                width={feature.desktopWidth}
+                height={feature.desktopHeight}
                 priority={i === 0}
                 className="h-full w-full object-cover"
                 sizes="60vw"
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Mobile: no theatre backdrop — the *_mobile.png assets are their
+          own full-bleed vertical slides, so they crossfade edge-to-edge
+          instead of being cropped into a landscape screen rectangle. */}
+      <div className="absolute inset-0 md:hidden">
+        {FEATURES.map((feature, i) => {
+          const p = presence(i, progress);
+          if (p <= 0.001 && i !== 0) return null;
+          return (
+            <div
+              key={feature.id}
+              className="absolute inset-0"
+              style={{
+                opacity: p,
+                zIndex: i,
+                transform: `scale(${1 + (1 - p) * 0.04})`,
+                filter: `blur(${(1 - p) * 6}px)`,
+              }}
+            >
+              <Image
+                src={feature.mobileSrc}
+                alt={`Noorva as ${feature.label}`}
+                width={feature.mobileWidth}
+                height={feature.mobileHeight}
+                priority={i === 0}
+                className="h-full w-full object-cover"
+                sizes="100vw"
               />
             </div>
           );
