@@ -47,7 +47,7 @@ export default function BookPreview3D() {
 
   return (
     <div ref={wrapRef} className="h-full w-full">
-      <Scene
+      <Scene 
         frameloop={inView ? "always" : "never"}
         // A low floor, not the operating distance — CameraFit takes
         // Math.max(cameraZ, ...dynamically-computed fit distances), so this
