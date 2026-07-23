@@ -494,16 +494,24 @@ export default function CinematicIntro() {
             </div>
           </div>
           <style>{`
+            /* A real lift-and-settle float, not just a scale pulse — the
+               backdrop's phone-hole has no bottom margin (see
+               HERO_PHONE_MARGIN_BOTTOM), so translating this cutout upward
+               genuinely uncovers a sliver of dark sky between the phone and
+               its podium at the peak of the float, instead of the phone
+               just quietly bulging in place. The slight scale still rides
+               along so it also reads as coming very slightly toward camera
+               at the top of the lift, not just rising in a straight line. */
             @keyframes hero-phone-hover {
-              0%, 100% { transform: scale(1); }
-              50% { transform: scale(1.06); }
+              0%, 100% { transform: translateY(0) scale(1); }
+              50% { transform: translateY(-16px) scale(1.025); }
             }
             .hero-phone-cutout-desktop {
-              animation: hero-phone-hover 4.2s ease-in-out infinite;
+              animation: hero-phone-hover 5s ease-in-out infinite;
               will-change: transform;
             }
             .hero-phone-cutout-mobile {
-              animation: hero-phone-hover 4.2s ease-in-out infinite;
+              animation: hero-phone-hover 5s ease-in-out infinite;
               will-change: transform;
             }
             @keyframes hero-fly-bob-a {
