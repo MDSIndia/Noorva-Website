@@ -20,8 +20,8 @@ const CosmicCanvas = dynamic(() => import("./CosmicCanvas"), { ssr: false });
 // internal progress ~0.45 (see CosmicCanvas.tsx). Scaling our 0-1 reveal
 // progress into that range means the reveal can take however long feels
 // right while always finishing on the same settled, calm frame.
-const BLAST_SETTLE_P = 0.45;
-const REVEAL_DURATION = 3.4; // seconds, click -> fully settled
+const BLAST_SETTLE_P = 0.15;
+const REVEAL_DURATION = 2.0; // seconds, click -> fully settled
 
 // The hero photo + text fade in over the back half of the reveal, once the
 // star blast has mostly finished exploding outward — so the blast gets to
@@ -494,24 +494,16 @@ export default function CinematicIntro() {
             </div>
           </div>
           <style>{`
-            /* A real lift-and-settle float, not just a scale pulse — the
-               backdrop's phone-hole has no bottom margin (see
-               HERO_PHONE_MARGIN_BOTTOM), so translating this cutout upward
-               genuinely uncovers a sliver of dark sky between the phone and
-               its podium at the peak of the float, instead of the phone
-               just quietly bulging in place. The slight scale still rides
-               along so it also reads as coming very slightly toward camera
-               at the top of the lift, not just rising in a straight line. */
             @keyframes hero-phone-hover {
-              0%, 100% { transform: translateY(0) scale(1); }
-              50% { transform: translateY(-16px) scale(1.025); }
+              0%, 100% { transform: scale(1); }
+              50% { transform: scale(1.06); }
             }
             .hero-phone-cutout-desktop {
-              animation: hero-phone-hover 5s ease-in-out infinite;
+              animation: hero-phone-hover 4.2s ease-in-out infinite;
               will-change: transform;
             }
             .hero-phone-cutout-mobile {
-              animation: hero-phone-hover 5s ease-in-out infinite;
+              animation: hero-phone-hover 4.2s ease-in-out infinite;
               will-change: transform;
             }
             @keyframes hero-fly-bob-a {
@@ -627,10 +619,21 @@ export default function CinematicIntro() {
               mobile crop's own empty space sits below the crowd), left-
               anchored and vertically centered on desktop (the desktop
               crop's empty space is to the phone's left). */}
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-end px-6 pb-16 pointer-events-none md:items-start md:justify-center md:px-0 md:pb-0 md:pl-14 lg:pl-24">
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-end px-6 pb-36 pointer-events-none md:items-start md:justify-center md:px-0 md:pb-0 md:pl-14 lg:pl-24">
             <div id="ci-text-1" className="flex flex-col items-center gap-9 text-center md:items-start md:text-left">
               <p
-                className="max-w-md text-3xl font-bold tracking-[0.1em] text-white uppercase md:max-w-xl md:text-5xl lg:max-w-2xl lg:text-6xl whitespace-pre-line"
+                className="max-w-md text-3xl font-bold tracking-[0.1em] uppercase md:max-w-xl md:text-5xl lg:max-w-2xl lg:text-6xl whitespace-pre-line"
+                style={{
+                  // Just the lead-in of the heading stays plain white; the
+                  // rest shifts into the Noorva logo's own blue -> pink ->
+                  // violet, so the brand colors read as the line "arriving"
+                  // rather than tinting the whole heading uniformly.
+                  backgroundImage: "linear-gradient(135deg, #ffffff 0%, #ffffff 28%, var(--accent-2) 48%, #db45d7 72%, var(--accent-1) 100%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  color: "transparent",
+                }}
               >
                 {typedText || ""}
                 {!typingDone && (
@@ -667,8 +670,8 @@ export default function CinematicIntro() {
                     boxShadow: "0 0 28px rgba(124,92,252,0.4)",
                   }}
                 >
-                  <span className="btn-glow flex items-center gap-1.5 rounded-full bg-black/85 px-4 py-2 text-[9px] font-semibold tracking-[0.22em] text-white uppercase backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70 sm:px-7 sm:py-3 sm:text-[11px] sm:tracking-[0.28em] sm:gap-2">
-                    <Library className="h-3 w-3 sm:h-4 sm:w-4" strokeWidth={1.75} />
+                  <span className="btn-glow flex items-center gap-2 rounded-full bg-black/85 px-6 py-3 text-[12px] font-semibold tracking-[0.24em] text-white uppercase backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70 sm:px-7 sm:py-3 sm:text-[11px] sm:tracking-[0.28em] sm:gap-2">
+                    <Library className="h-4 w-4 sm:h-4 sm:w-4" strokeWidth={1.75} />
                     Noorva Book
                   </span>
                 </button>
@@ -682,10 +685,10 @@ export default function CinematicIntro() {
                   }}
                 >
                   <span
-                    className="btn-glow flex items-center gap-1.5 rounded-full bg-black/85 px-4 py-2 text-[9px] font-semibold tracking-[0.22em] uppercase backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70 sm:px-7 sm:py-3 sm:text-[11px] sm:tracking-[0.28em] sm:gap-2"
+                    className="btn-glow flex items-center gap-2 rounded-full bg-black/85 px-6 py-3 text-[12px] font-semibold tracking-[0.24em] uppercase backdrop-blur-xl transition-colors duration-300 group-hover:bg-black/70 sm:px-7 sm:py-3 sm:text-[11px] sm:tracking-[0.28em] sm:gap-2"
                     style={{ color: "var(--accent-warm)" }}
                   >
-                    <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4" strokeWidth={1.75} />
+                    <ArrowUpRight className="h-4 w-4 sm:h-4 sm:w-4" strokeWidth={1.75} />
                     Join Noorva
                   </span>
                 </button>
