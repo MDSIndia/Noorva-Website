@@ -106,6 +106,21 @@ function useScreenRect(containerRef: React.RefObject<HTMLElement | null>) {
 // heights, spread across the 5 hand-offs between 6 images. Tune by feel.
 const PIN_VH_MULTIPLIER = 7;
 
+// How far (as a % of the screen rect's own width) each persona slides per
+// full step of progress — the "passing scenery" drift on the crossfade
+// below. Large enough that a slide is clearly still under way once a
+// neighbor's dwell fades it to invisible, not just a crossfade with a
+// barely-perceptible nudge.
+const JOURNEY_DRIFT_PCT = 45;
+
+// Pixel geometry of the journey-progress track below, kept as constants
+// (not measured) since the traveling marker needs to land on the same
+// pitch as the dots at every scroll position, not just resync on resize —
+// matches the track's own w-7 (28px) + gap-2 (8px) Tailwind classes.
+const JOURNEY_DOT_WIDTH_PX = 28;
+const JOURNEY_DOT_GAP_PX = 8;
+const JOURNEY_DOT_PITCH_PX = JOURNEY_DOT_WIDTH_PX + JOURNEY_DOT_GAP_PX;
+
 // Each image gets a full-opacity "dwell" window centered on its own index
 // (0, 1, 2…), and fades linearly over the gap between dwell windows — since
 // neighboring images are 1 unit apart, so each one's fade ramp has to run
@@ -198,6 +213,19 @@ export default function FeaturesSection() {
           // "in viewport" and eagerly load all 6 assets at once regardless
           // of which is actually showing.
           if (p <= 0.001 && i !== 0) return null;
+          // Each persona slides in from one side and out the other as its
+          // own dwell window passes — rather than just crossfading in
+          // place, this reads as scenery going by on a route stop-to-stop,
+          // not a static slideshow. The screen rect's own overflow-hidden
+          // clips it at the bezel, so the slide never escapes the "screen".
+          // A slight vertical dip + tilt rides along with the horizontal
+          // drift — a pure translateX reads as a flat slide; adding the
+          // other two axes (both settling back to 0 at rest, same as the
+          // scale/blur already did) sells it as something drifting past
+          // in three dimensions, not a card on rails.
+          const drift = (i - progress) * JOURNEY_DRIFT_PCT;
+          const dip = (1 - p) * 3.5;
+          const tilt = (i - progress) * 1.4;
           return (
             <div
               key={feature.id}
@@ -205,7 +233,7 @@ export default function FeaturesSection() {
               style={{
                 opacity: p,
                 zIndex: i,
-                transform: `scale(${1 + (1 - p) * 0.04})`,
+                transform: `translate(${drift}%, ${dip}%) rotate(${tilt}deg) scale(${1 + (1 - p) * 0.04})`,
                 filter: `blur(${(1 - p) * 6}px)`,
               }}
             >
@@ -223,18 +251,73 @@ export default function FeaturesSection() {
         })}
       </div>
 
-      {/* Scroll-progress dots — purely a "you're partway through" cue, no
-          labels, so nothing competes with the baked-in text in the art. */}
-      <div className="pointer-events-none absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 gap-2">
-        {FEATURES.map((feature, i) => (
-          <span key={feature.id} className="h-[3px] w-7 overflow-hidden rounded-full bg-white/15">
-            <span
-              className="block h-full rounded-full bg-white"
-              style={{ width: `${Math.max(0, 1 - Math.abs(progress - i)) * 100}%` }}
-            />
-          </span>
-        ))}
+      {/* Journey progress — a connected path (not just isolated dots) with
+          a glowing marker that travels smoothly along it as the pinned
+          scroll advances, plus the current stop's own name crossfading in
+          step with the persona itself (same presence() curve as the main
+          crossfade above, not a separate re-derived one). Housed in its own
+          frosted pill so it reads as one HUD element sitting on top of the
+          scene, not loose text and dots floating over the art. */}
+      <div className="pointer-events-none absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-3 rounded-full border border-white/10 bg-black/30 px-6 py-3 backdrop-blur-md">
+        <div className="relative hidden h-4 w-48 md:block">
+          {FEATURES.map((feature, i) => {
+            const p = presence(i, progress);
+            return (
+              <span
+                key={feature.id}
+                className="absolute inset-0 flex items-center justify-center text-center text-[10px] font-medium tracking-[0.2em] whitespace-nowrap text-white uppercase"
+                style={{ opacity: p, transform: `translateY(${(1 - p) * 8}px)` }}
+              >
+                {feature.label}
+              </span>
+            );
+          })}
+        </div>
+        <div className="relative flex gap-2">
+          {FEATURES.map((feature, i) => (
+            <span key={feature.id} className="h-[3px] w-7 overflow-hidden rounded-full bg-white/15">
+              {/* The lit portion of each dot is a slice of one continuous
+                  brand-color gradient (not a flat white fill) — its own
+                  background-position shifts per dot so the color reads as
+                  one road running under the whole track, the same blue ->
+                  violet -> pink already used on the CTA buttons, rather
+                  than every segment independently fading white. */}
+              <span
+                className="block h-full rounded-full"
+                style={{
+                  width: `${Math.max(0, Math.min(1, 1 - Math.abs(progress - i))) * 100}%`,
+                  backgroundImage: "linear-gradient(90deg, #3965e5, #7c5cfc, #db45d7)",
+                  backgroundSize: `${FEATURES.length * 100}% 100%`,
+                  backgroundPosition: `${(i / (FEATURES.length - 1)) * 100}% 0`,
+                  boxShadow: "0 0 6px 1px rgba(124,92,252,0.8)",
+                }}
+              />
+            </span>
+          ))}
+          {/* Traveling marker — a soft comet-style glow (layered box-shadow
+              standing in for a directional trail) riding the same gradient
+              as the track it's crossing, plus a slow pulse so it reads as
+              alive even mid-dwell when its position itself isn't moving. */}
+          <div
+            className="absolute top-1/2 h-2.5 w-2.5 rounded-full journey-marker"
+            style={{
+              left: progress * JOURNEY_DOT_PITCH_PX + JOURNEY_DOT_WIDTH_PX / 2,
+              background: "radial-gradient(circle, #ffffff, var(--accent-1))",
+              boxShadow:
+                "0 0 8px 2px rgba(255,255,255,0.9), 0 0 16px 6px rgba(124,92,252,0.75), 0 0 28px 10px rgba(219,69,215,0.35)",
+            }}
+          />
+        </div>
       </div>
+      <style>{`
+        @keyframes journey-marker-pulse {
+          0%, 100% { transform: translate(-50%, -50%) scale(1); }
+          50% { transform: translate(-50%, -50%) scale(1.25); }
+        }
+        .journey-marker {
+          animation: journey-marker-pulse 1.8s ease-in-out infinite;
+        }
+      `}</style>
     </section>
   );
 }

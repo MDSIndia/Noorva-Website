@@ -34,6 +34,12 @@ const PARCHMENT_GRAIN =
 const PAGE_INK = "#3f2a14";
 const PAGE_GILT = "rgba(120,78,28,0.55)";
 
+// How long the water-drop reveal takes to fully spread across the frame —
+// matches StoryGallerySection's own SLIDE_DURATION so its isAnimatingRef gate
+// (which blocks the next wheel/swipe transition) releases right as this
+// settles, not before or after.
+const RIPPLE_DURATION = 1.05;
+
 /** One corner accent on the chapter page's gilt frame — echoes the closed
  *  book's own gold corner-diamond flourish (BookModel.tsx's baked cover
  *  texture) so the pages read as part of the same physical object as the
@@ -220,13 +226,94 @@ function ChapterSlide({ chapter, reducedMotion }: { chapter: StoryChapterData; r
   );
 }
 
+/** Wraps one slide in a paper-flip-like reveal: the new page slides in from
+ *  the left (like being drawn across from the spine) while a directional
+ *  clip-path sweeps its reveal boundary left-to-right, and an SVG turbulence
+ *  + displacement filter warps the whole slide like a wave passing over
+ *  water — so the straight wipe edge reads as a rippling water-front instead
+ *  of a hard line, settling flat exactly as the sweep finishes. A fresh
+ *  instance mounts per `key` (AnimatePresence's `currentIndex` key on the
+ *  call site), so each page-flip gets its own filter id/seed with no risk of
+ *  two overlapping transitions fighting over the same filter node. */
+function RippleSlide({ children, reducedMotion }: { children: React.ReactNode; reducedMotion: boolean }) {
+  const elRef = useRef<HTMLDivElement>(null);
+  const dispRef = useRef<SVGFEDisplacementMapElement>(null);
+  // Random per mount, not derived from currentIndex — a stable id would be
+  // reused if the user ever lands back on an index whose previous filter
+  // node hasn't finished being torn down, and a random seed keeps
+  // consecutive ripples from looking like the exact same wave every time.
+  const [filterId] = useState(() => `page-ripple-${Math.random().toString(36).slice(2, 9)}`);
+  const [seed] = useState(() => Math.floor(Math.random() * 1000));
+
+  useEffect(() => {
+    if (reducedMotion) return; // a continuous rippling warp is exactly the motion this preference opts out of — plain crossfade only.
+    const el = elRef.current;
+    const disp = dispRef.current;
+    if (!el || !disp) return;
+
+    el.style.filter = `url(#${filterId})`;
+    // inset(top right bottom left) — right starts at 100% (nothing visible)
+    // and shrinks to 0%, so the visible strip grows from the left edge
+    // rightward: the reveal boundary sweeps left -> right across the frame,
+    // like a page being turned in from the spine. xPercent gives the page
+    // itself a physical shift into place alongside that sweep, rather than
+    // just an alpha wipe sitting still.
+    gsap.set(el, { clipPath: "inset(0% 100% 0% 0%)", xPercent: -6 });
+    gsap.set(disp, { attr: { scale: 70 } });
+
+    // Clip sweep, physical shift, and displacement scale all run in lockstep
+    // on the same timeline so the warp is always strongest right at the
+    // sweep's own leading edge and fully calm behind it — clearing the
+    // inline filter entirely once settled (rather than leaving it applied
+    // at scale 0) so the browser isn't asked to maintain an SVG filter's
+    // backing store for the whole time the chapter is just sitting there
+    // being read.
+    const tl = gsap.timeline({ onComplete: () => { el.style.filter = ""; } });
+    tl.to(el, { clipPath: "inset(0% 0% 0% 0%)", xPercent: 0, duration: RIPPLE_DURATION, ease: "power2.out" }, 0);
+    tl.to(disp, { attr: { scale: 0 }, duration: RIPPLE_DURATION, ease: "power3.out" }, 0);
+
+    return () => {
+      tl.kill();
+    };
+    // Mount-only — this component is freshly instantiated per AnimatePresence
+    // key (see call site), so there's no prop change to react to here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <motion.div
+      ref={elRef}
+      className="absolute inset-0"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      // The outgoing slide shifts right and fades as the incoming one shifts
+      // in from the left over it — a reciprocal motion so the page reads as
+      // physically displaced rather than just crossfaded.
+      exit={{ opacity: 0, x: "4%" }}
+      transition={{ duration: RIPPLE_DURATION, ease: "easeInOut" }}
+    >
+      {!reducedMotion && (
+        <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden>
+          <defs>
+            <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves={2} seed={seed} result="noise" />
+              <feDisplacementMap ref={dispRef} in="SourceGraphic" in2="noise" scale={0} xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+          </defs>
+        </svg>
+      )}
+      {children}
+    </motion.div>
+  );
+}
+
 /** The fullscreen cinematic sequence shown after the book "opens" — a
  *  title/cover slide followed by one full-bleed Ken Burns image per
  *  chapter, replacing the earlier WebGL page-curl reader entirely.
  *  `currentIndex` is owned by StoryGallerySection.tsx, which already has
  *  the wheel/touch/keyboard gesture handling this reuses verbatim; this
- *  component only renders whichever slide is current and crossfades
- *  between them. */
+ *  component only renders whichever slide is current, revealing each one
+ *  with a water-drop ripple (see RippleSlide) instead of a plain crossfade. */
 export default function StoryCinematic({ currentIndex }: StoryCinematicProps) {
   // Lazily initialized off matchMedia directly, not a ref — this component
   // only ever mounts client-side (inside the fullscreen overlay, after a
@@ -241,16 +328,9 @@ export default function StoryCinematic({ currentIndex }: StoryCinematicProps) {
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
       <AnimatePresence>
-        <motion.div
-          key={currentIndex}
-          className="absolute inset-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1, ease: "easeInOut" }}
-        >
+        <RippleSlide key={currentIndex} reducedMotion={reducedMotion}>
           {chapter ? <ChapterSlide chapter={chapter} reducedMotion={reducedMotion} /> : <CoverSlide />}
-        </motion.div>
+        </RippleSlide>
       </AnimatePresence>
     </div>
   );

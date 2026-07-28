@@ -11,7 +11,6 @@ import {
   acquireScrollLock,
   releaseScrollLock,
   introRevealControl,
-  storyGalleryOverlayControl,
 } from "./store";
 
 const CosmicCanvas = dynamic(() => import("./CosmicCanvas"), { ssr: false });
@@ -659,11 +658,7 @@ export default function CinematicIntro() {
 
               <div className="pointer-events-auto flex flex-col items-center gap-4 sm:flex-row md:items-start md:justify-start">
                 <button
-                  // The story-gallery temple scene is a hidden overlay, not
-                  // a normal scroll-flow section (see StoryGallerySection.tsx
-                  // and storyGalleryOverlayControl's own comment in store.ts)
-                  // — this reveals it directly instead of scrolling to it.
-                  onClick={() => storyGalleryOverlayControl.open?.()}
+                  onClick={() => goTo("#story-gallery")}
                   className="group relative shrink-0 rounded-full p-[1.5px] transition-transform duration-300 hover:scale-105"
                   style={{
                     background: "linear-gradient(135deg, #3965e5, #7c5cfc, #db45d7)",

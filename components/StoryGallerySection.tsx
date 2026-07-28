@@ -7,7 +7,7 @@ import { X } from "lucide-react";
 import BookPreview3D from "./StoryGallery3D/BookPreview3D";
 import BookLandingScene from "./StoryGallery3D/BookLandingScene";
 import StoryCinematic from "./StoryCinematic";
-import { galleryCaptureControl, acquireScrollLock, releaseScrollLock, storyGalleryOverlayControl } from "./store";
+import { galleryCaptureControl, acquireScrollLock, releaseScrollLock } from "./store";
 import { storyChapters } from "./storyData";
 
 // Slide 0 is the title/cover; slides 1..N are storyChapters[0..N-1] — same
@@ -19,8 +19,8 @@ const TOTAL_SLIDES = storyChapters.length + 1;
 // actual pixels (sharp). Also each image's native aspect ratio and roughly
 // how wide the podium's stone top reads as a fraction of the image's own
 // width, used to size the book preview proportionally to it.
-const PODIUM_DESKTOP = { x: 0.5007, y: 0.534, widthFrac: 0.207 };
-const PODIUM_PHONE = { x: 0.4995, y: 0.5532, widthFrac: 0.2125 };
+const PODIUM_DESKTOP = { x: 0.5007, y: 0.528, widthFrac: 0.155 };
+const PODIUM_PHONE = { x: 0.515, y: 0.541, widthFrac: 0.12 };
 const BACKDROP_DESKTOP_ASPECT = 1448 / 1086;
 const BACKDROP_PHONE_ASPECT = 941 / 1672;
 const MD_BREAKPOINT = 768; // matches the md: Tailwind breakpoint used below
@@ -33,7 +33,7 @@ const MD_BREAKPOINT = 768; // matches the md: Tailwind breakpoint used below
 // reading as cut-off/undersized rather than a deliberate hero element.
 // Flooring it to a fraction of the viewport itself keeps the book a
 // legible, tappable size on phones without touching how it's positioned.
-const MOBILE_MIN_BOOK_WIDTH_FRAC = 0.4;
+const MOBILE_MIN_BOOK_WIDTH_FRAC = 0.24;
 
 // The book preview sits in a box shaped like the book itself (aspect
 // 190/280) — see BookPreview3D.tsx's wrapper — but BookPreview3D's own
@@ -148,13 +148,6 @@ export default function StoryGallerySection() {
   // once BookLandingScene reports the cover is opening (handleLandingOpened).
   const landingWrapRef = useRef<HTMLDivElement>(null);
 
-  // Whether the whole temple/podium scene is showing at all — this section
-  // is hidden by default (not reachable by scrolling; see the root
-  // <section>'s fixed/opacity styling below) and only appears as a full-
-  // screen overlay once storyGalleryOverlayControl.open() fires, wired up
-  // to the hero's "Noorva Book" button and the header's "Story" link.
-  const [overlayOpen, setOverlayOpen] = useState(false);
-  const overlayOpenRef = useRef(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [entered, setEntered] = useState(false);
   const [showLanding, setShowLanding] = useState(false);
@@ -201,14 +194,9 @@ export default function StoryGallerySection() {
     if (reducedMotionRef.current) return;
     const el = sectionRef.current;
     if (!el) return;
-    // This section is a fixed inset-0 overlay (see the root <section> below)
-    // rather than normal scroll-flow content now, so it geometrically
-    // overlaps the viewport — and this observer reports "intersecting" —
-    // from the moment it mounts, whether or not overlayOpen is actually
-    // true yet. That's fine: it just means BookLandingScene now warms up
-    // essentially on page load instead of waiting for scroll proximity,
-    // which is exactly what's wanted once the scene can be reached
-    // immediately from the hero rather than only after scrolling to it.
+    // Normal scroll-flow section now, sitting right after the hero — warms
+    // up BookLandingScene once the visitor scrolls within 600px of it,
+    // well before they could plausibly reach the "open" click.
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -225,32 +213,6 @@ export default function StoryGallerySection() {
   useEffect(() => {
     enteredRef.current = entered;
   }, [entered]);
-
-  useEffect(() => {
-    overlayOpenRef.current = overlayOpen;
-  }, [overlayOpen]);
-
-  // Registered for CinematicIntro's "Noorva Book" button and Header's
-  // "Story" nav link (see storyGalleryOverlayControl's own comment) — both
-  // just need to reveal the overlay; scroll gets frozen on the background
-  // page for the same reason the reader itself freezes it (acquireScrollLock),
-  // under a distinct owner key so the two locks release independently
-  // (closing the reader shouldn't also drop the outer overlay's lock, and
-  // vice versa).
-  useEffect(() => {
-    storyGalleryOverlayControl.open = () => {
-      acquireScrollLock("story-gallery-overlay");
-      setOverlayOpen(true);
-    };
-    return () => {
-      storyGalleryOverlayControl.open = null;
-    };
-  }, []);
-
-  function handleCloseOverlay() {
-    setOverlayOpen(false);
-    releaseScrollLock("story-gallery-overlay");
-  }
 
   useEffect(() => {
     // `thenClose`: used when backing out of chapter one by scroll — crossfades
@@ -353,14 +315,7 @@ export default function StoryGallerySection() {
     }
 
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== "Escape") return;
-      if (enteredRef.current) {
-        closeBook();
-      } else if (overlayOpenRef.current) {
-        // Reader isn't open yet — just the podium stage — so Escape backs
-        // all the way out of the overlay instead of doing nothing.
-        handleCloseOverlay();
-      }
+      if (e.key === "Escape" && enteredRef.current) closeBook();
     }
 
     function onTouchStart(e: TouchEvent) {
@@ -383,13 +338,11 @@ export default function StoryGallerySection() {
     }
 
     // Lets nav links (Home/Join/CTAs) escape the book instantly even if it's
-    // open mid-read, or back out of the podium overlay entirely if the
-    // reader itself was never opened — otherwise clicking e.g. "Join" while
-    // this overlay is showing would try to Lenis-scroll a background page
-    // that's still scroll-locked underneath it.
+    // open mid-read — otherwise clicking e.g. "Join" while the reader is
+    // open would try to Lenis-scroll a page that's still scroll-locked
+    // underneath it.
     galleryCaptureControl.release = () => {
       if (enteredRef.current) closeBook(true);
-      else if (overlayOpenRef.current) handleCloseOverlay();
     };
 
     const overlayEl = overlayRef.current;
@@ -423,7 +376,6 @@ export default function StoryGallerySection() {
   useEffect(() => {
     return () => {
       if (enteredRef.current) releaseScrollLock("story-gallery");
-      if (overlayOpenRef.current) releaseScrollLock("story-gallery-overlay");
     };
   }, []);
 
@@ -633,40 +585,13 @@ export default function StoryGallerySection() {
     <section
       id="story-gallery"
       ref={sectionRef}
-      // Hidden by default and pulled out of normal scroll flow — this used
-      // to be a plain in-flow section reachable by scrolling past the hero;
-      // now it only appears when storyGalleryOverlayControl.open() fires
-      // (the hero's "Noorva Book" button, the header's "Story" link), as a
-      // full-screen overlay on top of whatever the visitor was already
-      // looking at. overflow-y-auto (not a hard viewport clip) because the
-      // stage below is deliberately taller than 100vh — see its own comment.
-      // z-[35] sits above ordinary page content but below Header's own nav
-      // pill (z-40/50), so navigation stays reachable while this is open,
-      // matching the same relationship the reader/landing layers below
-      // already have with Header.
-      className="fixed inset-0 z-[35] w-full overflow-x-hidden overflow-y-auto bg-[color:var(--bg)]/70 transition-opacity duration-500 ease-out"
-      style={{
-        opacity: overlayOpen ? 1 : 0,
-        visibility: overlayOpen ? "visible" : "hidden",
-        pointerEvents: overlayOpen ? "auto" : "none",
-      }}
+      // Normal in-flow section now, sitting right after the hero — not a
+      // hidden overlay. overflow-x-hidden guards the stage's own taller-
+      // than-viewport art (see its own comment) from adding horizontal
+      // scroll on any axis it doesn't need.
+      className="relative w-full overflow-x-hidden bg-[color:var(--bg)]"
     >
       <div className="pointer-events-none absolute inset-0 vignette-edge" />
-
-      {/* Close the whole overlay and return to wherever the visitor was —
-          only while just the podium stage is showing; once the book's
-          actually open, the reader below has its own close button (and
-          closing it lands back here, where this button reappears). */}
-      {!entered && (
-        <button
-          type="button"
-          onClick={handleCloseOverlay}
-          aria-label="Close the Noorva story"
-          className="fixed top-20 right-3 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/70 text-white/70 backdrop-blur-xl transition-colors duration-300 hover:text-[color:var(--accent-warm)] sm:right-4 md:top-24 md:right-6 md:h-10 md:w-10"
-        >
-          <X className="h-4 w-4" strokeWidth={1.75} />
-        </button>
-      )}
 
       {/* Stage — public/book_bg_desktop.png (book_bg_mobile.png below md) is
           a temple chamber with a stone podium built into the art itself,
