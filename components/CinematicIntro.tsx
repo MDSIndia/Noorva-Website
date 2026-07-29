@@ -151,6 +151,30 @@ const MOBILE_WINDOW_COORDS: [number, number][] = [[0.9097,0.237],[0.9086,0.1231]
 const DESKTOP_BUILDING_LIGHTS = toBuildingLights(mulberry32(1337), DESKTOP_WINDOW_COORDS);
 const MOBILE_BUILDING_LIGHTS = toBuildingLights(mulberry32(4242), MOBILE_WINDOW_COORDS);
 
+// A scattered starfield painted into the open sky above the skyline — the
+// photo's own upper band is mostly plain dark sky/nebula haze with nothing
+// else going on there, unlike the busy lower two-thirds full of buildings/
+// the phone/the globe, so it's generated (not extracted from real pixels
+// like the building lights above) rather than needing anything hand-picked.
+// Confined to a band well above where either photo's buildings/phone start
+// (HERO_PHONE_SOURCE's own y1 is 0.205/0.187) so stars never land on top of
+// skyline silhouettes or get masked out with the phone-hole cutout for
+// nothing.
+type Star = { x: number; y: number; size: number; duration: number; delay: number };
+
+function toStars(rand: () => number, count: number): Star[] {
+  return Array.from({ length: count }, () => ({
+    x: 0.03 + rand() * 0.94,
+    y: 0.015 + rand() * 0.145,
+    size: 1 + rand() * 1.6,
+    duration: 2.6 + rand() * 3.4,
+    delay: rand() * 6,
+  }));
+}
+
+const DESKTOP_STARS = toStars(mulberry32(2718), 90);
+const MOBILE_STARS = toStars(mulberry32(9001), 60);
+
 export default function CinematicIntro() {
   const containerRef = useRef<HTMLDivElement>(null);
   const revealRef = useRef<HTMLDivElement>(null);
@@ -171,6 +195,16 @@ export default function CinematicIntro() {
   );
   const [mobileLightPos, setMobileLightPos] = useState<{ x: number; y: number }[]>(
     () => MOBILE_WINDOW_COORDS.map(([x, y]) => ({ x, y }))
+  );
+  // Star positions, remapped the same way — a generated (not extracted)
+  // layer, but still needs the same object-fit: cover correction so the
+  // sky band it's confined to tracks the actual photo rather than a plain
+  // container-relative percentage.
+  const [desktopStarPos, setDesktopStarPos] = useState<{ x: number; y: number }[]>(
+    () => DESKTOP_STARS.map((s) => ({ x: s.x, y: s.y }))
+  );
+  const [mobileStarPos, setMobileStarPos] = useState<{ x: number; y: number }[]>(
+    () => MOBILE_STARS.map((s) => ({ x: s.x, y: s.y }))
   );
   // Bumped on every recompute and baked into the mask ids below. Chromium
   // doesn't reliably repaint a CSS `mask-image: url(#id)` when the
@@ -200,6 +234,12 @@ export default function CinematicIntro() {
       );
       setMobileLightPos(
         MOBILE_WINDOW_COORDS.map(([x, y]) => mapCoverPoint(width, height, HERO_PHONE_SOURCE.mobile.imgW, HERO_PHONE_SOURCE.mobile.imgH, x, y))
+      );
+      setDesktopStarPos(
+        DESKTOP_STARS.map((s) => mapCoverPoint(width, height, HERO_PHONE_SOURCE.desktop.imgW, HERO_PHONE_SOURCE.desktop.imgH, s.x, s.y))
+      );
+      setMobileStarPos(
+        MOBILE_STARS.map((s) => mapCoverPoint(width, height, HERO_PHONE_SOURCE.mobile.imgW, HERO_PHONE_SOURCE.mobile.imgH, s.x, s.y))
       );
       setMaskVersion((v) => v + 1);
     };
@@ -443,6 +483,58 @@ export default function CinematicIntro() {
             ))}
           </div>
 
+          {/* Cosmos — a scattered starfield twinkling in the open sky above
+              the skyline (see DESKTOP_STARS/MOBILE_STARS above for why this
+              is generated rather than extracted like the window lights).
+              Masked with the same phone-hole cutout so none land on the
+              phone; each star gets its own soft glow and randomized
+              twinkle duration/delay so the sky reads as alive rather than
+              a static overlay. */}
+          <div
+            className="absolute inset-0 z-[1] hidden overflow-hidden pointer-events-none md:block"
+            style={{
+              WebkitMaskImage: `url(#ci-phone-hole-desktop-${maskVersion})`,
+              maskImage: `url(#ci-phone-hole-desktop-${maskVersion})`,
+            }}
+          >
+            {DESKTOP_STARS.map((s, i) => (
+              <span
+                key={i}
+                className="hero-star"
+                style={{
+                  left: `${(desktopStarPos[i]?.x ?? s.x) * 100}%`,
+                  top: `${(desktopStarPos[i]?.y ?? s.y) * 100}%`,
+                  width: `${s.size}px`,
+                  height: `${s.size}px`,
+                  animationDuration: `${s.duration}s`,
+                  animationDelay: `${s.delay}s`,
+                }}
+              />
+            ))}
+          </div>
+          <div
+            className="absolute inset-0 z-[1] block overflow-hidden pointer-events-none md:hidden"
+            style={{
+              WebkitMaskImage: `url(#ci-phone-hole-mobile-${maskVersion})`,
+              maskImage: `url(#ci-phone-hole-mobile-${maskVersion})`,
+            }}
+          >
+            {MOBILE_STARS.map((s, i) => (
+              <span
+                key={i}
+                className="hero-star"
+                style={{
+                  left: `${(mobileStarPos[i]?.x ?? s.x) * 100}%`,
+                  top: `${(mobileStarPos[i]?.y ?? s.y) * 100}%`,
+                  width: `${s.size}px`,
+                  height: `${s.size}px`,
+                  animationDuration: `${s.duration}s`,
+                  animationDelay: `${s.delay}s`,
+                }}
+              />
+            ))}
+          </div>
+
           {/* Floating phone — same photo, cropped to just the phone via
               mask-image, animated with a slow zoom in/out pulse anchored to
               its own base (see transformOrigin) so only the phone itself
@@ -612,6 +704,26 @@ export default function CinematicIntro() {
             .bl-v3 { animation-name: bl-flicker-3; }
             .bl-v4 { animation-name: bl-flicker-4; }
             .bl-v5 { animation-name: bl-flicker-5; }
+            /* A soft glowing point drawn straight onto the photo's own open
+               sky, unlike .building-light above (which reveals real pixels
+               already in the photo, so its own color always matches) — this
+               paints new light, hence the radial-gradient glow rather than
+               a flat dot, so it reads as a distant star rather than a
+               drawn-on circle. */
+            .hero-star {
+              position: absolute;
+              border-radius: 50%;
+              transform: translate(-50%, -50%);
+              background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(200,215,255,0.55) 45%, rgba(200,215,255,0) 75%);
+              animation-name: hero-star-twinkle;
+              animation-timing-function: ease-in-out;
+              animation-iteration-count: infinite;
+              will-change: opacity, transform;
+            }
+            @keyframes hero-star-twinkle {
+              0%, 100% { opacity: 0.25; transform: translate(-50%, -50%) scale(0.85); }
+              50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+            }
           `}</style>
 
           {/* Text overlay — bottom-anchored and centered on mobile (the
