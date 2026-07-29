@@ -16,12 +16,24 @@ const TOTAL_SLIDES = storyChapters.length + 1;
 
 // The podium's own top-center point (where the book preview should rest),
 // as a fraction (0-1) of each backdrop's full image — found by probing the
-// actual pixels (sharp). Also each image's native aspect ratio and roughly
-// how wide the podium's stone top reads as a fraction of the image's own
-// width, used to size the book preview proportionally to it.
-const PODIUM_DESKTOP = { x: 0.5007, y: 0.528, widthFrac: 0.155 };
-const PODIUM_PHONE = { x: 0.515, y: 0.541, widthFrac: 0.12 };
-const BACKDROP_DESKTOP_ASPECT = 1448 / 1086;
+// actual pixels (sharp), specifically the shadow crease where the flat
+// golden disc meets the carved cylindrical body (a clean near-black dip in
+// brightness, unlike the disc/body surfaces themselves which are too
+// ornately engraved for a plain brightness scan to find their own edges).
+// Also each image's native aspect ratio and roughly how wide the podium's
+// own flat top reads as a fraction of the image's width, used to size the
+// book preview proportionally to it (see BOOK_FIT_MARGIN etc. below for how
+// that turns into an actual render width).
+// y is intentionally well above the measured shadow crease itself (~0.583)
+// — BOOK_BOTTOM_GAP_FRAC below already pushes the anchor down from this
+// point to compensate for BookPreview3D's own inset margin, and using the
+// crease directly double-counted that offset, sinking the visible book
+// down into the podium's carved side instead of resting on its flat top
+// (confirmed on-screen: the book's rendered bottom edge, at every rotation
+// angle, landed ~6% of the image's height below the crease).
+const PODIUM_DESKTOP = { x: 0.4994, y: 0.51, widthFrac: 0.148 };
+const PODIUM_PHONE = { x: 0.4995, y: 0.51, widthFrac: 0.235 };
+const BACKDROP_DESKTOP_ASPECT = 1672 / 941;
 const BACKDROP_PHONE_ASPECT = 941 / 1672;
 const MD_BREAKPOINT = 768; // matches the md: Tailwind breakpoint used below
 
@@ -594,8 +606,9 @@ export default function StoryGallerySection() {
       <div className="pointer-events-none absolute inset-0 vignette-edge" />
 
       {/* Stage — public/book_bg_desktop.png (book_bg_mobile.png below md) is
-          a temple chamber with a stone podium built into the art itself,
-          filling the full viewport. The heading and "Click to Open" button
+          a golden ceremonial podium ringed by torch-lit columns, built into
+          the art itself, filling the full viewport. The heading and "Click
+          to Open" button
           overlay the bottom of this same image (a scrim behind them keeps
           them legible) rather than sitting in their own flow block above
           it — that previously pushed the image mostly below the fold,
@@ -609,20 +622,20 @@ export default function StoryGallerySection() {
           percentage position would (see that hook's own comment, and
           FeaturesSection.tsx's useScreenRect for the same fix applied to a
           full rectangle instead of a point). Taller than the viewport
-          (120vh) for a more cinematic, zoomed-in crop of the temple art;
+          (120vh) for a more cinematic, zoomed-in crop of the podium art;
           the outer <section> scrolls internally (overflow-y-auto above) so
           the heading/CTA anchored to its bottom stays reachable. */}
       <div ref={stageRef} className="relative z-10 h-[120vh] w-full">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/book_bg_mobile.png"
-          alt="A stone podium inside an ancient torch-lit temple chamber"
+          alt="A golden ceremonial podium surrounded by torch-lit stone columns"
           className="absolute inset-0 block h-full w-full object-cover md:hidden"
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/book_bg_desktop.png"
-          alt="A stone podium inside an ancient torch-lit temple chamber"
+          alt="A golden ceremonial podium surrounded by torch-lit stone columns"
           className="absolute inset-0 hidden h-full w-full object-cover md:block"
         />
 

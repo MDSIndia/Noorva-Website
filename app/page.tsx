@@ -4,6 +4,7 @@ import CinematicIntro from "@/components/CinematicIntro";
 import Header from "@/components/Header";
 import FeaturesSection from "@/components/FeaturesSection";
 import StoryGallerySection from "@/components/StoryGallerySection";
+import AboutNoorvaSection from "@/components/AboutNoorvaSection";
 import ClosingSection from "@/components/ClosingSection";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
 import CosmicBackground from "@/components/CosmicBackground";
@@ -18,6 +19,7 @@ export default function Home() {
       <CinematicIntro />
       <StoryGallerySection />
       <FeaturesSection />
+      <AboutNoorvaSection />
       <ClosingSection />
     </>
   );
