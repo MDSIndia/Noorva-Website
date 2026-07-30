@@ -269,7 +269,7 @@ export default function PhilosophySection() {
   }, [progress]);
 
   return (
-    <section id="philosophy" className="relative w-full overflow-hidden bg-[color:var(--bg)] py-28 md:py-36">
+    <section id="philosophy" className="relative w-full overflow-hidden bg-[color:var(--bg)]/70 py-28 md:py-36">
       <div className="pointer-events-none absolute -top-20 right-0 h-[600px] w-[700px] translate-x-1/4">
         <div
           className="h-full w-full rounded-full opacity-70 blur-[120px]"

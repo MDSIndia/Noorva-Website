@@ -18,8 +18,17 @@ const CosmicCanvas = dynamic(() => import("./CosmicCanvas"), { ssr: false });
 // CosmicCanvas's own star-blast resolves into a calm resting field by its
 // internal progress ~0.45 (see CosmicCanvas.tsx). Scaling our 0-1 reveal
 // progress into that range means the reveal can take however long feels
-// right while always finishing on the same settled, calm frame.
-const BLAST_SETTLE_P = 0.15;
+// right while always finishing on the same settled, calm frame. This had
+// drifted to 0.15 — well short of 0.45 — which meant the reveal tween
+// finished (and stopped updating scrollProgress.value) while the burst of
+// 3600 explosion particles were still ~83% of the way through their
+// outward flight and fully opaque; since CosmicCanvas keeps rendering every
+// frame forever afterward, that mid-flight burst stayed frozen in place
+// indefinitely instead of ever fading into the calm resting field — visible
+// through the hero photo's own transparent sky (verified: its alpha
+// channel isn't uniformly opaque, since the sky is meant to reveal
+// whatever cosmic backdrop sits behind it).
+const BLAST_SETTLE_P = 0.45;
 const REVEAL_DURATION = 2.0; // seconds, click -> fully settled
 
 // The hero photo + text fade in over the back half of the reveal, once the
@@ -189,6 +198,15 @@ export default function CinematicIntro() {
     return () => clearTimeout(t);
   }, []);
 
+  // Once the blast has faded to its calm resting frame (see
+  // BLAST_SETTLE_P), everything CosmicCanvas draws is at opacity 0 — so
+  // continuing frameloop="always" forever after just re-renders an
+  // invisible scene every frame for no reason. useLiveProgress's own
+  // exponential smoothing needs a little real time to catch up to the
+  // frozen target after the tween ends, hence the extra buffer past
+  // REVEAL_DURATION before actually pausing it.
+  const [canvasSettled, setCanvasSettled] = useState(false);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -268,6 +286,7 @@ export default function CinematicIntro() {
     tlRef.current?.eventCallback("onComplete", () => {
       releaseScrollLock("cosmic-intro");
       startTyping();
+      setTimeout(() => setCanvasSettled(true), 1000);
     });
     tlRef.current?.play();
   }, [startTyping]);
@@ -293,7 +312,7 @@ export default function CinematicIntro() {
       style={{ zIndex: 30 }}
     >
       <div className="absolute inset-0 overflow-hidden">
-        {canvasMounted && <CosmicCanvas frameloop={inView && revealStarted ? "always" : "never"} />}
+        {canvasMounted && <CosmicCanvas frameloop={inView && revealStarted && !canvasSettled ? "always" : "never"} />}
 
         {/* Click hint — outside the reveal wrapper below since it's what's
             visible BEFORE the reveal, and fades out on its own on click. */}

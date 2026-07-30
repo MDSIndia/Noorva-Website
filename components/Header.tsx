@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { label: "Home", target: "home" },
   { label: "Story", target: "#story-gallery" },
   { label: "Join", target: "#closing" },
+  { label: "About Noorva", target: "#about-noorva" },
   { label: "About MDS", target: "https://mdsindia.in", external: true },
 ] as const;
 

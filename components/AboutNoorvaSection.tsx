@@ -92,13 +92,14 @@ export default function AboutNoorvaSection() {
     <section
       id="about-noorva"
       ref={sectionRef}
-      className="relative w-full overflow-hidden bg-[color:var(--bg)] py-28 md:py-36"
+      className="relative w-full overflow-hidden bg-[color:var(--bg)]/70 py-28 md:py-36"
     >
-      {/* Background — the site's own starfield (CosmicBackground) already
-          shows through since nothing here is opaque; these are local
-          accents layered on top: drifting blurred orbs, a couple of very
-          faint diagonal light rays, and a scattered particle field. All
-          slow, all pointer-events-none. */}
+      {/* Background — /70 (not fully opaque) so the site's own moving
+          starfield (CosmicBackground, fixed behind every section) actually
+          shows through, same convention as ClosingSection's own bg-[...]/70
+          — these are local accents layered on top of that: drifting
+          blurred orbs, a couple of very faint diagonal light rays, and a
+          scattered particle field. All slow, all pointer-events-none. */}
       <div className="pointer-events-none absolute -top-32 left-[8%] h-[520px] w-[520px]">
         <div className="h-full w-full rounded-full bg-[color:var(--accent-1)]/15 blur-[130px] animate-float-slow" />
       </div>
@@ -175,8 +176,8 @@ export default function AboutNoorvaSection() {
               <Image
                 src="/phone-in-hand-trimmed.png"
                 alt="A hand holding a phone with Noorva's companion mark glowing on the screen"
-                width={525}
-                height={475}
+                width={1525}
+                height={1475}
                 priority
                 className="h-auto w-[360px] md:w-[440px]"
                 style={{ filter: "drop-shadow(0 20px 45px rgba(0,0,0,0.55)) drop-shadow(0 0 40px rgba(124,92,252,0.45))" }}
