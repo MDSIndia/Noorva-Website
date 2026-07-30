@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import { acquireScrollLock, releaseScrollLock, introRevealControl } from "./store";
 
 const TEXT = "Welcome to Noorva.";
@@ -173,8 +174,42 @@ export default function WelcomeOverlay() {
             style={{ background: "radial-gradient(ellipse at center, rgba(124,92,252,0.12), transparent 60%)" }}
           />
 
+          {/* Nebula wisps — soft diagonal streaks bleeding in from the left
+              (violet) and right (blue) edges, same painterly technique as
+              the hero photo's own nebula streaks, so this gate reads as
+              part of the same cosmos rather than a plain black screen. */}
+          <div
+            className="pointer-events-none absolute -left-1/4 top-0 h-full w-1/2 opacity-60 blur-3xl"
+            style={{
+              background: "linear-gradient(200deg, transparent 10%, rgba(124,92,252,0.35) 45%, transparent 80%)",
+              transform: "rotate(-8deg)",
+            }}
+          />
+          <div
+            className="pointer-events-none absolute -right-1/4 top-0 h-full w-1/2 opacity-60 blur-3xl"
+            style={{
+              background: "linear-gradient(160deg, transparent 10%, rgba(79,168,213,0.35) 45%, transparent 80%)",
+              transform: "rotate(8deg)",
+            }}
+          />
+
           <div className="relative mb-8 flex flex-col items-center">
             <div className="relative flex h-20 w-20 items-center justify-center md:h-24 md:w-24">
+              {/* Concentric rings rippling outward from the mark, well
+                  past its own footprint — a sonar-like signature of a
+                  presence, not just a glow sitting behind the logo. */}
+              {[0, 1, 2, 3].map((i) => (
+                <motion.div
+                  key={i}
+                  className="pointer-events-none absolute -z-10 rounded-full border"
+                  style={{
+                    borderColor: "rgba(124,92,252,0.22)",
+                    inset: -(90 + i * 90),
+                  }}
+                  animate={{ opacity: [0.5, 0.2, 0.5], scale: [1, 1.04, 1] }}
+                  transition={{ duration: 5 + i, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
+                />
+              ))}
               <motion.div
                 className="pointer-events-none absolute inset-[-8%] -z-10 rounded-full blur-3xl"
                 style={{ background: "radial-gradient(circle, rgba(124,92,252,0.55), transparent 70%)" }}
@@ -202,27 +237,30 @@ export default function WelcomeOverlay() {
 
           <AnimatePresence>
             {phase === "ready" && (
-              <motion.p
+              <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, ease: "easeOut" }}
-                className="relative mt-4 px-8 text-center text-xs font-medium uppercase tracking-[0.25em] text-white/90 md:text-sm"
+                className="relative mt-4 flex flex-col items-center gap-6"
               >
-                <span className="relative inline-block overflow-hidden px-1 py-1">
-                  <motion.span
-                    className="absolute inset-y-0 left-0 w-[40%]"
-                    animate={{ x: ["-140%", "240%"] }}
-                    transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-                    style={{
-                      background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 20%, rgba(255,255,255,0.38) 45%, rgba(255,255,255,0.12) 80%, transparent 100%)",
-                      filter: "blur(0.6px)",
-                    }}
-                  />
-                  <span className="relative z-10 text-white/90">
-                    The future of Human-AI companionship
+                <p className="px-8 text-center text-xs font-medium uppercase tracking-[0.25em] text-white/90 md:text-sm">
+                  <span className="relative inline-block overflow-hidden px-1 py-1">
+                    <motion.span
+                      className="absolute inset-y-0 left-0 w-[40%]"
+                      animate={{ x: ["-140%", "240%"] }}
+                      transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+                      style={{
+                        background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 20%, rgba(255,255,255,0.38) 45%, rgba(255,255,255,0.12) 80%, transparent 100%)",
+                        filter: "blur(0.6px)",
+                      }}
+                    />
+                    <span className="relative z-10 text-white/90">
+                      The future of Human-AI companionship
+                    </span>
                   </span>
-                </span>
-              </motion.p>
+                </p>
+                <div className="h-px w-16 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+              </motion.div>
             )}
           </AnimatePresence>
 
@@ -235,9 +273,14 @@ export default function WelcomeOverlay() {
                 className="absolute bottom-14 flex flex-col items-center gap-2"
               >
                 <span className="text-[10px] font-light uppercase tracking-[0.44em] text-white/40">
-                  Click to open
+                  Click to enter
                 </span>
-                <div className="h-8 w-px animate-pulse bg-gradient-to-b from-white/25 to-transparent" />
+                <motion.div
+                  animate={{ y: [0, 6, 0] }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <ChevronDown className="h-4 w-4 text-white/40" strokeWidth={1.5} />
+                </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
