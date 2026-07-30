@@ -158,6 +158,36 @@ export default function CinematicIntro() {
   // loop once the section scrolls out of view (it's the biggest lag source
   // once the user is deep into the story chapters below).
   const [inView, setInView] = useState(true);
+  // Also don't start rendering frames until the click reveal actually fires.
+  // cosmic-intro is the very first section, so `inView` is already true on
+  // initial mount, before the user has clicked anything — without this, the
+  // WebGL scene (6000-star field, camera rig, fog) renders every frame the
+  // entire time WelcomeOverlay's own typewriter is running on top of it
+  // (WelcomeOverlay is opaque, so none of this is even visible yet), which
+  // was competing with that typewriter's setInterval ticks for main-thread
+  // time and made the "Welcome to Noorva" text visibly stutter/lag.
+  const [revealStarted, setRevealStarted] = useState(false);
+
+  // Mounting CosmicCanvas at all — separate from frameloop above — pays a
+  // real one-time cost: dynamically importing Three.js/R3F, creating the
+  // WebGL context, and compiling every material's shaders (confirmed via
+  // CPU profiling: getProgramInfoLog/texSubImage2D during this mount was
+  // the single largest source of main-thread time on page load, over 1s of
+  // it). That cost lands in whatever main-thread turn the mount happens to
+  // run in — if that's the same turn as WelcomeOverlay's own typewriter
+  // re-renders, the two visibly collide and the letter-by-letter reveal
+  // stutters even though the canvas itself is still invisible underneath
+  // it. requestIdleCallback is NOT a reliable way to defer past that
+  // window: it fires during idle *gaps*, and the typewriter itself is
+  // bursty (idle between each ~85ms tick), so idle callback can fire almost
+  // immediately and still land mid-typing. A fixed delay comfortably past
+  // WelcomeOverlay's own typing duration (19 chars * 85ms ≈ 1.6s) is what
+  // actually guarantees no overlap.
+  const [canvasMounted, setCanvasMounted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setCanvasMounted(true), 2200);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -230,6 +260,10 @@ export default function CinematicIntro() {
   const handleReveal = useCallback(() => {
     if (hasPlayedRef.current) return;
     hasPlayedRef.current = true;
+    // Guarantees the canvas is mounted by the time this plays even if the
+    // user clicks before the idle-deferred mount above has fired on its own.
+    setCanvasMounted(true);
+    setRevealStarted(true);
     gsap.to("#ci-click-hint", { opacity: 0, duration: 0.3 });
     tlRef.current?.eventCallback("onComplete", () => {
       releaseScrollLock("cosmic-intro");
@@ -259,7 +293,7 @@ export default function CinematicIntro() {
       style={{ zIndex: 30 }}
     >
       <div className="absolute inset-0 overflow-hidden">
-        <CosmicCanvas frameloop={inView ? "always" : "never"} />
+        {canvasMounted && <CosmicCanvas frameloop={inView && revealStarted ? "always" : "never"} />}
 
         {/* Click hint — outside the reveal wrapper below since it's what's
             visible BEFORE the reveal, and fades out on its own on click. */}

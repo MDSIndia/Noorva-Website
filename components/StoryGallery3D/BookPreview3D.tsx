@@ -24,6 +24,26 @@ function SpinningBook({ spinRef }: { spinRef: React.RefObject<boolean> }) {
 export default function BookPreview3D() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
+  // Mounting the Canvas at all — separate from the inView-gated frameloop
+  // below — pays a real one-time cost: creating the WebGL context and
+  // compiling the book material's shaders (confirmed via CPU profiling:
+  // getProgramInfoLog/texSubImage2D during this mount was the single
+  // largest source of main-thread time on page load). This section sits
+  // immediately below the first (h-screen) section, so at scroll position
+  // 0 on initial page load this wrapper already falls within the
+  // IntersectionObserver's 200px rootMargin — meaning inView (and so this
+  // mount) would otherwise fire immediately, competing with WelcomeOverlay's
+  // own typewriter reveal for main-thread time. requestIdleCallback is NOT
+  // a reliable way to defer past that window: it fires during idle *gaps*,
+  // and the typewriter itself is bursty (idle between each ~85ms tick), so
+  // idle callback can fire almost immediately and still land mid-typing. A
+  // fixed delay comfortably past WelcomeOverlay's own typing duration
+  // (19 chars * 85ms ≈ 1.6s) is what actually guarantees no overlap.
+  const [canvasReady, setCanvasReady] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setCanvasReady(true), 2200);
+    return () => clearTimeout(t);
+  }, []);
   // A ref, not state — only ever read inside useFrame, so there's no need
   // to trigger a re-render (and a plain useEffect setState would anyway,
   // since matchMedia isn't available during SSR and can't be read at
@@ -47,7 +67,8 @@ export default function BookPreview3D() {
 
   return (
     <div ref={wrapRef} className="h-full w-full">
-      <Scene 
+      {canvasReady && (
+      <Scene
         frameloop={inView ? "always" : "never"}
         // A low floor, not the operating distance — CameraFit takes
         // Math.max(cameraZ, ...dynamically-computed fit distances), so this
@@ -68,6 +89,7 @@ export default function BookPreview3D() {
       >
         <SpinningBook spinRef={spinRef} />
       </Scene>
+      )}
     </div>
   );
 }

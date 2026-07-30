@@ -2,6 +2,7 @@
 
 import CinematicIntro from "@/components/CinematicIntro";
 import Header from "@/components/Header";
+import PhilosophySection from "@/components/PhilosophySection";
 import FeaturesSection from "@/components/FeaturesSection";
 import StoryGallerySection from "@/components/StoryGallerySection";
 import AboutNoorvaSection from "@/components/AboutNoorvaSection";
@@ -17,6 +18,7 @@ export default function Home() {
       <WelcomeOverlay />
       <Header />
       <CinematicIntro />
+      <PhilosophySection />
       <StoryGallerySection />
       <FeaturesSection />
       <AboutNoorvaSection />

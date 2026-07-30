@@ -7,7 +7,7 @@ import { ChevronDown } from "lucide-react";
 import { acquireScrollLock, releaseScrollLock, introRevealControl } from "./store";
 
 const TEXT = "Welcome to Noorva.";
-const TYPE_INTERVAL_MS = 85;
+const TYPE_INTERVAL_MS = 120;
 
 const FEMALE_NAME_HINTS = ["female", "zira", "samantha", "aria", "heera", "victoria", "karen", "susan", "tessa", "moira"];
 
@@ -47,7 +47,9 @@ export default function WelcomeOverlay() {
   const [revealCount, setRevealCount] = useState(0);
   const [phase, setPhase] = useState<Phase>("typing");
   const phaseRef = useRef<Phase>(phase);
-  phaseRef.current = phase;
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   // Lock page scroll while the overlay is up — shared with CinematicIntro's
   // own gate via a reference-counted lock, since either one dismissing
@@ -61,19 +63,36 @@ export default function WelcomeOverlay() {
     return () => releaseScrollLock("welcome-overlay");
   }, [phase]);
 
-  // Typewriter reveal — runs on a fixed pace independent of whether speech
-  // actually plays, so the intro never hangs if TTS is unavailable/blocked.
+  // Typewriter reveal — driven by elapsed wall-clock time on a
+  // requestAnimationFrame loop, not a fixed setInterval tick. A timer-based
+  // reveal that increments by one character per callback visibly stutters
+  // the instant anything else (a WebGL frame, an image decode) briefly
+  // blocks the main thread: the callback still fires late, but late by an
+  // unpredictable amount each time, so characters land in an uneven
+  // rhythm instead of a steady one. Computing the target character count
+  // from actual elapsed time means a delayed frame just catches up to
+  // wherever it should already be — the pacing stays locked to the clock
+  // rather than to how many callbacks happened to fire.
   useEffect(() => {
     if (phase !== "typing") return;
-    const id = setInterval(() => {
-      setRevealCount((c) => (c >= TEXT.length ? c : c + 1));
-    }, TYPE_INTERVAL_MS);
-    return () => clearInterval(id);
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const count = Math.min(TEXT.length, Math.floor((now - start) / TYPE_INTERVAL_MS));
+      setRevealCount(count);
+      if (count < TEXT.length) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        // Transition happens right here, at the point the animation itself
+        // finishes, rather than in a separate effect reacting to revealCount
+        // — that would be deriving one piece of state from another via an
+        // effect, an extra render for something already knowable in place.
+        setPhase("ready");
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, [phase]);
-
-  useEffect(() => {
-    if (phase === "typing" && revealCount >= TEXT.length) setPhase("ready");
-  }, [revealCount, phase]);
 
   // Speech — best effort, started alongside the typing so the two roughly
   // track together. Browsers block speechSynthesis without a real user
@@ -101,7 +120,7 @@ export default function WelcomeOverlay() {
       if (voice) utterance.voice = voice;
       utterance.rate = 1;
       utterance.pitch = 1;
-      utterance.volume = 1;
+      utterance.volume = 0.8;
 
       utterance.onstart = () => {
         startedRef.current = true;
@@ -169,28 +188,29 @@ export default function WelcomeOverlay() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.7, ease: "easeInOut" }}
         >
+          {/* Full-bleed background — two lightning-streak nebula arcs,
+              one per breakpoint since the mobile crop needs a taller,
+              narrower composition than a simple object-cover of the
+              desktop art would give. */}
+          <Image
+            src="/starting_page_desktop.png"
+            alt=""
+            fill
+            priority
+            className="hidden object-cover md:block"
+            sizes="100vw"
+          />
+          <Image
+            src="/starting_page_mobile.png"
+            alt=""
+            fill
+            priority
+            className="block object-cover md:hidden"
+            sizes="100vw"
+          />
           <div
             className="pointer-events-none absolute inset-0"
             style={{ background: "radial-gradient(ellipse at center, rgba(124,92,252,0.12), transparent 60%)" }}
-          />
-
-          {/* Nebula wisps — soft diagonal streaks bleeding in from the left
-              (violet) and right (blue) edges, same painterly technique as
-              the hero photo's own nebula streaks, so this gate reads as
-              part of the same cosmos rather than a plain black screen. */}
-          <div
-            className="pointer-events-none absolute -left-1/4 top-0 h-full w-1/2 opacity-60 blur-3xl"
-            style={{
-              background: "linear-gradient(200deg, transparent 10%, rgba(124,92,252,0.35) 45%, transparent 80%)",
-              transform: "rotate(-8deg)",
-            }}
-          />
-          <div
-            className="pointer-events-none absolute -right-1/4 top-0 h-full w-1/2 opacity-60 blur-3xl"
-            style={{
-              background: "linear-gradient(160deg, transparent 10%, rgba(79,168,213,0.35) 45%, transparent 80%)",
-              transform: "rotate(8deg)",
-            }}
           />
 
           <div className="relative mb-8 flex flex-col items-center">
