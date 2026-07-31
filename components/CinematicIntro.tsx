@@ -335,6 +335,7 @@ export default function CinematicIntro() {
             src="/hero_section_desktop.png"
             alt="A robed figure with a staff standing atop a mountain, gazing out at a starry cosmic sky over a sunset horizon"
             className="hidden h-full w-full object-cover md:block"
+            style={{ objectPosition: "50% 25%" }}
           />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

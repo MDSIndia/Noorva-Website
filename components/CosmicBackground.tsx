@@ -10,9 +10,19 @@ interface Star {
   baseAlpha: number;
   twinkleSpeed: number;
   twinklePhase: number;
+  color: string;
 }
 
-const DENSITY = 7000; // px^2 per star — lower = more stars
+// px^2 per star — lower = more stars. Dropped from 7000 to give the whole
+// site a visibly denser, more "cosmos-filled" backdrop rather than a sparse
+// handful of dots.
+const DENSITY = 2000;
+
+// A handful of stars pick up a faint brand-color tint instead of plain
+// white, so the field reads as a genuine nebula-adjacent cosmos rather than
+// a flat star chart — same blue/violet already used for every other accent
+// on the site, just at low saturation so it doesn't compete with content.
+const STAR_COLORS = ["#ffffff", "#ffffff", "#ffffff", "#bcd4ff", "#c9b8ff"];
 
 /**
  * Fixed, full-viewport star field that sits behind every section of the
@@ -39,10 +49,11 @@ export default function CosmicBackground() {
           x: Math.random() * width,
           y: Math.random() * height,
           depth,
-          r: 0.4 + depth * 1.2,
-          baseAlpha: 0.2 + Math.random() * 0.55,
-          twinkleSpeed: 0.3 + Math.random() * 1.0,
+          r: 0.5 + depth * 1.7,
+          baseAlpha: 0.28 + Math.random() * 0.62,
+          twinkleSpeed: 0.45 + Math.random() * 1.35,
           twinklePhase: Math.random() * Math.PI * 2,
+          color: STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)],
         };
       });
     };
@@ -74,8 +85,13 @@ export default function CosmicBackground() {
 
       for (const s of stars) {
         if (!reduceMotion) {
-          s.y += dt * 3.5 * s.depth;
-          s.x -= dt * 1.6 * s.depth;
+          // Drift speed roughly tripled from the original tuning — the old
+          // pace (near stars crossing the viewport in well over a minute)
+          // read as effectively static at a glance; this is fast enough to
+          // notice within a couple of seconds of watching while still
+          // feeling like slow ambient drift, not a warp-speed effect.
+          s.y += dt * 9 * s.depth;
+          s.x -= dt * 4 * s.depth;
           if (s.y > height + 4) {
             s.y = -4;
             s.x = Math.random() * width;
@@ -89,7 +105,7 @@ export default function CosmicBackground() {
         const twinkle = reduceMotion ? 1 : 0.6 + 0.4 * Math.sin(s.twinklePhase);
         ctx.globalAlpha = s.baseAlpha * twinkle;
         ctx.beginPath();
-        ctx.fillStyle = "#ffffff";
+        ctx.fillStyle = s.color;
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
         ctx.fill();
       }
