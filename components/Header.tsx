@@ -81,7 +81,7 @@ export default function Header() {
             <span className="font-display text-lg tracking-tight text-[color:var(--ink)] italic">Noorva</span>
           </button>
 
-          <nav className="hidden items-center gap-8 md:flex">
+          <nav className="hidden items-center gap-6 lg:flex">
             {NAV_ITEMS.map((item) => {
               const active = item.type === "route" && pathname === item.target;
               const linkClass = `link-underline pb-0.5 text-[11px] font-medium tracking-[0.18em] uppercase transition-colors duration-300 hover:text-[color:var(--accent)] ${
@@ -110,7 +110,7 @@ export default function Header() {
             onClick={() => setMobileOpen((v) => !v)}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileOpen}
-            className="flex h-8 w-8 items-center justify-center text-[color:var(--ink)] md:hidden"
+            className="flex h-8 w-8 items-center justify-center text-[color:var(--ink)] lg:hidden"
           >
             {mobileOpen ? <X className="h-5 w-5" strokeWidth={1.5} /> : <Menu className="h-5 w-5" strokeWidth={1.5} />}
           </button>
@@ -125,7 +125,7 @@ export default function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="fixed inset-x-0 top-[72px] z-40 border-b border-[color:var(--line)] bg-[color:var(--paper)] md:hidden"
+            className="fixed inset-x-0 top-[72px] z-40 border-b border-[color:var(--line)] bg-[color:var(--paper)] lg:hidden"
           >
             <div className="flex flex-col px-6 py-4">
               {NAV_ITEMS.map((item) =>
