@@ -3,9 +3,11 @@
 // Doc §6/§11 — the video sharing/discovery platform teaser, positioned
 // right after Companion per the doc's homepage flow.
 
-import { Search, Bell, ShieldCheck, Users, PlayCircle } from "lucide-react";
+import { Search, Bell, ShieldCheck, Users } from "lucide-react";
 import PageSection from "./ui/PageSection";
 import ProductFeatureRow from "./ProductFeatureRow";
+import PhoneMockup from "./ui/PhoneMockup";
+import VideoScreen from "./VideoScreen";
 
 const FEATURES = [
   { icon: Search, title: "Precise Video Search", description: "Natural-language discovery, not endless scrolling." },
@@ -23,8 +25,11 @@ export default function VideoTeaserSection() {
         accent="content worth your time."
         description="Noorva isn't intended to be another conventional scrolling video app. It's built for personalized discovery, useful content, credible creators and efficient consumption."
         features={FEATURES}
-        visualIcon={PlayCircle}
-        visualLabel="Noorva Video"
+        visual={
+          <PhoneMockup tilt={2}>
+            <VideoScreen />
+          </PhoneMockup>
+        }
         ctaHref="/products/video"
         ctaLabel="Explore Noorva Video"
         reverse

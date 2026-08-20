@@ -7,6 +7,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, MessageCircle } from "lucide-react";
 import PageSection from "./ui/PageSection";
+import { CircleDoodle } from "./ui/Doodle";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -36,7 +37,10 @@ export default function FinalCTASection() {
         >
           The ecosystem is just getting started.
           <br />
-          <span className="italic">Come explore it.</span>
+          <span className="relative inline-block italic">
+            Come explore it.
+            <CircleDoodle className="pointer-events-none absolute -inset-x-6 -inset-y-3 h-[calc(100%+1.5rem)] w-[calc(100%+3rem)]" />
+          </span>
         </motion.h2>
 
         <motion.p variants={fadeUp} transition={{ duration: 0.6, ease: "easeOut" }} className="mx-auto mb-12 max-w-lg text-base text-[color:var(--ink-soft)] md:text-lg">

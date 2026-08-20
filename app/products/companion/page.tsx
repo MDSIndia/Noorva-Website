@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
-import { Brain, ListTodo, Search, BookOpen, Mic, Bell, UserCog, ShieldCheck, ArrowRight, MessageCircleHeart } from "lucide-react";
+import { Brain, ListTodo, Search, BookOpen, Mic, Bell, UserCog, ShieldCheck, ArrowRight } from "lucide-react";
 import PageSection from "@/components/ui/PageSection";
 import SectionHeading from "@/components/ui/SectionHeading";
 import Card from "@/components/ui/Card";
+import PhoneMockup from "@/components/ui/PhoneMockup";
+import CompanionScreen from "@/components/CompanionScreen";
 
 export const metadata: Metadata = {
   title: "Noorva Companion — Primary Product",
@@ -24,27 +27,25 @@ const CAPABILITIES = [
 export default function CompanionPage() {
   return (
     <main className="pt-24">
-      <PageSection id="companion-hero">
-        <div className="mx-auto flex max-w-3xl flex-col items-center">
-          <div
-            className="mb-8 flex h-20 w-20 items-center justify-center rounded-full border border-[color:var(--line)] shadow-[0_16px_32px_-16px_var(--shadow-warm)]"
-            style={{ background: "linear-gradient(160deg, var(--paper-dim), var(--paper))" }}
-          >
-            <MessageCircleHeart className="h-8 w-8 text-[color:var(--accent)]" strokeWidth={1} />
+      <PageSection id="companion-hero" mesh>
+        <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-12 lg:gap-8">
+          <div className="lg:col-span-7">
+            <SectionHeading
+              eyebrow="Primary Product"
+              title="Not another assistant."
+              accent="A guide, mentor, planner and companion."
+              description="Noorva Companion is designed to understand who you are, remember what matters, and walk beside you every day — offering guidance, encouragement and personalized support that evolves with you."
+            />
+            <Link href="#get-started" className="btn-primary-sm group mt-10">
+              Get Started
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </Link>
           </div>
-          <SectionHeading
-            eyebrow="Primary Product"
-            title="Not another assistant."
-            accent="A guide, mentor, planner and companion."
-            description="Noorva Companion is designed to understand who you are, remember what matters, and walk beside you every day — offering guidance, encouragement and personalized support that evolves with you."
-            align="center"
-          />
-        </div>
-        <div className="mt-10 flex justify-center">
-          <Link href="#get-started" className="btn-primary-sm group">
-            Get Started
-            <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-          </Link>
+          <div className="lg:col-span-5">
+            <PhoneMockup>
+              <CompanionScreen />
+            </PhoneMockup>
+          </div>
         </div>
       </PageSection>
 
@@ -56,7 +57,9 @@ export default function CompanionPage() {
             return (
               <Card key={c.title} delay={i * 0.04}>
                 <div className="p-6">
-                  <Icon className="mb-4 h-6 w-6 text-[color:var(--accent)]" strokeWidth={1.5} />
+                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full" style={{ backgroundImage: "var(--accent-gradient)" }}>
+                    <Icon className="h-[18px] w-[18px] text-white" strokeWidth={1.5} />
+                  </div>
                   <h3 className="mb-2 text-base font-medium text-[color:var(--ink)]">{c.title}</h3>
                   <p className="text-sm leading-relaxed text-[color:var(--ink-soft)]">{c.description}</p>
                 </div>
@@ -67,15 +70,32 @@ export default function CompanionPage() {
       </PageSection>
 
       <PageSection id="get-started">
-        <div className="mx-auto max-w-2xl text-center">
-          <SectionHeading eyebrow="Get Started" title="Ready to meet" accent="Noorva Companion?" align="center" />
-          <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-[color:var(--ink-soft)] md:text-lg">
-            Noorva Companion is in active development. Reach out and we&rsquo;ll let you know as soon as it&rsquo;s ready for you.
-          </p>
-          <Link href="/contact" className="btn-primary group mt-8">
-            Get Notified
-            <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-          </Link>
+        <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-12 lg:gap-8">
+          <div className="order-2 lg:order-1 lg:col-span-6">
+            <p className="mb-4 flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.25em] text-[color:var(--accent)] uppercase">
+              <span className="h-px w-6 bg-[color:var(--accent)]" />
+              Get Started
+            </p>
+            <h2 className="font-display text-3xl leading-[1.15] font-normal text-[color:var(--ink)] md:text-4xl">
+              Ready to meet <span className="italic">Noorva Companion?</span>
+            </h2>
+            <p className="mt-6 max-w-md text-base leading-relaxed text-[color:var(--ink-soft)] md:text-lg">
+              Noorva Companion is in active development. Reach out and we&rsquo;ll let you know as soon as it&rsquo;s ready for you.
+            </p>
+            <Link href="/contact" className="btn-primary group mt-8">
+              Get Notified
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </Link>
+          </div>
+          <div className="order-1 flex justify-center lg:order-2 lg:col-span-6">
+            <Image
+              src="/phone-in-hand-trimmed.png"
+              alt="A hand holding a phone with the Noorva mark glowing on screen"
+              width={420}
+              height={406}
+              className="h-auto w-full max-w-[340px]"
+            />
+          </div>
         </div>
       </PageSection>
     </main>

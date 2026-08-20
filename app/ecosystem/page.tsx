@@ -20,7 +20,7 @@ const CONNECTION_STORY = [
 export default function EcosystemPage() {
   return (
     <main className="pt-24">
-      <PageSection id="ecosystem-hero">
+      <PageSection id="ecosystem-hero" mesh>
         <SectionHeading
           eyebrow="The Ecosystem"
           title="One intelligence,"

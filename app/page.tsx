@@ -5,6 +5,7 @@ import { lenisRef } from "@/components/store";
 import Hero from "@/components/Hero";
 import WhatIsNoorvaSection from "@/components/WhatIsNoorvaSection";
 import EcosystemShowcaseSection from "@/components/EcosystemShowcaseSection";
+import PullQuoteSection from "@/components/PullQuoteSection";
 import CompanionTeaserSection from "@/components/CompanionTeaserSection";
 import VideoTeaserSection from "@/components/VideoTeaserSection";
 import ConnectedFutureSection from "@/components/ConnectedFutureSection";
@@ -39,6 +40,7 @@ export default function Home() {
       <Hero />
       <WhatIsNoorvaSection />
       <EcosystemShowcaseSection />
+      <PullQuoteSection />
       <CompanionTeaserSection />
       <VideoTeaserSection />
       <ConnectedFutureSection />

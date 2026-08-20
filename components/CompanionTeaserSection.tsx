@@ -3,9 +3,11 @@
 // Doc §6/§9 — the homepage's first detailed product introduction, ahead of
 // Video/Glasses/Phones per the doc's "Companion first" ordering.
 
-import { Brain, ListTodo, Search, Mic, MessageCircleHeart } from "lucide-react";
+import { Brain, ListTodo, Search, Mic } from "lucide-react";
 import PageSection from "./ui/PageSection";
 import ProductFeatureRow from "./ProductFeatureRow";
+import PhoneMockup from "./ui/PhoneMockup";
+import CompanionScreen from "./CompanionScreen";
 
 const FEATURES = [
   { icon: Brain, title: "Human-Interactive AI", description: "Natural, personalized conversations that remember you." },
@@ -23,8 +25,11 @@ export default function CompanionTeaserSection() {
         accent="a companion that grows with you."
         description="A personalized, human-interactive AI companion for everyday life. Not another assistant — a guide, mentor, planner and companion that understands your goals and walks beside you."
         features={FEATURES}
-        visualIcon={MessageCircleHeart}
-        visualLabel="Noorva Companion"
+        visual={
+          <PhoneMockup>
+            <CompanionScreen />
+          </PhoneMockup>
+        }
         ctaHref="/products/companion"
         ctaLabel="Explore Noorva Companion"
       />

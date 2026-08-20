@@ -18,7 +18,7 @@ const VALUES = [
 export default function AboutPage() {
   return (
     <main className="pt-24">
-      <PageSection id="about-noorva">
+      <PageSection id="about-noorva" mesh>
         <SectionHeading
           eyebrow="About Noorva"
           title="More than AI."
@@ -43,7 +43,9 @@ export default function AboutPage() {
             const Icon = v.icon;
             return (
               <div key={v.title}>
-                <Icon className="mb-4 h-5 w-5 text-[color:var(--accent)]" strokeWidth={1.5} />
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--paper-dim)]">
+                  <Icon className="h-[18px] w-[18px]" strokeWidth={1.5} style={{ color: "var(--accent-2)" }} />
+                </div>
                 <h3 className="mb-2 text-base font-medium text-[color:var(--ink)]">{v.title}</h3>
                 <p className="text-sm leading-relaxed text-[color:var(--ink-soft)]">{v.description}</p>
               </div>

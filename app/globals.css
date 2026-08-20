@@ -2,18 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── DESIGN TOKENS — light, editorial ─────────────────────────── */
+/* ── DESIGN TOKENS — premium, futuristic, light ──────────────────── */
 :root {
-  --paper:      #faf7f2;
-  --paper-dim:  #f2ede4;
-  --ink:        #16151a;
-  --ink-soft:   rgba(22, 21, 26, 0.62);
-  --ink-faint:  rgba(22, 21, 26, 0.38);
-  --line:       rgba(22, 21, 26, 0.12);
-  --accent:      #c1440e;
-  --accent-soft: rgba(193, 68, 14, 0.1);
-  --accent-dark: #8f3009;
-  --shadow-warm: rgba(22, 15, 8, 0.08);
+  --paper:      #f6f7fb;
+  --paper-dim:  #eceef7;
+  --white:      #ffffff;
+  --ink:        #0d0e16;
+  --ink-soft:   rgba(13, 14, 22, 0.62);
+  --ink-faint:  rgba(13, 14, 22, 0.4);
+  --line:       rgba(13, 14, 22, 0.1);
+
+  /* Brand gradient — matches the Noorva mark (blue -> violet -> magenta) */
+  --accent-1: #3965e5;
+  --accent-2: #7c5cfc;
+  --accent-3: #db45d7;
+  --accent-gradient: linear-gradient(120deg, var(--accent-1) 0%, var(--accent-2) 50%, var(--accent-3) 100%);
+
+  /* Flat fallback for text-color contexts where a gradient fill isn't practical */
+  --accent:      #6b4de0;
+  --accent-soft: rgba(124, 92, 252, 0.1);
+  --shadow-cool: rgba(35, 27, 90, 0.14);
 }
 
 /* ── RESET ─────────────────────────────────────────────────────── */
@@ -47,15 +55,14 @@ html.lenis          { height: auto; }
 ::-webkit-scrollbar       { width: 3px; }
 ::-webkit-scrollbar-track { background: var(--paper); }
 ::-webkit-scrollbar-thumb {
-  background: rgba(22, 21, 26, 0.2);
+  background: rgba(13, 14, 22, 0.2);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(22, 21, 26, 0.35);
+  background: rgba(13, 14, 22, 0.35);
 }
 
 /* ── GSAP PINNED SPACER FIX ─────────────────────────────────────── */
-/* Kept in case a future pinned section is added — harmless if unused. */
 .pin-spacer {
   pointer-events: none;
 }
@@ -72,8 +79,15 @@ html.lenis          { height: auto; }
 /* ── TYPOGRAPHY UTILITIES ───────────────────────────────────────── */
 .font-display { font-family: var(--font-fraunces); }
 
+.text-gradient {
+  background-image: var(--accent-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
 /* ── SOFT FLOATING DRIFT ─────────────────────────────────────────── */
-/* Small, generic — used sparingly for subtle emphasis, not ambient orbs. */
 @keyframes float-slow {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-10px); }
@@ -82,16 +96,66 @@ html.lenis          { height: auto; }
   animation: float-slow 14s ease-in-out infinite;
 }
 
+/* ── AMBIENT GRADIENT MESH ─────────────────────────────────────── */
+/* Soft, slow-drifting multi-color blooms — the premium/futuristic
+   counterpart to the old dark theme's starfield, built from the same
+   brand gradient instead of a flat single accent. */
+@keyframes mesh-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(3%, -2%) scale(1.05); }
+}
+.gradient-mesh {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.gradient-mesh::before,
+.gradient-mesh::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  animation: mesh-drift 18s ease-in-out infinite;
+}
+.gradient-mesh::before {
+  top: -20%;
+  left: -10%;
+  width: 55%;
+  height: 65%;
+  background: radial-gradient(circle, var(--accent-1) 0%, transparent 70%);
+  opacity: 0.16;
+}
+.gradient-mesh::after {
+  top: -10%;
+  right: -15%;
+  width: 50%;
+  height: 60%;
+  background: radial-gradient(circle, var(--accent-3) 0%, transparent 70%);
+  opacity: 0.14;
+  animation-delay: -9s;
+}
+
+/* ── FINE GRID TEXTURE ────────────────────────────────────────────── */
+/* A faint technical/blueprint grid — used sparingly to read as "engineered"
+   rather than hand-drawn, balancing the doodle motif elsewhere. */
+.grid-texture {
+  background-image:
+    linear-gradient(to right, rgba(13, 14, 22, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(13, 14, 22, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 40%, transparent 100%);
+}
+
 /* ── PAPER GRAIN ────────────────────────────────────────────────── */
-/* Very faint fixed noise layer — reads as paper texture, not the old dark
-   theme's cosmic grain. Single shared instance mounted once at the page
-   root (see app/layout.tsx). */
 .paper-grain {
   position: fixed;
   inset: 0;
   z-index: 60;
   pointer-events: none;
-  opacity: 0.035;
+  opacity: 0.025;
   mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
@@ -105,23 +169,56 @@ html.lenis          { height: auto; }
   animation: marquee-scroll 32s linear infinite;
 }
 
+/* ── GRADIENT BORDER SHEEN (buttons / cards) ─────────────────────── */
+@keyframes border-sheen {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.gradient-border {
+  background: var(--accent-gradient);
+  background-size: 220% 220%;
+  animation: border-sheen 6s linear infinite;
+}
+
 /* ── BUTTONS ────────────────────────────────────────────────────── */
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center gap-2 rounded-full bg-[color:var(--ink)] px-7 py-3.5 text-sm font-medium text-[color:var(--paper)] shadow-[0_12px_28px_-10px_var(--shadow-warm)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-12px_var(--shadow-warm)];
+    @apply relative inline-flex items-center gap-2 overflow-hidden rounded-full px-7 py-3.5 text-sm font-medium text-white shadow-[0_16px_32px_-12px_var(--shadow-cool)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_40px_-14px_var(--shadow-cool)];
+    background-image: var(--accent-gradient);
+    background-size: 160% 160%;
+    background-position: 0% 50%;
+    transition: background-position 0.5s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  }
+  .btn-primary:hover {
+    background-position: 100% 50%;
   }
   .btn-primary-sm {
-    @apply inline-flex items-center gap-2 rounded-full bg-[color:var(--ink)] px-6 py-3 text-sm font-medium text-[color:var(--paper)] shadow-[0_10px_22px_-10px_var(--shadow-warm)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-10px_var(--shadow-warm)];
+    @apply relative inline-flex items-center gap-2 overflow-hidden rounded-full px-6 py-3 text-sm font-medium text-white shadow-[0_12px_24px_-10px_var(--shadow-cool)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_-10px_var(--shadow-cool)];
+    background-image: var(--accent-gradient);
+    background-size: 160% 160%;
+    background-position: 0% 50%;
+    transition: background-position 0.5s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  }
+  .btn-primary-sm:hover {
+    background-position: 100% 50%;
   }
   .btn-secondary {
-    @apply inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] px-7 py-3.5 text-sm font-medium text-[color:var(--ink)] transition-colors duration-300 hover:border-[color:var(--ink)];
+    @apply inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-white/60 px-7 py-3.5 text-sm font-medium text-[color:var(--ink)] backdrop-blur-sm transition-all duration-300 hover:border-transparent hover:shadow-[0_12px_24px_-12px_var(--shadow-cool)];
   }
+}
+
+/* ── GLASS PANEL ──────────────────────────────────────────────────── */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
 /* ── UNDERLINE SWEEP (nav / text links) ────────────────────────── */
 .link-underline {
   position: relative;
-  background-image: linear-gradient(var(--accent), var(--accent));
+  background-image: linear-gradient(var(--accent-2), var(--accent-2));
   background-repeat: no-repeat;
   background-position: 0 100%;
   background-size: 0% 1px;

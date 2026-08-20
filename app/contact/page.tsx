@@ -22,7 +22,7 @@ const CHANNELS = [
 export default function ContactPage() {
   return (
     <main className="pt-24">
-      <PageSection id="contact">
+      <PageSection id="contact" mesh>
         <SectionHeading
           eyebrow="Get in Touch"
           title="We'd love to"
@@ -37,7 +37,12 @@ export default function ContactPage() {
             return (
               <Card key={c.title} delay={i * 0.06}>
                 <a href={`mailto:${c.email}`} className="group block h-full p-7">
-                  <Icon className="mb-5 h-6 w-6 text-[color:var(--accent)]" strokeWidth={1.5} />
+                  <div
+                    className="mb-5 flex h-11 w-11 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110"
+                    style={{ backgroundImage: "var(--accent-gradient)" }}
+                  >
+                    <Icon className="h-[18px] w-[18px] text-white" strokeWidth={1.5} />
+                  </div>
                   <h3 className="mb-2 text-base font-medium text-[color:var(--ink)]">{c.title}</h3>
                   <p className="mb-4 text-sm leading-relaxed text-[color:var(--ink-soft)]">{c.description}</p>
                   <span className="text-sm font-medium text-[color:var(--accent)] transition-opacity duration-300 group-hover:opacity-70">

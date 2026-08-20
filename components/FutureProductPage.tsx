@@ -36,17 +36,17 @@ export default function FutureProductPage({
   const Icon = ICONS[icon];
   return (
     <main className="pt-24">
-      <PageSection id={`${name.toLowerCase().replace(/\s+/g, "-")}-hero`}>
+      <PageSection id={`${name.toLowerCase().replace(/\s+/g, "-")}-hero`} mesh>
         <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="mb-8 flex h-20 w-20 items-center justify-center rounded-full border border-[color:var(--line)] shadow-[0_16px_32px_-16px_var(--shadow-warm)]"
-            style={{ background: "linear-gradient(160deg, var(--paper-dim), var(--paper))" }}
+            className="relative mb-8 flex h-20 w-20 items-center justify-center rounded-full shadow-[0_16px_32px_-16px_var(--shadow-cool)]"
+            style={{ backgroundImage: "var(--accent-gradient)" }}
           >
-            <Icon className="h-8 w-8 text-[color:var(--accent)]" strokeWidth={1} />
+            <Icon className="h-8 w-8 text-white" strokeWidth={1} />
           </motion.div>
 
           <span className="mb-5 rounded-full border border-[color:var(--line)] px-4 py-1.5 text-[10px] font-medium tracking-[0.2em] text-[color:var(--ink-soft)] uppercase">
@@ -63,14 +63,18 @@ export default function FutureProductPage({
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-5 md:grid-cols-2">
           <Card>
             <div className="p-8">
-              <Link2 className="mb-5 h-5 w-5 text-[color:var(--accent)]" strokeWidth={1.5} />
+              <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-full" style={{ backgroundImage: "var(--accent-gradient)" }}>
+                <Link2 className="h-[18px] w-[18px] text-white" strokeWidth={1.5} />
+              </div>
               <h3 className="font-display mb-3 text-xl font-normal text-[color:var(--ink)]">How It Fits the Ecosystem</h3>
               <p className="text-sm leading-relaxed text-[color:var(--ink-soft)] md:text-base">{ecosystemFit}</p>
             </div>
           </Card>
           <Card delay={0.06}>
             <div className="p-8">
-              <Icon className="mb-5 h-5 w-5 text-[color:var(--accent)]" strokeWidth={1.5} />
+              <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-full" style={{ backgroundImage: "var(--accent-gradient)" }}>
+                <Icon className="h-[18px] w-[18px] text-white" strokeWidth={1.5} />
+              </div>
               <h3 className="font-display mb-3 text-xl font-normal text-[color:var(--ink)]">Connection with Noorva Companion</h3>
               <p className="text-sm leading-relaxed text-[color:var(--ink-soft)] md:text-base">{companionConnection}</p>
             </div>

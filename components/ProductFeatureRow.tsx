@@ -3,13 +3,14 @@
 // Generic "visual + copy + feature list + CTA" row, shared by the
 // homepage's Companion/Video teasers (doc §6) and reused inside the
 // individual product detail pages for their capability breakdowns (doc
-// §9/§11). The visual panel is a flat icon plate (no photography), per the
-// redesign's editorial, typography-first direction.
+// §9/§11). The visual slot renders whatever the caller passes — a
+// PhoneMockup with real (if invented) screen content, rather than a
+// generic icon plate.
 
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -17,7 +18,7 @@ const fadeUp = {
 };
 
 export interface ProductFeature {
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   title: string;
   description: string;
 }
@@ -28,8 +29,7 @@ interface ProductFeatureRowProps {
   accent?: string;
   description: string;
   features: ProductFeature[];
-  visualIcon: LucideIcon;
-  visualLabel: string;
+  visual: ReactNode;
   ctaHref: string;
   ctaLabel: string;
   reverse?: boolean;
@@ -41,36 +41,14 @@ export default function ProductFeatureRow({
   accent,
   description,
   features,
-  visualIcon: VisualIcon,
-  visualLabel,
+  visual,
   ctaHref,
   ctaLabel,
   reverse = false,
 }: ProductFeatureRowProps) {
   return (
     <div className={`flex flex-col gap-14 lg:flex-row lg:items-center lg:gap-16 ${reverse ? "lg:flex-row-reverse" : ""}`}>
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true, amount: 0.3 }}
-        transition={{ duration: 0.7, ease: "easeOut" }}
-        className="flex justify-center lg:flex-1"
-      >
-        <div
-          className="relative flex aspect-square w-full max-w-[320px] flex-col items-center justify-center gap-5 overflow-hidden rounded-2xl border border-[color:var(--line)] shadow-[0_20px_44px_-20px_var(--shadow-warm)]"
-          style={{ background: "linear-gradient(160deg, var(--paper-dim), var(--paper))" }}
-        >
-          <span
-            aria-hidden
-            className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full opacity-[0.14] blur-2xl"
-            style={{ background: "var(--accent)" }}
-          />
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-[color:var(--line)] bg-[color:var(--paper)]">
-            <VisualIcon className="h-9 w-9 text-[color:var(--accent)]" strokeWidth={1} />
-          </div>
-          <span className="relative text-xs font-medium tracking-[0.2em] text-[color:var(--ink-faint)] uppercase">{visualLabel}</span>
-        </div>
-      </motion.div>
+      <div className="flex justify-center lg:flex-1">{visual}</div>
 
       <motion.div
         initial="hidden"

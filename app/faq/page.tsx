@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function FaqPage() {
   return (
     <main className="pt-24">
-      <PageSection id="faq">
+      <PageSection id="faq" mesh>
         <SectionHeading eyebrow="Questions" title="Frequently Asked" accent="questions." align="center" className="mb-16" />
         <FaqAccordion />
       </PageSection>

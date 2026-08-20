@@ -2,11 +2,12 @@
 
 // Doc §6 "Trust and Privacy" — explains responsible use of personalization
 // and user controls, kept high-level (no policy specifics are in the
-// supplied documentation to publish as fact).
+// supplied documentation to publish as fact). Left-aligned heading with a
+// horizontal, divider-separated row rather than another centered icon
+// triptych.
 
 import { Lock, Eye, SlidersHorizontal } from "lucide-react";
 import PageSection from "./ui/PageSection";
-import SectionHeading from "./ui/SectionHeading";
 import { motion } from "framer-motion";
 
 const POINTS = [
@@ -17,32 +18,44 @@ const POINTS = [
 
 export default function TrustPrivacySection() {
   return (
-    <PageSection id="trust-privacy" shade="dim">
-      <SectionHeading eyebrow="Trust & Privacy" title="Personalization," accent="on your terms." align="center" />
+    <PageSection id="trust-privacy">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-8">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="lg:col-span-4"
+        >
+          <p className="mb-4 flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.25em] text-[color:var(--accent)] uppercase">
+            <span className="h-px w-6" style={{ backgroundImage: "var(--accent-gradient)" }} />
+            Trust &amp; Privacy
+          </p>
+          <h2 className="font-display text-3xl leading-[1.15] font-normal text-[color:var(--ink)] md:text-4xl">
+            Personalization, <span className="italic">on your terms.</span>
+          </h2>
+        </motion.div>
 
-      <motion.div
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, amount: 0.3 }}
-        transition={{ staggerChildren: 0.08 }}
-        className="mx-auto mt-16 grid max-w-4xl grid-cols-1 gap-8 sm:grid-cols-3"
-      >
-        {POINTS.map((p) => {
-          const Icon = p.icon;
-          return (
-            <motion.div
-              key={p.title}
-              variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="flex flex-col items-center gap-4 text-center"
-            >
-              <Icon className="h-6 w-6 text-[color:var(--accent)]" strokeWidth={1.5} />
-              <h3 className="text-base font-medium text-[color:var(--ink)]">{p.title}</h3>
-              <p className="text-sm leading-relaxed text-[color:var(--ink-soft)]">{p.description}</p>
-            </motion.div>
-          );
-        })}
-      </motion.div>
+        <div className="grid grid-cols-1 gap-8 divide-[color:var(--line)] sm:grid-cols-3 sm:divide-x lg:col-span-8">
+          {POINTS.map((p, i) => {
+            const Icon = p.icon;
+            return (
+              <motion.div
+                key={p.title}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.4 }}
+                transition={{ duration: 0.5, ease: "easeOut", delay: i * 0.08 }}
+                className="sm:pl-8 sm:first:pl-0"
+              >
+                <Icon className="mb-4 h-5 w-5 text-[color:var(--accent)]" strokeWidth={1.5} />
+                <h3 className="mb-2 text-base font-medium text-[color:var(--ink)]">{p.title}</h3>
+                <p className="text-sm leading-relaxed text-[color:var(--ink-soft)]">{p.description}</p>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
     </PageSection>
   );
 }

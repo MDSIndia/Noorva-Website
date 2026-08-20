@@ -45,8 +45,8 @@ export default function SectionHeading({
           transition={{ duration: 0.5, ease: "easeOut" }}
           className={`mb-4 flex items-center gap-2.5 ${align === "center" ? "justify-center" : ""}`}
         >
-          <span className="h-px w-6 bg-[color:var(--accent)]" />
-          <p className="text-[11px] font-semibold tracking-[0.25em] text-[color:var(--accent)] uppercase">{eyebrow}</p>
+          <span className="h-px w-6" style={{ backgroundImage: "var(--accent-gradient)" }} />
+          <p className="text-gradient text-[11px] font-semibold tracking-[0.25em] uppercase">{eyebrow}</p>
         </motion.div>
       )}
 
@@ -55,7 +55,7 @@ export default function SectionHeading({
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="font-display max-w-3xl text-4xl leading-[1.1] font-normal text-[color:var(--ink)] md:text-5xl lg:text-6xl"
       >
-        {title} {accent && <span className="italic">{accent}</span>}
+        {title} {accent && <span className="text-gradient italic">{accent}</span>}
       </motion.h2>
 
       {description && (
