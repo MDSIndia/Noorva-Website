@@ -2,13 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── DESIGN TOKENS ─────────────────────────────────────────────── */
+/* ── DESIGN TOKENS — light, editorial ─────────────────────────── */
 :root {
-  --bg:          #050505;
-  --text:        #ffffff;
-  --accent-1:    #7c5cfc;
-  --accent-2:    #4fa8d5;
-  --accent-warm: #e8b478;
+  --paper:      #faf7f2;
+  --paper-dim:  #f2ede4;
+  --ink:        #16151a;
+  --ink-soft:   rgba(22, 21, 26, 0.62);
+  --ink-faint:  rgba(22, 21, 26, 0.38);
+  --line:       rgba(22, 21, 26, 0.12);
+  --accent:      #c1440e;
+  --accent-soft: rgba(193, 68, 14, 0.1);
+  --accent-dark: #8f3009;
+  --shadow-warm: rgba(22, 15, 8, 0.08);
 }
 
 /* ── RESET ─────────────────────────────────────────────────────── */
@@ -25,8 +30,8 @@ html {
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-inter), system-ui, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -40,16 +45,17 @@ html.lenis          { height: auto; }
 
 /* ── SCROLLBAR ──────────────────────────────────────────────────── */
 ::-webkit-scrollbar       { width: 3px; }
-::-webkit-scrollbar-track { background: #000000; }
+::-webkit-scrollbar-track { background: var(--paper); }
 ::-webkit-scrollbar-thumb {
-  background: rgba(232, 180, 120, 0.35);
+  background: rgba(22, 21, 26, 0.2);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(232, 180, 120, 0.6);
+  background: rgba(22, 21, 26, 0.35);
 }
 
 /* ── GSAP PINNED SPACER FIX ─────────────────────────────────────── */
+/* Kept in case a future pinned section is added — harmless if unused. */
 .pin-spacer {
   pointer-events: none;
 }
@@ -57,218 +63,70 @@ html.lenis          { height: auto; }
   pointer-events: auto;
 }
 
-/* ── COSMIC INTRO SPECIFIC ──────────────────────────────────────── */
-/* Fixed-position layer stacking, in page/scroll order: intro=30,
-   story-gallery's fullscreen book overlay=32, features' pinned 3D desert
-   showcase=33, grain=35, WorldTransitionOverlay's warp-burst canvas=37,
-   header=40/50. Each section needs a higher z-index than the one before it
-   so it slides on top and covers it during the pin handoff — reorder these
-   together with the section order in app/page.tsx. WorldTransitionOverlay
-   sits above every section (so its burst is never hidden behind whichever
-   section is opaque at the moment) but below the header, which stays
-   usable through the transition. */
-#cosmic-intro canvas {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-}
-
-/* ── FEATURES PHONE SCREEN ──────────────────────────────────────── */
-@keyframes phone-typing-dot {
-  0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
-  30%           { opacity: 1;    transform: translateY(-2px); }
-}
-
-@keyframes phone-cursor-blink {
-  0%, 50%   { opacity: 1; }
-  51%, 100% { opacity: 0; }
-}
-
-@keyframes phone-waveform {
-  0%, 100% { transform: scaleY(0.4); }
-  50%      { transform: scaleY(1); }
-}
-
 /* ── SELECTION ──────────────────────────────────────────────────── */
 ::selection {
-  background: rgba(232, 180, 120, 0.35);
-  color: #ffffff;
+  background: var(--accent-soft);
+  color: var(--ink);
 }
 
 /* ── TYPOGRAPHY UTILITIES ───────────────────────────────────────── */
-.font-playfair { font-family: var(--font-playfair); }
-.font-jakarta  { font-family: var(--font-jakarta); }
-.font-hand     { font-family: var(--font-caveat); }
-
-/* ── PREMIUM GLOW BUTTON ────────────────────────────────────────── */
-.btn-glow {
-  position: relative;
-  overflow: hidden;
-  transition: all 0.4s ease;
-}
-.btn-glow::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at center, rgba(232, 180, 120, 0.25), transparent 65%);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-.btn-glow:hover::after {
-  opacity: 1;
-}
-
-/* ── MAGNETIC GLASS BUTTON (DesertShowcase3D) ───────────────────────── */
-/* Slow, always-on rotation of the button's own gradient-border angle —
-   distinct from .btn-glow's hover-only radial glow above; this one never
-   stops, giving the border a subtle "alive" quality at rest. */
-.magnetic-btn-border {
-  background-size: 200% 200%;
-  animation: magnetic-border-spin 6s linear infinite;
-}
-@keyframes magnetic-border-spin {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
-}
-
-/* ── NOISE GRAIN OVERLAY ─────────────────────────────────────────── */
-/* Single shared instance mounted once at the page root (see GrainOverlay.tsx) —
-   9 separate animated SVG-turbulence layers (one per section) was a real CPU cost. */
-.grain {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  /* Must stay above every fixed-position layer (intro=30, story-gallery's
-     book overlay=32, features' pinned 3D phone showcase=33) or the grain
-     texture silently renders underneath them and disappears. */
-  z-index: 35;
-}
-.grain::before {
-  content: "";
-  position: absolute;
-  inset: -200%;
-  width: 400%;
-  height: 400%;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-  opacity: 0.022;
-  pointer-events: none;
-  animation: grain-shift 0.5s steps(2) infinite;
-}
-
-@keyframes grain-shift {
-  0%   { transform: translate(0, 0); }
-  25%  { transform: translate(-2%, 2%); }
-  50%  { transform: translate(2%, -2%); }
-  75%  { transform: translate(-1%, 1%); }
-  100% { transform: translate(0, 0); }
-}
-
-/* ── VIGNETTE ────────────────────────────────────────────────────── */
-.vignette-edge {
-  box-shadow: inset 0 0 220px rgba(0, 0, 0, 0.75);
-}
+.font-display { font-family: var(--font-fraunces); }
 
 /* ── SOFT FLOATING DRIFT ─────────────────────────────────────────── */
+/* Small, generic — used sparingly for subtle emphasis, not ambient orbs. */
 @keyframes float-slow {
   0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-14px); }
+  50%      { transform: translateY(-10px); }
 }
-
 .animate-float-slow {
   animation: float-slow 14s ease-in-out infinite;
 }
 
-/* ── BOOK COVER SHEEN ────────────────────────────────────────────── */
-/* Slow diagonal foil-catch sweep across the book cover's gilt surface. */
-@keyframes book-sheen {
-  0%, 100% { transform: translateX(-40%); }
-  50%      { transform: translateX(220%); }
+/* ── PAPER GRAIN ────────────────────────────────────────────────── */
+/* Very faint fixed noise layer — reads as paper texture, not the old dark
+   theme's cosmic grain. Single shared instance mounted once at the page
+   root (see app/layout.tsx). */
+.paper-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-.animate-book-sheen {
-  animation: book-sheen 9s ease-in-out infinite;
+/* ── MARQUEE ────────────────────────────────────────────────────── */
+@keyframes marquee-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee-scroll 32s linear infinite;
 }
 
-/* ── LOGO LIGHT FLOW ─────────────────────────────────────────────── */
-/* Soft band of light sweeping through the logo mark, masked to its own
-   alpha so it reads as light traveling through the glyph, not a generic
-   button shine. */
-@keyframes logo-light-flow {
-  0%   { background-position: 220% 50%; }
-  100% { background-position: -120% 50%; }
+/* ── BUTTONS ────────────────────────────────────────────────────── */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-full bg-[color:var(--ink)] px-7 py-3.5 text-sm font-medium text-[color:var(--paper)] shadow-[0_12px_28px_-10px_var(--shadow-warm)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-12px_var(--shadow-warm)];
+  }
+  .btn-primary-sm {
+    @apply inline-flex items-center gap-2 rounded-full bg-[color:var(--ink)] px-6 py-3 text-sm font-medium text-[color:var(--paper)] shadow-[0_10px_22px_-10px_var(--shadow-warm)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-10px_var(--shadow-warm)];
+  }
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] px-7 py-3.5 text-sm font-medium text-[color:var(--ink)] transition-colors duration-300 hover:border-[color:var(--ink)];
+  }
 }
 
-.animate-logo-light-flow {
-  animation: logo-light-flow 3.4s linear infinite;
+/* ── UNDERLINE SWEEP (nav / text links) ────────────────────────── */
+.link-underline {
+  position: relative;
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size 0.35s ease;
 }
-
-/* ── PHONE PODIUM SHOWCASE ───────────────────────────────────────── */
-/* Flat CSS/DOM stand-in for the WebGL phone carousel: a central podium
-   with four phone mockups crossfaded per scroll-selected feature. */
-
-/* Jellyfish float: a jellyfish's motion never reads as one mechanical
-   up/down cycle because its drift and its rhythmic pulse run on their own
-   independent clocks. Two nested elements, two different-duration loops
-   (drift on the outer, tilt+pulse on the inner) approximate that instead
-   of a single keyframe doing both at once. */
-@keyframes phone-jelly-drift {
-  0%   { transform: translate(0, 0); }
-  22%  { transform: translate(1.4%, -4%); }
-  48%  { transform: translate(-0.8%, -7%); }
-  74%  { transform: translate(-1.6%, -2.5%); }
-  100% { transform: translate(0, 0); }
-}
-@keyframes phone-jelly-tilt {
-  0%   { transform: rotate(0deg) scale(1); }
-  30%  { transform: rotate(1.6deg) scale(1.018); }
-  62%  { transform: rotate(-1.2deg) scale(0.985); }
-  100% { transform: rotate(0deg) scale(1); }
-}
-.phone-jelly-outer {
-  animation: phone-jelly-drift 7.5s ease-in-out infinite;
-}
-.phone-jelly-inner {
-  animation: phone-jelly-tilt 5.5s ease-in-out infinite;
-}
-
-/* Diagonal sheen sweeping across each phone's bezel — clipped to the
-   frame's own rounded corners by its parent's overflow-hidden, so no mask
-   image is needed the way the header logo's shimmer requires. */
-@keyframes phone-sheen-sweep {
-  0%   { background-position: 200% 0%; }
-  100% { background-position: -100% 0%; }
-}
-.phone-sheen {
-  background-image: linear-gradient(115deg, transparent 44%, rgba(255,255,255,0.45) 50%, transparent 56%);
-  background-size: 320% 320%;
-  animation: phone-sheen-sweep 6s ease-in-out infinite;
-  mix-blend-mode: plus-lighter;
-}
-
-/* Slow ambient breathing on the podium's glow/beam — color itself comes
-   from an inline `backgroundColor` set per active feature; transitioning
-   that (rather than a CSS custom property feeding a gradient) is what lets
-   the accent shift animate smoothly on a feature change, since gradients
-   can't interpolate through a CSS transition the way solid colors can. */
-@keyframes podium-breathe {
-  0%, 100% { opacity: 0.6; }
-  50%      { opacity: 1; }
-}
-.podium-glow {
-  transition: background-color 0.9s ease;
-  animation: podium-breathe 3.4s ease-in-out infinite;
-}
-.podium-beam {
-  transition: background-color 0.9s ease;
-  animation: podium-breathe 3.4s ease-in-out infinite reverse;
-}
-.podium-ring {
-  transition: border-color 0.9s ease, box-shadow 0.9s ease;
-}
-
-/* Crossfade between the four phones — opacity/transform only, so it never
-   fights the jellyfish loops running on the nested elements inside. */
-.phone-slot {
-  transition: opacity 1s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+.link-underline:hover {
+  background-size: 100% 1px;
 }

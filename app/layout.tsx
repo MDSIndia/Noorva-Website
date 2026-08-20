@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans, Playfair_Display, Oxanium, Caveat } from "next/font/google";
+import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/SmoothScroll";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -9,64 +12,38 @@ const inter = Inter({
   weight: ["400", "500", "600", "700"],
 });
 
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
   display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "600", "700", "800", "900"],
+  weight: ["400", "500", "600"],
   style: ["normal", "italic"],
 });
 
-const oxanium = Oxanium({
-  variable: "--font-oxanium",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["300", "400", "500"],
-});
-
-// Storybook-page handwriting used only by the story chapter pages
-// (StoryCinematic.tsx's ChapterSlide) — a warm, casual print-hand rather
-// than a cursive script, so chapter headlines stay legible at size.
-const caveat = Caveat({
-  variable: "--font-caveat",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["500", "600", "700"],
-});
-
 export const metadata: Metadata = {
-  title: "Noorva — The Future of Human-AI Companionship",
+  title: "Noorva — A Connected Ecosystem of Human-Interactive AI",
   description:
-    "Noorva is a next-generation Human-Interactive AI Companion. Not another assistant — a guide, mentor, planner, and companion that grows with you.",
+    "Noorva is building a connected ecosystem of human-interactive AI products — Noorva Companion, Noorva Video, and the wearables and devices that follow.",
   keywords: [
-    "AI Companion",
-    "Human Interactive AI",
-    "Digital Companion",
-    "AI Guide",
-    "Smart Assistant",
-    "Personalized AI",
-    "Future of AI",
-    "AI Mentor",
     "Noorva",
+    "Noorva Companion",
+    "Noorva Video",
+    "Human Interactive AI",
+    "AI Ecosystem",
+    "Personal AI",
+    "AI Companion",
   ],
   authors: [{ name: "Noorva" }],
   openGraph: {
-    title: "Noorva — The Future of Human-AI Companionship",
-    description: "Not another assistant. A guide, mentor, planner, and companion that grows with you.",
+    title: "Noorva — A Connected Ecosystem of Human-Interactive AI",
+    description: "Noorva Companion, Noorva Video, and the wearables and devices that follow — one connected ecosystem.",
     type: "website",
     siteName: "Noorva",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Noorva — The Future of Human-AI Companionship",
-    description: "Not another assistant. A guide, mentor, planner, and companion that grows with you.",
+    title: "Noorva — A Connected Ecosystem of Human-Interactive AI",
+    description: "Noorva Companion, Noorva Video, and the wearables and devices that follow — one connected ecosystem.",
   },
 };
 
@@ -75,8 +52,13 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${jakarta.variable} ${playfair.variable} ${oxanium.variable} ${caveat.variable} antialiased`}>
-        <SmoothScroll>{children}</SmoothScroll>
+      <body className={`${inter.variable} ${fraunces.variable} antialiased`}>
+        <SmoothScroll>
+          <div className="paper-grain" />
+          <Header />
+          {children}
+          <Footer />
+        </SmoothScroll>
       </body>
     </html>
   );

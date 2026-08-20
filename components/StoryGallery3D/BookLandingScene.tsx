@@ -13,18 +13,29 @@ import BookModel, { BOOK_D, BOOK_W, BOOK_H } from "./BookModel";
 const REST_Y = 0;
 const DESK_Y = REST_Y - BOOK_D / 2 - 0.02;
 const FALL_START_Y = REST_Y + 3.6;
-// The desk's top-surface footprint, and how thick its slab reads. A
-// paper-thin plane only barely larger than the book (the original 8x6) has
-// no visible edge, so from the establishing shot's fairly level angle its
-// far boundary shows up as a stark straight line against the plain black
-// void beyond it — nothing like an actual desk. Generously oversizing it
-// pushes that boundary well outside both camera framings below so the
-// surface recedes toward a natural perspective vanishing point instead;
-// the added thickness gives it a visible front edge up close, the one cue
-// that actually reads as "physical slab" rather than "floating sheet."
-const DESK_W = 30;
-const DESK_D = 30;
+// The desk's top-surface footprint — a plain, finite square tabletop. An
+// earlier pass oversized this to 30x30 specifically so its edges never
+// entered frame (an unbounded plane recedes to a vanishing point instead of
+// showing a hard boundary against the black void beyond it); the tradeoff
+// was that it never read as an actual bounded table, just an endless floor.
+// Now that there's a library wall (see LIBRARY_WALL_* below) closing off
+// the background instead of open void, a real edge is fine to show — it's
+// the cue that actually sells "table," and a square footprint matches a
+// real library table's proportions rather than a rectangle stretched out
+// toward the horizon.
+const DESK_W = 8;
+const DESK_D = 8;
 const DESK_THICKNESS = 0.28;
+// The library backdrop wall the desk sits in front of — placed just far
+// enough behind the desk's own far edge to clear it, sized generously so it
+// fills the establishing shot's frame at typical aspect ratios without
+// needing fitScale's exactness (a plain backdrop, unlike the book, doesn't
+// need to be pixel-precise in frame — the <fog> in Scene's children below
+// fades its edges out regardless of exactly how it's cropped).
+const LIBRARY_WALL_Z = -(DESK_D / 2 + 3);
+const LIBRARY_WALL_W = 16;
+const LIBRARY_WALL_H = 9;
+const LIBRARY_WALL_Y = 3.3;
 // Past vertical (-90°/-Math.PI/2), so the cover settles leaning back
 // against where the pages would be rather than balancing exactly upright —
 // reads as a book that's naturally come to rest open, not one frozen
@@ -110,252 +121,230 @@ function fitScale(cameraPos: [number, number, number], lookAt: [number, number, 
   return Math.min(1, 1 / (worst * (1 + margin)));
 }
 
-/** Procedural wood-grain texture for the desk the book lands on — a canvas
- *  gradient plus wavy grain lines and a few plank seams, generated inline
- *  rather than an image asset so this stays a single self-contained repo
- *  change (matches BookModel.tsx's own usePaperEdgeTexture/
- *  useHingeGrooveTexture precedent for the same reason). */
-function useDeskWoodTexture() {
+// Deterministic PRNG for the grain generation below — same mulberry32 used
+// elsewhere in the codebase (CinematicIntro's own starfield) for
+// reproducible "generated, not hand-picked" variation.
+function mulberry32(seed: number) {
+  let a = seed;
+  return function rand() {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Plain, flat table colors — a "real library table" reference is a solid
+// stained wood surface, not an ornately grained one; this replaces two
+// earlier passes at a procedural wood-grain canvas texture that kept
+// reading as artificial (a stamped-out lattice, then a still-too-busy set
+// of converging fibers) with a single flat color per face instead. Top a
+// touch lighter/warmer than the sides — the same "surface catches more
+// light than the edge" cue real furniture has — without needing a texture
+// map to sell it.
+const DESK_TOP_COLOR = "#8a5a34";
+const DESK_EDGE_COLOR = "#6e4527";
+
+function Desk() {
+  return (
+    <mesh position={[0, DESK_Y - DESK_THICKNESS / 2, 0]} receiveShadow>
+      <boxGeometry args={[DESK_W, DESK_THICKNESS, DESK_D]} />
+      <meshPhysicalMaterial attach="material-0" color={DESK_EDGE_COLOR} roughness={0.65} metalness={0.05} />
+      <meshPhysicalMaterial attach="material-1" color={DESK_EDGE_COLOR} roughness={0.65} metalness={0.05} />
+      <meshPhysicalMaterial attach="material-2" color={DESK_TOP_COLOR} roughness={0.55} metalness={0.05} />
+      <meshPhysicalMaterial attach="material-3" color={DESK_EDGE_COLOR} roughness={0.65} metalness={0.05} />
+      <meshPhysicalMaterial attach="material-4" color={DESK_EDGE_COLOR} roughness={0.65} metalness={0.05} />
+      <meshPhysicalMaterial attach="material-5" color={DESK_EDGE_COLOR} roughness={0.65} metalness={0.05} />
+    </mesh>
+  );
+}
+
+// Book-spine base hues for the library backdrop below (degrees on the HSL
+// wheel) — muted, period-plausible cloth-binding families (reds, forest
+// green, navy, mustard, plum, teal, oxblood, indigo) rather than bright
+// saturated colors, so the shelf reads as an old library, not a toy store.
+// Each spine still jitters its own saturation/lightness around whichever
+// hue it draws (see the drawing loop below) so two books from the same
+// family never render as the literal same color — a flat palette of exact
+// hex swatches was what made the first pass read as an obviously repeating,
+// stamped-out pattern rather than a shelf someone actually filled by hand.
+const LIBRARY_HUES = [6, 150, 210, 42, 320, 174, 24, 258];
+
+/** Procedural bookshelf texture for the library wall the desk sits in front
+ *  of — replaces the earlier cosmos starfield backdrop with a setting that
+ *  actually matches "library table" instead of a book floating in space.
+ *  Canvas-generated (same precedent as BookModel.tsx's usePaperEdgeTexture/
+ *  useHingeGrooveTexture and this file's own former wood-grain texture) so
+ *  this stays a self-contained repo change with no new image asset. Rows of
+ *  shelf boards each stacked with randomly sized/colored book spines —
+ *  seeded so the arrangement is reproducible, not hand-placed. */
+function useLibraryTexture() {
   return useMemo(() => {
     if (typeof document === "undefined") return null;
-    const w = 512;
-    const h = 512;
+    const w = 1024;
+    const h = 576;
     const canvas = document.createElement("canvas");
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
+    const rand = mulberry32(2671);
 
-    // Brighter, more saturated oak/chestnut browns than the previous pass
-    // (was #7a4f2c / #8f6238 / #6b4526) — still reads warm-but-muted next
-    // to the fog and low lighting here, short of an unmistakably "brown
-    // wood desk" read; these push further into a clearer, lighter brown so
-    // the tone survives that same dim lighting.
-    const base = ctx.createLinearGradient(0, 0, w, 0);
-    base.addColorStop(0, "#9c6a3c");
-    base.addColorStop(0.5, "#b17c46");
-    base.addColorStop(1, "#8a5a32");
-    ctx.fillStyle = base;
+    // Carcass color behind and between the shelves.
+    ctx.fillStyle = "#241509";
     ctx.fillRect(0, 0, w, h);
 
-    for (let i = 0; i < 46; i++) {
-      const y0 = (i / 46) * h + Math.sin(i * 12.9) * 6;
-      ctx.strokeStyle = `rgba(74,46,22,${0.1 + (i % 5) * 0.04})`;
-      ctx.lineWidth = 1 + (i % 3);
-      ctx.beginPath();
-      ctx.moveTo(0, y0);
-      for (let x = 0; x <= w; x += 32) {
-        ctx.lineTo(x, y0 + Math.sin(x * 0.02 + i) * 4);
+    const rows = 4;
+    const rowH = h / rows;
+    const shelfBoardH = 14;
+    const sideMargin = 26;
+
+    for (let row = 0; row < rows; row++) {
+      const rowTop = row * rowH;
+      const contentTop = rowTop + shelfBoardH;
+      const contentH = rowH - shelfBoardH;
+      // Real shelves have books sitting slightly forward/back of each
+      // other, which reads as a subtle brightness difference under a
+      // consistent light — applied per-row so it isn't the same handful of
+      // books every time.
+      const rowLight = rand() > 0.5 ? 1 : -1;
+
+      // Books packed left-to-right, each a random width/height/hue-jittered
+      // color — no two rows (or spines within a row) share a rhythm. An
+      // occasional wider gap (an empty slot, or where a book is missing) and
+      // occasional slight lean keep the row from reading as a single
+      // mechanically-tiled unit.
+      let x = sideMargin;
+      while (x < w - sideMargin) {
+        // A real shelf isn't packed edge-to-edge everywhere — every so
+        // often (not on the very first book of a row) leave a small bare
+        // gap of shelf-board color instead of another spine.
+        if (x > sideMargin && rand() < 0.06) {
+          x += 6 + rand() * 16;
+          continue;
+        }
+
+        const bw = 14 + rand() * 34;
+        if (x + bw > w - sideMargin) break;
+        const shrink = rand() * 0.24; // some books shorter than the shelf's full height
+        const bh = contentH * (0.74 + rand() * 0.26 - shrink);
+        const by = contentTop + (contentH - bh);
+
+        // Hue jitter + independent saturation/lightness per spine, instead
+        // of picking a swatch verbatim from a fixed palette — this is what
+        // actually breaks up the "stamped out" look, since even two spines
+        // sharing a hue family land on visibly different exact colors.
+        const hue = LIBRARY_HUES[Math.floor(rand() * LIBRARY_HUES.length)] + (rand() - 0.5) * 16;
+        const sat = 24 + rand() * 26;
+        const light = 20 + rowLight * (rand() * 3) + rand() * 16;
+
+        // A slight lean on a minority of spines — the one detail that most
+        // reads as "someone's actual shelf" rather than a drawn grid. Small
+        // enough (±4°) that it still looks like gravity/wear, not a book
+        // about to fall.
+        const lean = rand() < 0.16 ? (rand() - 0.5) * 8 : 0;
+        const cx = x + bw / 2;
+        const cy = by + bh;
+        ctx.save();
+        if (lean !== 0) {
+          ctx.translate(cx, cy);
+          ctx.rotate((lean * Math.PI) / 180);
+          ctx.translate(-cx, -cy);
+        }
+
+        // Spine face — a left-to-right gradient rather than a flat fill, so
+        // each spine reads as a rounded surface catching light unevenly
+        // instead of a flat painted rectangle.
+        const spineGrad = ctx.createLinearGradient(x, 0, x + bw, 0);
+        spineGrad.addColorStop(0, `hsl(${hue.toFixed(1)}, ${sat.toFixed(1)}%, ${Math.max(8, light - 6).toFixed(1)}%)`);
+        spineGrad.addColorStop(0.4, `hsl(${hue.toFixed(1)}, ${sat.toFixed(1)}%, ${light.toFixed(1)}%)`);
+        spineGrad.addColorStop(1, `hsl(${hue.toFixed(1)}, ${sat.toFixed(1)}%, ${Math.max(6, light - 10).toFixed(1)}%)`);
+        ctx.fillStyle = spineGrad;
+        ctx.fillRect(x, by, bw, bh);
+
+        // A thin darker line separates each spine from its neighbor.
+        ctx.strokeStyle = "rgba(0,0,0,0.35)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, by, bw, bh);
+
+        // A faint lighter band partway down some spines reads as a title
+        // label without needing legible text at this viewing distance.
+        if (rand() > 0.45) {
+          ctx.fillStyle = `rgba(255,255,255,${0.08 + rand() * 0.1})`;
+          ctx.fillRect(x + 2, by + bh * (0.3 + rand() * 0.3), bw - 4, 3 + rand() * 3);
+        }
+        // Raised horizontal bands near the top, the way older leather-bound
+        // spines are ribbed — only on a minority of (usually taller/darker)
+        // spines so it doesn't read as a repeated stamp on every book.
+        if (rand() > 0.72) {
+          const bandCount = 1 + Math.floor(rand() * 2);
+          for (let b = 0; b < bandCount; b++) {
+            const by2 = by + bh * (0.12 + b * 0.09 + rand() * 0.03);
+            ctx.strokeStyle = "rgba(0,0,0,0.3)";
+            ctx.lineWidth = 1.5 + rand();
+            ctx.beginPath();
+            ctx.moveTo(x + 1, by2);
+            ctx.lineTo(x + bw - 1, by2);
+            ctx.stroke();
+          }
+        }
+        // A worn, chipped-lighter corner on a few spines — cloth/leather
+        // binding wear at the shelf-facing top corner.
+        if (rand() > 0.85) {
+          ctx.fillStyle = "rgba(210,196,170,0.22)";
+          ctx.beginPath();
+          ctx.moveTo(x, by);
+          ctx.lineTo(x + Math.min(bw * 0.6, 10), by);
+          ctx.lineTo(x, by + Math.min(bh * 0.15, 10));
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        ctx.restore();
+        x += bw + 1 + (rand() < 0.1 ? rand() * 4 : 0);
       }
-      ctx.stroke();
+
+      // Shelf board this row's books sit on.
+      const shelfGrad = ctx.createLinearGradient(0, rowTop, 0, rowTop + shelfBoardH);
+      shelfGrad.addColorStop(0, "#5a3a1e");
+      shelfGrad.addColorStop(1, "#3a2410");
+      ctx.fillStyle = shelfGrad;
+      ctx.fillRect(0, rowTop, w, shelfBoardH);
     }
 
-    ctx.strokeStyle = "rgba(74,46,22,0.3)";
-    ctx.lineWidth = 2;
-    for (let p = 1; p < 5; p++) {
-      const x = (p / 5) * w;
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-      ctx.stroke();
-    }
+    // Vertical side posts frame the whole unit.
+    ctx.fillStyle = "#2f1c0d";
+    ctx.fillRect(0, 0, sideMargin, h);
+    ctx.fillRect(w - sideMargin, 0, sideMargin, h);
+
+    // Soft vignette so the backdrop's own edges fade toward the same
+    // near-black the scene's fog already recedes into, instead of a hard
+    // rectangle cutting against the void.
+    const vignette = ctx.createRadialGradient(w / 2, h * 0.4, h * 0.25, w / 2, h * 0.4, w * 0.7);
+    vignette.addColorStop(0, "rgba(0,0,0,0)");
+    vignette.addColorStop(1, "rgba(0,0,0,0.6)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, w, h);
 
     const texture = new THREE.CanvasTexture(canvas);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    // Grain density kept proportional to the original 1.4-tiles-over-8x6
-    // plane now that the surface is DESK_W x DESK_D — otherwise the same
-    // fixed tile count would stretch across the much larger area and read
-    // as a blurry smear instead of grain.
-    texture.repeat.set((1.4 / 8) * DESK_W, (1.4 / 6) * DESK_D);
     texture.colorSpace = THREE.SRGBColorSpace;
-    // The establishing shot looks almost along the desk's own surface (a
-    // near-grazing angle), which without this stretches the mip selection
-    // hard in one UV direction and blurs the grain into a flat, washed-out
-    // band right where the camera's looking — anisotropic filtering keeps
-    // it resolved at exactly the shallow angles a flat "cover" plane like
-    // this is always going to be viewed at.
-    texture.anisotropy = 16;
     return texture;
   }, []);
 }
 
-// Walnut for the slab's underside/edges — only the top face shows the grain
-// texture (a stretched copy of it on the thin edge faces would look wrong);
-// this is what actually sells the "edge" cue the old flat plane had none of,
-// visible on the front face nearest the establishing-shot camera. Lightened
-// alongside the top face's own texture (was #3b2414, then #5c3a20) —
-// matched-in-tone but still a shade darker than the top, reading as the
-// same wood seen edge-on rather than a different, darker material.
-const DESK_EDGE_COLOR = "#77502c";
-
-function Desk() {
-  const texture = useDeskWoodTexture();
+/** The library wall the desk sits in front of. A single plane behind the
+ *  desk's far edge, sized generously so it fills the establishing shot's
+ *  frame at typical aspect ratios — see LIBRARY_WALL_* above for its
+ *  placement. */
+function LibraryBackdrop() {
+  const texture = useLibraryTexture();
   if (!texture) return null;
   return (
-    <mesh position={[0, DESK_Y - DESK_THICKNESS / 2, 0]} receiveShadow>
-      <boxGeometry args={[DESK_W, DESK_THICKNESS, DESK_D]} />
-      <meshPhysicalMaterial attach="material-0" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
-      <meshPhysicalMaterial attach="material-1" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
-      <meshPhysicalMaterial attach="material-2" map={texture} roughness={0.8} metalness={0.05} envMapIntensity={0.5} />
-      <meshPhysicalMaterial attach="material-3" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
-      <meshPhysicalMaterial attach="material-4" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
-      <meshPhysicalMaterial attach="material-5" color={DESK_EDGE_COLOR} roughness={0.6} metalness={0.05} />
+    <mesh position={[0, LIBRARY_WALL_Y, LIBRARY_WALL_Z]}>
+      <planeGeometry args={[LIBRARY_WALL_W, LIBRARY_WALL_H]} />
+      <meshStandardMaterial map={texture} roughness={0.95} />
     </mesh>
-  );
-}
-
-/** Soft round point texture for the cosmos backdrop above the desk — same
- *  canvas-generated-texture approach as the wood grain above (and the dust
- *  puff below). A tiny bright core fading to transparent reads as a
- *  distant point of light once rendered through additive blending at
- *  point-sprite scale. */
-function useStarTexture() {
-  return useMemo(() => {
-    if (typeof document === "undefined") return null;
-    const size = 32;
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-    gradient.addColorStop(0, "rgba(255,255,255,1)");
-    gradient.addColorStop(0.35, "rgba(210,222,255,0.7)");
-    gradient.addColorStop(1, "rgba(210,222,255,0)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, size, size);
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
-  }, []);
-}
-
-// Deterministic hash-based PRNG (not Math.random()) — component render/
-// memo work is expected to be pure/idempotent (see CinematicIntro.tsx's own
-// mulberry32 for the same reason), and a seeded index-based generator gives
-// the same star scatter on every render without needing to stash it in
-// state. Matches CosmicCanvas.tsx's own `prng` precedent.
-function starPrng(n: number) {
-  let s = (n * 1664525 + 1013904223) | 0;
-  s = Math.imul(s, s ^ (s >> 16));
-  return ((s >>> 0) / 0xffffffff);
-}
-
-// CAMERA_ESTABLISH's own basis vectors — placing stars by a plain world-
-// space box (an earlier pass here) put almost all of them outside the
-// establishing camera's actual view: it's tilted ~19° *below* horizontal
-// (aimed at the desk) with only a 34° vertical FOV, so its frustum barely
-// grazes true horizontal at its very top edge — nothing placed at a
-// generic "up in the sky" world height was ever going to land in frame.
-// Building star positions in this camera's own local (forward/right/up)
-// space instead — as a small angular offset from where it's actually
-// looking, not from world "up" — guarantees they land inside its frustum
-// regardless of that tilt.
-const ESTABLISH_FORWARD = new THREE.Vector3(...CAMERA_TARGET).sub(new THREE.Vector3(...CAMERA_ESTABLISH)).normalize();
-const ESTABLISH_RIGHT = new THREE.Vector3().crossVectors(ESTABLISH_FORWARD, new THREE.Vector3(0, 1, 0)).normalize();
-const ESTABLISH_UP = new THREE.Vector3().crossVectors(ESTABLISH_RIGHT, ESTABLISH_FORWARD).normalize();
-const ESTABLISH_ORIGIN = new THREE.Vector3(...CAMERA_ESTABLISH);
-
-// Scattered as a cone of directions around where the establishing camera is
-// actually looking (see the basis vectors above), well behind the book, so
-// they read as a night sky sitting behind the whole tabletop scene rather
-// than floating in a part of world-space this shot never points at.
-function useStarPositions(count: number, seed: number) {
-  // `count`/`seed` are literals at each call site (never change across
-  // renders), so this only ever needs to run once per instance, same as
-  // this file's other useMemo(() => ..., []) texture/geometry hooks.
-  return useMemo(() => {
-    const arr = new Float32Array(count * 3);
-    const dir = new THREE.Vector3();
-    const pos = new THREE.Vector3();
-    for (let i = 0; i < count; i++) {
-      const n = seed * 100000 + i;
-      // Offsets from dead-center of frame, well inside BOOK_FOV's own
-      // ±17° half-angle (and its ~±26° horizontal counterpart) so every
-      // star lands comfortably inside the frustum, not right at its edge.
-      // Biased upward (mostly positive elevation) since dead-center already
-      // points at the book/desk — tilting up from there is what actually
-      // reaches the emptier part of frame above it.
-      const elevDeg = -4 + starPrng(n * 3 + 1) * 18;
-      const azDeg = (starPrng(n * 3 + 2) - 0.5) * 44;
-      const dist = 12 + starPrng(n * 3) * 55;
-      const elev = THREE.MathUtils.degToRad(elevDeg);
-      const az = THREE.MathUtils.degToRad(azDeg);
-
-      dir.copy(ESTABLISH_FORWARD)
-        .addScaledVector(ESTABLISH_UP, Math.tan(elev))
-        .addScaledVector(ESTABLISH_RIGHT, Math.tan(az))
-        .normalize();
-      pos.copy(ESTABLISH_ORIGIN).addScaledVector(dir, dist);
-      // Floor kept just above the desk surface — a steeply-down offset
-      // combined with a short distance could otherwise place a star at or
-      // below the desk's own height, where the opaque slab would hide it.
-      pos.y = Math.max(pos.y, DESK_Y + 0.15);
-
-      arr[i * 3] = pos.x;
-      arr[i * 3 + 1] = pos.y;
-      arr[i * 3 + 2] = pos.z;
-    }
-    return arr;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-}
-
-/** A static starfield behind/above the desk — this scene's own "sky",
- *  otherwise just the plain fog-black void the desk recedes into. Two
- *  layers (many faint pinpricks + a handful of brighter, bigger ones) for
- *  depth, matching CosmicCanvas.tsx's own near/far star-field precedent.
- *  `fog={false}` on both materials is what actually makes these visible at
- *  the distance they need to sit — the desk's own <fog> below (tuned to
- *  swallow the desk's surface into black by ~10 units out) would otherwise
- *  wash these out to nothing long before they're far enough to look like a
- *  sky. Rendered once and left alone (no per-frame animation) — matches
- *  this scene's "demand" frameloop; it just needs to be in the scene graph
- *  the next time anything else (the fall, the idle pose) calls
- *  invalidate(), not to drive its own render-loop upkeep. */
-function CosmosField() {
-  const texture = useStarTexture();
-  const farPositions = useStarPositions(1400, 1);
-  const nearPositions = useStarPositions(90, 2);
-
-  if (!texture) return null;
-
-  return (
-    <>
-      <points>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[farPositions, 3]} />
-        </bufferGeometry>
-        <pointsMaterial
-          map={texture}
-          size={0.09}
-          transparent
-          opacity={0.55}
-          depthWrite={false}
-          fog={false}
-          blending={THREE.AdditiveBlending}
-          toneMapped={false}
-          sizeAttenuation
-        />
-      </points>
-      <points>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[nearPositions, 3]} />
-        </bufferGeometry>
-        <pointsMaterial
-          map={texture}
-          size={0.22}
-          transparent
-          opacity={0.85}
-          depthWrite={false}
-          fog={false}
-          blending={THREE.AdditiveBlending}
-          toneMapped={false}
-          sizeAttenuation
-        />
-      </points>
-    </>
   );
 }
 
@@ -702,20 +691,15 @@ export default function BookLandingScene({ active, onOpened }: BookLandingSceneP
       cameraLookAt={CAMERA_TARGET}
       fov={BOOK_FOV}
       contactShadowPosition={[0, DESK_Y + 0.002, 0]}
-      contactShadowScale={6}
     >
-      {/* The desk is oversized (30x30, see DESK_W/DESK_D above) specifically
-          so its edge never enters frame — but with nothing at all fading
-          the distance out, that leaves an endless, flat-lit plane with zero
-          depth cues once the wood grain itself blurs out toward the
-          establishing shot's shallow, near-grazing sightline: no vanishing
-          point, no darkening, nothing to read as "table" rather than "wall
-          of color." Fog matching the page's own near-black background
-          recedes the far reaches into the same darkness the rest of the
-          site already sits in, giving the eye an actual horizon instead of
-          an infinite flat wash. */}
-      <fog attach="fog" args={["#050505", 1.8, 10]} />
-      <CosmosField />
+      {/* Fog recedes the desk's own edges and the library wall behind it
+          into the same near-black the rest of the site already sits in,
+          instead of a hard cut against nothing — pushed out a bit further
+          than the desk alone needed (was 1.8-10) so the library backdrop at
+          LIBRARY_WALL_Z is dim but still legible rather than fully
+          swallowed. */}
+      <fog attach="fog" args={["#050505", 2, 15]} />
+      <LibraryBackdrop />
       <Desk />
       <group ref={outerGroupRef}>
         <BookModel hingeGroupRef={hingeGroupRef} />
