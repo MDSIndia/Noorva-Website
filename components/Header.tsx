@@ -84,8 +84,8 @@ export default function Header() {
           <nav className="hidden items-center gap-6 lg:flex">
             {NAV_ITEMS.map((item) => {
               const active = item.type === "route" && pathname === item.target;
-              const linkClass = `link-underline pb-0.5 text-[11px] font-medium tracking-[0.18em] uppercase transition-colors duration-300 hover:text-[color:var(--accent)] ${
-                active ? "text-[color:var(--accent)]" : "text-[color:var(--ink-soft)]"
+              const linkClass = `link-underline pb-0.5 text-[11px] tracking-[0.18em] text-[color:var(--ink)] uppercase transition-opacity duration-300 hover:opacity-70 ${
+                active ? "font-semibold [background-size:100%_1px]" : "font-medium"
               }`;
               return item.type === "route" ? (
                 <Link key={item.label} href={item.target} className={linkClass}>

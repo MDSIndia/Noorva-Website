@@ -28,7 +28,7 @@ export default function WhatIsNoorvaSection() {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="lg:col-span-5"
         >
-          <p className="mb-4 flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.25em] text-[color:var(--accent)] uppercase">
+          <p className="mb-4 flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.25em] text-[color:var(--ink)] uppercase">
             <span className="h-px w-6" style={{ backgroundImage: "var(--accent-gradient)" }} />
             What Is Noorva
           </p>

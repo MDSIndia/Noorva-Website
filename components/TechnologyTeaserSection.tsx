@@ -43,7 +43,7 @@ export default function TechnologyTeaserSection() {
             transition={{ duration: 0.5, ease: "easeOut", delay: i * 0.05 }}
             className="group flex flex-col gap-2 py-7 sm:flex-row sm:items-center sm:gap-8 md:py-9"
           >
-            <span className="text-gradient font-display text-2xl opacity-80 sm:w-16 sm:shrink-0">{t.n}</span>
+            <span className="font-display text-2xl text-[color:var(--ink)] opacity-50 sm:w-16 sm:shrink-0">{t.n}</span>
             <h3 className="text-lg font-medium text-[color:var(--ink)] sm:w-72 sm:shrink-0 md:text-xl">{t.title}</h3>
             <p className="text-sm leading-relaxed text-[color:var(--ink-soft)] md:text-base">{t.description}</p>
           </motion.div>

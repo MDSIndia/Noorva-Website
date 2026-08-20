@@ -45,7 +45,7 @@ export default function ContactPage() {
                   </div>
                   <h3 className="mb-2 text-base font-medium text-[color:var(--ink)]">{c.title}</h3>
                   <p className="mb-4 text-sm leading-relaxed text-[color:var(--ink-soft)]">{c.description}</p>
-                  <span className="text-sm font-medium text-[color:var(--accent)] transition-opacity duration-300 group-hover:opacity-70">
+                  <span className="text-sm font-medium text-[color:var(--ink)] underline decoration-[color:var(--line)] underline-offset-4 transition-opacity duration-300 group-hover:opacity-70">
                     {c.email}
                   </span>
                 </a>

@@ -58,7 +58,7 @@ export default function AboutPage() {
         <p className="font-display mx-auto max-w-3xl text-center text-2xl leading-[1.5] font-normal text-[color:var(--ink)] italic md:text-3xl">
           &ldquo;A companion that remembers your journey, understands your story, and helps shape your future.&rdquo;
         </p>
-        <p className="mt-6 text-center text-xs tracking-[0.2em] text-[color:var(--accent)] uppercase">— Noorva</p>
+        <p className="mt-6 text-center text-xs tracking-[0.2em] text-[color:var(--ink)] uppercase">— Noorva</p>
       </PageSection>
     </main>
   );

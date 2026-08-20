@@ -38,11 +38,11 @@ export default function FaqAccordion() {
               className="group flex w-full items-center justify-between gap-4 py-6 text-left"
               aria-expanded={isOpen}
             >
-              <span className={`text-sm font-medium transition-colors duration-300 md:text-base ${isOpen ? "text-[color:var(--accent)]" : "text-[color:var(--ink)] group-hover:text-[color:var(--accent)]"}`}>
+              <span className={`text-sm text-[color:var(--ink)] transition-all duration-300 md:text-base ${isOpen ? "font-semibold" : "font-medium"}`}>
                 {item.q}
               </span>
               <ChevronDown
-                className={`h-4 w-4 shrink-0 transition-all duration-300 ${isOpen ? "text-[color:var(--accent)]" : "text-[color:var(--ink-faint)] group-hover:text-[color:var(--accent)]"}`}
+                className={`h-4 w-4 shrink-0 text-[color:var(--ink)] transition-transform duration-300`}
                 style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
               />
             </button>

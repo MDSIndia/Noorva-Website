@@ -32,7 +32,7 @@ export default function Hero() {
           <motion.p
             variants={fadeUp}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="mb-5 text-[11px] font-semibold tracking-[0.25em] text-[color:var(--accent)] uppercase"
+            className="mb-5 text-[11px] font-semibold tracking-[0.25em] text-[color:var(--ink)] uppercase"
           >
             01 — A Connected Ecosystem
           </motion.p>
@@ -43,7 +43,7 @@ export default function Hero() {
             className="font-display text-5xl leading-[1.05] font-normal text-[color:var(--ink)] md:text-[4.5rem]"
           >
             A new generation of{" "}
-            <span className="text-gradient relative inline-block italic">
+            <span className="relative inline-block italic">
               human-interactive
               <UnderlineDoodle className="absolute -bottom-2 left-0 h-3 w-full" />
             </span>{" "}
@@ -98,7 +98,7 @@ export default function Hero() {
             {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
               <span key={i} className="flex shrink-0 items-center gap-12 text-sm font-medium tracking-[0.1em] whitespace-nowrap text-[color:var(--ink-faint)] uppercase">
                 {item}
-                <span className="text-[color:var(--accent)]">✦</span>
+                <span className="text-[color:var(--ink)]">✦</span>
               </span>
             ))}
           </div>

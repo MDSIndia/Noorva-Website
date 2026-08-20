@@ -60,7 +60,7 @@ export default function ProductFeatureRow({
         <motion.p
           variants={fadeUp}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="mb-4 text-[11px] font-semibold tracking-[0.25em] text-[color:var(--accent)] uppercase"
+          className="mb-4 text-[11px] font-semibold tracking-[0.25em] text-[color:var(--ink)] uppercase"
         >
           {eyebrow}
         </motion.p>

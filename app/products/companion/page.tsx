@@ -72,8 +72,8 @@ export default function CompanionPage() {
       <PageSection id="get-started">
         <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-12 lg:gap-8">
           <div className="order-2 lg:order-1 lg:col-span-6">
-            <p className="mb-4 flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.25em] text-[color:var(--accent)] uppercase">
-              <span className="h-px w-6 bg-[color:var(--accent)]" />
+            <p className="mb-4 flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.25em] text-[color:var(--ink)] uppercase">
+              <span className="h-px w-6" style={{ backgroundImage: "var(--accent-gradient)" }} />
               Get Started
             </p>
             <h2 className="font-display text-3xl leading-[1.15] font-normal text-[color:var(--ink)] md:text-4xl">
