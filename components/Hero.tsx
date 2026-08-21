@@ -21,7 +21,6 @@ export default function Hero() {
   return (
     <section className="relative w-full overflow-hidden bg-[color:var(--paper)] pt-36 pb-0 md:pt-44">
       <div className="gradient-mesh" />
-      <div className="grid-texture pointer-events-none absolute inset-x-0 top-0 z-0 h-[640px]" />
       <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 gap-16 px-6 pb-24 md:px-10 md:pb-32 lg:grid-cols-12 lg:items-end lg:gap-8">
         <motion.div
           initial="hidden"
@@ -34,7 +33,7 @@ export default function Hero() {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="mb-5 text-[11px] font-semibold tracking-[0.25em] text-[color:var(--ink)] uppercase"
           >
-            01 — A Connected Ecosystem
+            A Connected Ecosystem
           </motion.p>
 
           <motion.h1
@@ -96,9 +95,8 @@ export default function Hero() {
         <div className="flex overflow-hidden">
           <div className="animate-marquee flex shrink-0 items-center gap-12 pr-12">
             {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
-              <span key={i} className="flex shrink-0 items-center gap-12 text-sm font-medium tracking-[0.1em] whitespace-nowrap text-[color:var(--ink-faint)] uppercase">
+              <span key={i} className="shrink-0 text-sm font-medium tracking-[0.1em] whitespace-nowrap text-[color:var(--ink-faint)] uppercase">
                 {item}
-                <span className="text-[color:var(--ink)]">✦</span>
               </span>
             ))}
           </div>

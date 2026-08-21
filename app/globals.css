@@ -137,18 +137,6 @@ html.lenis          { height: auto; }
   animation-delay: -9s;
 }
 
-/* ── FINE GRID TEXTURE ────────────────────────────────────────────── */
-/* A faint technical/blueprint grid — used sparingly to read as "engineered"
-   rather than hand-drawn, balancing the doodle motif elsewhere. */
-.grid-texture {
-  background-image:
-    linear-gradient(to right, rgba(13, 14, 22, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(13, 14, 22, 0.05) 1px, transparent 1px);
-  background-size: 44px 44px;
-  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 40%, transparent 100%);
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 40%, transparent 100%);
-}
-
 /* ── PAPER GRAIN ────────────────────────────────────────────────── */
 .paper-grain {
   position: fixed;

@@ -3,6 +3,7 @@ import { Mail, Briefcase, Users } from "lucide-react";
 import PageSection from "@/components/ui/PageSection";
 import SectionHeading from "@/components/ui/SectionHeading";
 import Card from "@/components/ui/Card";
+import NotifyForm from "@/components/NotifyForm";
 
 export const metadata: Metadata = {
   title: "Contact — Noorva",
@@ -52,6 +53,10 @@ export default function ContactPage() {
               </Card>
             );
           })}
+        </div>
+
+        <div className="mx-auto mt-6 max-w-2xl">
+          <NotifyForm />
         </div>
       </PageSection>
     </main>

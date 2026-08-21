@@ -7,6 +7,8 @@ import SectionHeading from "@/components/ui/SectionHeading";
 import Card from "@/components/ui/Card";
 import PhoneMockup from "@/components/ui/PhoneMockup";
 import CompanionScreen from "@/components/CompanionScreen";
+import CompanionDemoSection from "@/components/CompanionDemoSection";
+import LifeCategoriesSection from "@/components/LifeCategoriesSection";
 
 export const metadata: Metadata = {
   title: "Noorva Companion — Primary Product",
@@ -68,6 +70,9 @@ export default function CompanionPage() {
           })}
         </div>
       </PageSection>
+
+      <CompanionDemoSection />
+      <LifeCategoriesSection />
 
       <PageSection id="get-started">
         <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-12 lg:gap-8">

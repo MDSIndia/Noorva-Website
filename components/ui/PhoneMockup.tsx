@@ -22,7 +22,7 @@ export default function PhoneMockup({ children, className = "", tilt = -2 }: Pho
       whileInView={{ opacity: 1, y: 0, rotate: tilt }}
       viewport={{ once: true, amount: 0.3 }}
       transition={{ duration: 0.7, ease: "easeOut" }}
-      className={`relative mx-auto w-full max-w-[260px] ${className}`}
+      className={`relative mx-auto w-full max-w-[190px] sm:max-w-[260px] ${className}`}
     >
       <div className="pointer-events-none absolute -inset-8 -z-10 rounded-[3rem] opacity-[0.35] blur-3xl" style={{ backgroundImage: "var(--accent-gradient)" }} />
 

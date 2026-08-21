@@ -12,13 +12,13 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
   const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
-    // Reset scroll to top and disable browser scroll restoration on refresh
-    if (typeof window !== "undefined") {
-      window.scrollTo(0, 0);
-      if ("scrollRestoration" in window.history) {
-        window.history.scrollRestoration = "manual";
-      }
-    }
+    // Deliberately NOT touching window.history.scrollRestoration here.
+    // Setting it to "manual" disables the browser's native scroll-position
+    // restore for the rest of the session (this effect only runs once,
+    // since SmoothScroll lives in the root layout and persists across
+    // client-side navigations) — every subsequent Back/Forward then lands
+    // at the top of the page instead of where the user actually was.
+    // "auto" (the default) is what makes Back return to the right spot.
 
     const lenis = new Lenis({
       duration: 1.5,
