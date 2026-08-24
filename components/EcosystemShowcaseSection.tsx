@@ -43,7 +43,7 @@ export default function EcosystemShowcaseSection() {
                 style={{ backgroundImage: "var(--accent-gradient)" }}
               />
               <div
-                className="relative flex h-28 w-28 items-center justify-center rounded-full shadow-[0_20px_44px_-18px_var(--shadow-cool)] transition-transform duration-500 group-hover:scale-105"
+                className="relative flex h-28 w-28 items-center justify-center rounded-full shadow-[0_20px_44px_-18px_var(--shadow-accent)] transition-transform duration-500 group-hover:scale-105"
                 style={{ backgroundImage: "var(--accent-gradient)" }}
               >
                 <MessageCircleHeart className="h-12 w-12 text-white" strokeWidth={1} />

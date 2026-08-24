@@ -2,26 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── DESIGN TOKENS — premium, futuristic, light ──────────────────── */
+/* ── DESIGN TOKENS — premium: deep emerald + ink on crisp white ──── */
 :root {
-  --paper:      #f6f7fb;
-  --paper-dim:  #eceef7;
+  --paper:      #ffffff;
+  --paper-dim:  #f1f3f1;
   --white:      #ffffff;
-  --ink:        #0d0e16;
-  --ink-soft:   rgba(13, 14, 22, 0.62);
-  --ink-faint:  rgba(13, 14, 22, 0.4);
-  --line:       rgba(13, 14, 22, 0.1);
+  --ink:        #0a0d0b;
+  --ink-soft:   rgba(10, 13, 11, 0.62);
+  --ink-faint:  rgba(10, 13, 11, 0.4);
+  --line:       rgba(10, 13, 11, 0.1);
 
-  /* Brand gradient — matches the Noorva mark (blue -> violet -> magenta) */
-  --accent-1: #3965e5;
-  --accent-2: #7c5cfc;
-  --accent-3: #db45d7;
-  --accent-gradient: linear-gradient(120deg, var(--accent-1) 0%, var(--accent-2) 50%, var(--accent-3) 100%);
+  /* Brand accent — a tonal emerald sweep (one hue, three depths) rather
+     than a multi-hue rainbow gradient, so it reads as a single considered
+     color rather than a generic "AI startup" gradient. Not the logo mark's
+     own blue-violet-magenta, which stays as-is on the static logo image —
+     this is the site chrome's own accent identity, kept deliberately
+     distinct from it. */
+  --accent-1: #1f9c74;
+  --accent-2: #0d7a5a;
+  --accent-3: #06432f;
+  --accent-gradient: linear-gradient(120deg, var(--accent-1) 0%, var(--accent-2) 55%, var(--accent-3) 100%);
 
   /* Flat fallback for text-color contexts where a gradient fill isn't practical */
-  --accent:      #6b4de0;
-  --accent-soft: rgba(124, 92, 252, 0.1);
-  --shadow-cool: rgba(35, 27, 90, 0.14);
+  --accent:      #0d7a5a;
+  --accent-soft: rgba(13, 122, 90, 0.1);
+  --shadow-accent: rgba(6, 30, 22, 0.16);
 }
 
 /* ── RESET ─────────────────────────────────────────────────────── */
@@ -55,11 +60,11 @@ html.lenis          { height: auto; }
 ::-webkit-scrollbar       { width: 3px; }
 ::-webkit-scrollbar-track { background: var(--paper); }
 ::-webkit-scrollbar-thumb {
-  background: rgba(13, 14, 22, 0.2);
+  background: rgba(10, 13, 11, 0.2);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(13, 14, 22, 0.35);
+  background: rgba(10, 13, 11, 0.35);
 }
 
 /* ── GSAP PINNED SPACER FIX ─────────────────────────────────────── */
@@ -171,7 +176,7 @@ html.lenis          { height: auto; }
 /* ── BUTTONS ────────────────────────────────────────────────────── */
 @layer components {
   .btn-primary {
-    @apply relative inline-flex items-center gap-2 overflow-hidden rounded-full px-7 py-3.5 text-sm font-medium text-white shadow-[0_16px_32px_-12px_var(--shadow-cool)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_40px_-14px_var(--shadow-cool)];
+    @apply relative inline-flex items-center gap-2 overflow-hidden rounded-full px-7 py-3.5 text-sm font-medium text-white shadow-[0_16px_32px_-12px_var(--shadow-accent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_40px_-14px_var(--shadow-accent)];
     background-image: var(--accent-gradient);
     background-size: 160% 160%;
     background-position: 0% 50%;
@@ -181,7 +186,7 @@ html.lenis          { height: auto; }
     background-position: 100% 50%;
   }
   .btn-primary-sm {
-    @apply relative inline-flex items-center gap-2 overflow-hidden rounded-full px-6 py-3 text-sm font-medium text-white shadow-[0_12px_24px_-10px_var(--shadow-cool)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_-10px_var(--shadow-cool)];
+    @apply relative inline-flex items-center gap-2 overflow-hidden rounded-full px-6 py-3 text-sm font-medium text-white shadow-[0_12px_24px_-10px_var(--shadow-accent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_-10px_var(--shadow-accent)];
     background-image: var(--accent-gradient);
     background-size: 160% 160%;
     background-position: 0% 50%;
@@ -191,7 +196,7 @@ html.lenis          { height: auto; }
     background-position: 100% 50%;
   }
   .btn-secondary {
-    @apply inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-white/60 px-7 py-3.5 text-sm font-medium text-[color:var(--ink)] backdrop-blur-sm transition-all duration-300 hover:border-transparent hover:shadow-[0_12px_24px_-12px_var(--shadow-cool)];
+    @apply inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-white/60 px-7 py-3.5 text-sm font-medium text-[color:var(--ink)] backdrop-blur-sm transition-all duration-300 hover:border-transparent hover:shadow-[0_12px_24px_-12px_var(--shadow-accent)];
   }
 }
 

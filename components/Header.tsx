@@ -73,7 +73,7 @@ export default function Header() {
           borderColor: scrolled ? "var(--line)" : "transparent",
           background: scrolled ? "color-mix(in srgb, var(--paper) 92%, transparent)" : "transparent",
           backdropFilter: scrolled ? "blur(14px)" : "none",
-          boxShadow: scrolled ? "0 8px 24px -18px var(--shadow-cool)" : "none",
+          boxShadow: scrolled ? "0 8px 24px -18px var(--shadow-accent)" : "none",
         }}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10">
@@ -100,7 +100,7 @@ export default function Header() {
             })}
             <Link
               href="/contact"
-              className="rounded-full border border-[color:var(--ink)] px-5 py-2 text-[11px] font-medium tracking-[0.18em] text-[color:var(--ink)] uppercase shadow-[0_8px_18px_-10px_var(--shadow-cool)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[color:var(--ink)] hover:text-[color:var(--paper)] hover:shadow-[0_12px_24px_-10px_var(--shadow-cool)]"
+              className="rounded-full border border-[color:var(--ink)] px-5 py-2 text-[11px] font-medium tracking-[0.18em] text-[color:var(--ink)] uppercase shadow-[0_8px_18px_-10px_var(--shadow-accent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[color:var(--ink)] hover:text-[color:var(--paper)] hover:shadow-[0_12px_24px_-10px_var(--shadow-accent)]"
             >
               Get Started
             </Link>

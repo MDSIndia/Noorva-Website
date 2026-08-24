@@ -32,7 +32,7 @@ export default function PhoneMockup({ children, className = "", tilt = -2 }: Pho
       <span className="absolute top-28 -right-[3px] h-16 w-[3px] rounded-r-sm bg-[#c9c2b6]" />
 
       <div
-        className="relative overflow-hidden rounded-[2.6rem] border-[6px] shadow-[0_30px_60px_-24px_var(--shadow-cool)]"
+        className="relative overflow-hidden rounded-[2.6rem] border-[6px] shadow-[0_30px_60px_-24px_var(--shadow-accent)]"
         style={{ borderColor: "#1c1b1f", background: "#1c1b1f", aspectRatio: "9/19.4" }}
       >
         <div className="relative h-full w-full overflow-hidden rounded-[2.1rem] bg-[color:var(--paper)]">

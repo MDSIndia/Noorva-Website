@@ -78,7 +78,7 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
           className="relative lg:col-span-5 lg:justify-self-end"
         >
-          <div className="gradient-border rounded-[1.4rem] p-[1.5px] shadow-[0_24px_50px_-20px_var(--shadow-cool)]">
+          <div className="gradient-border rounded-[1.4rem] p-[1.5px] shadow-[0_24px_50px_-20px_var(--shadow-accent)]">
             <div className="glass-panel relative w-full max-w-[300px] rounded-[1.35rem] p-7">
               <span className="absolute -top-3 left-7 h-6 w-12 rotate-[-4deg] bg-[color:var(--accent-soft)]" aria-hidden />
               <p className="font-display text-xl leading-snug text-[color:var(--ink)] italic">

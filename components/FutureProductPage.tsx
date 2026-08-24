@@ -43,7 +43,7 @@ export default function FutureProductPage({
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="relative mb-8 flex h-20 w-20 items-center justify-center rounded-full shadow-[0_16px_32px_-16px_var(--shadow-cool)]"
+            className="relative mb-8 flex h-20 w-20 items-center justify-center rounded-full shadow-[0_16px_32px_-16px_var(--shadow-accent)]"
             style={{ backgroundImage: "var(--accent-gradient)" }}
           >
             <Icon className="h-8 w-8 text-white" strokeWidth={1} />
