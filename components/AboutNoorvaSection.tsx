@@ -302,7 +302,7 @@ export default function AboutNoorvaSection() {
         transition={{ duration: 0.9, ease: "easeOut" }}
         className="relative z-10 mx-auto mt-28 max-w-3xl px-8 text-center md:mt-36"
       >
-        <p className="font-playfair text-balance text-2xl leading-[1.5] font-light text-white/90 italic md:text-3xl lg:text-4xl">
+        <p className="font-playfair text-balance text-2xl leading-[1.5] font-light text-white/90 md:text-3xl lg:text-4xl">
           &ldquo;A companion that remembers your journey, understands your story, and helps shape
           your future.&rdquo;
         </p>

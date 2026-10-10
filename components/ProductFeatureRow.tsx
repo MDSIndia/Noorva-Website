@@ -70,7 +70,7 @@ export default function ProductFeatureRow({
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="font-display mb-6 text-3xl leading-[1.12] font-normal text-[color:var(--ink)] md:text-4xl lg:text-5xl"
         >
-          {title} {accent && <span className="italic">{accent}</span>}
+          {title} {accent && <span>{accent}</span>}
         </motion.h2>
 
         <motion.p variants={fadeUp} transition={{ duration: 0.6, ease: "easeOut" }} className="mb-10 max-w-xl text-base leading-relaxed text-[color:var(--ink-soft)] md:text-lg">

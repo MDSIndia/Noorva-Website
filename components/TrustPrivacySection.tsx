@@ -32,7 +32,7 @@ export default function TrustPrivacySection() {
             Trust &amp; Privacy
           </p>
           <h2 className="font-display text-3xl leading-[1.15] font-normal text-[color:var(--ink)] md:text-4xl">
-            Personalization, <span className="italic">on your terms.</span>
+            Personalization, <span>on your terms.</span>
           </h2>
         </motion.div>
 

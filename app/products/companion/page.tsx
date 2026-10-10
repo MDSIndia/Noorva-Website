@@ -82,7 +82,7 @@ export default function CompanionPage() {
               Get Started
             </p>
             <h2 className="font-display text-3xl leading-[1.15] font-normal text-[color:var(--ink)] md:text-4xl">
-              Ready to meet <span className="italic">Noorva Companion?</span>
+              Ready to meet <span>Noorva Companion?</span>
             </h2>
             <p className="mt-6 max-w-md text-base leading-relaxed text-[color:var(--ink-soft)] md:text-lg">
               Noorva Companion is in active development. Reach out and we&rsquo;ll let you know as soon as it&rsquo;s ready for you.

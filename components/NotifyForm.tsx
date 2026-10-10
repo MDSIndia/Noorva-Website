@@ -73,7 +73,7 @@ export default function NotifyForm() {
               }}
               placeholder="you@email.com"
               aria-label="Email address"
-              className="flex-1 rounded-full border border-[color:var(--line)] bg-[color:var(--paper)] px-5 py-3 text-sm text-[color:var(--ink)] placeholder:text-[color:var(--ink-faint)] outline-none transition-colors focus:border-[color:var(--ink)]"
+              className="flex-1 rounded-full glass px-5 py-3 text-sm text-[color:var(--ink)] placeholder:text-[color:var(--ink-faint)] outline-none transition-colors focus:border-[color:var(--ink)]"
             />
             <button type="submit" className="btn-primary-sm group shrink-0 justify-center">
               Notify Me

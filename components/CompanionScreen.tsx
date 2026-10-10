@@ -27,7 +27,7 @@ export default function CompanionScreen() {
               className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-[11.5px] leading-snug ${
                 m.from === "user"
                   ? "rounded-br-sm bg-[color:var(--ink)] text-[color:var(--paper)]"
-                  : "rounded-bl-sm border border-[color:var(--line)] bg-[color:var(--paper-dim)] text-[color:var(--ink)]"
+                  : "rounded-bl-sm glass-soft text-[color:var(--ink)]"
               }`}
             >
               {m.text}

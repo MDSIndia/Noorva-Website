@@ -151,7 +151,7 @@ export default function CompanionDemoSection() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true, amount: 0.4 }}
                   transition={{ duration: 0.4, ease: "easeOut", delay: i * 0.06 }}
-                  className="flex items-center gap-3 rounded-xl border border-[color:var(--line)] bg-[color:var(--paper)] px-4 py-3"
+                  className="flex items-center gap-3 rounded-xl glass px-4 py-3"
                 >
                   <Icon className="h-4 w-4 shrink-0 text-[color:var(--ink)]" strokeWidth={1.5} />
                   <span className="text-sm font-medium text-[color:var(--ink)]">{t.label}</span>
@@ -193,10 +193,10 @@ export default function CompanionDemoSection() {
                   className="p-6 md:p-8"
                 >
                   <div className="mb-5 flex items-start gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--paper-dim)]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full glass-soft">
                       <User className="h-4 w-4 text-[color:var(--ink)]" strokeWidth={1.5} />
                     </div>
-                    <div className="rounded-2xl rounded-tl-sm border border-[color:var(--line)] bg-[color:var(--paper-dim)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ink)]">
+                    <div className="rounded-2xl rounded-tl-sm glass-soft px-4 py-3 text-sm leading-relaxed text-[color:var(--ink)]">
                       {ex.userMessage}
                     </div>
                   </div>

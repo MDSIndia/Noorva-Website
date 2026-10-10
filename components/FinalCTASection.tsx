@@ -37,7 +37,7 @@ export default function FinalCTASection() {
         >
           The ecosystem is just getting started.
           <br />
-          <span className="relative inline-block italic">
+          <span className="relative inline-block">
             Come explore it.
             <CircleDoodle className="pointer-events-none absolute -inset-x-6 -inset-y-3 h-[calc(100%+1.5rem)] w-[calc(100%+3rem)]" />
           </span>

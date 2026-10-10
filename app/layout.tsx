@@ -1,24 +1,23 @@
-import type { Metadata } from "next";
-import { Inter, Fraunces } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/SmoothScroll";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import CosmicBackground from "@/components/CosmicBackground";
 
-const inter = Inter({
-  variable: "--font-inter",
+// Same typeface as mdsindia.in.
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
   display: "swap",
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-});
+export const viewport: Viewport = {
+  themeColor: "#020208",
+  colorScheme: "dark",
+};
 
 export const metadata: Metadata = {
   title: "Noorva — A Connected Ecosystem of Human-Interactive AI",
@@ -51,10 +50,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} ${fraunces.variable} antialiased`}>
+    <html lang="en" className={outfit.variable} style={{ backgroundColor: "#020208" }}>
+      <body className="antialiased" style={{ color: "#ffffff" }}>
+        <CosmicBackground />
         <SmoothScroll>
-          <div className="paper-grain" />
+          <div className="noise-grain" />
           <Header />
           {children}
           <Footer />

@@ -2,7 +2,7 @@
 
 // Shared eyebrow + display-serif headline idiom for the light/editorial
 // design — a small tracked-out accent-colored label, a Fraunces headline in
-// ink with an optional italic accent phrase, and a muted description line.
+// ink with an optional accent phrase, and a muted description line.
 
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
@@ -55,7 +55,7 @@ export default function SectionHeading({
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="font-display max-w-3xl text-4xl leading-[1.1] font-normal text-[color:var(--ink)] md:text-5xl lg:text-6xl"
       >
-        {title} {accent && <span className="italic">{accent}</span>}
+        {title} {accent && <span>{accent}</span>}
       </motion.h2>
 
       {description && (

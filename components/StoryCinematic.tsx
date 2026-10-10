@@ -114,7 +114,7 @@ function CoverSlide() {
       >
         Noorva
       </h1>
-      <p className="max-w-md text-sm font-light text-white/50 italic md:text-base">
+      <p className="max-w-md text-sm font-light text-white/50 md:text-base">
         A story of how humanity has always reached for connection — and the next step it takes.
       </p>
       <p className="mt-8 text-xs font-light tracking-[0.4em] text-white/30 uppercase">

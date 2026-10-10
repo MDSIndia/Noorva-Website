@@ -37,7 +37,7 @@ export default function EcosystemPage() {
             return (
               <div
                 key={item.title}
-                className="flex items-center gap-5 rounded-2xl border border-[color:var(--line)] bg-[color:var(--paper)] px-6 py-5"
+                className="flex items-center gap-5 rounded-2xl glass px-6 py-5"
               >
                 <span className="font-mono shrink-0 text-xs text-[color:var(--ink-faint)]">
                   {String(i + 1).padStart(2, "0")}

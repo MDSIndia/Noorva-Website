@@ -16,13 +16,21 @@ interface Star {
 // px^2 per star — lower = more stars. Dropped from 7000 to give the whole
 // site a visibly denser, more "cosmos-filled" backdrop rather than a sparse
 // handful of dots.
-const DENSITY = 2000;
+const DENSITY = 4000;
 
 // A handful of stars pick up a faint brand-color tint instead of plain
 // white, so the field reads as a genuine nebula-adjacent cosmos rather than
 // a flat star chart — same blue/violet already used for every other accent
 // on the site, just at low saturation so it doesn't compete with content.
-const STAR_COLORS = ["#ffffff", "#ffffff", "#ffffff", "#bcd4ff", "#c9b8ff"];
+const STAR_COLORS = ["#ffffff", "#ffffff", "#ffffff", "#9fc2ff", "#7fe6ff", "#c9b8ff"];
+
+// Deep-space nebula glows layered under the stars — the same blue / purple /
+// cyan radial blooms mdsindia.in uses behind its own cosmos.
+const NEBULA = [
+  "radial-gradient(60% 42% at 50% 28%, rgba(0, 85, 255, 0.08) 0%, transparent 70%)",
+  "radial-gradient(45% 40% at 88% 78%, rgba(123, 47, 190, 0.08) 0%, transparent 70%)",
+  "radial-gradient(40% 38% at 8% 62%, rgba(0, 212, 255, 0.04) 0%, transparent 70%)",
+].join(", ");
 
 /**
  * Fixed, full-viewport star field that sits behind every section of the
@@ -121,11 +129,18 @@ export default function CosmicBackground() {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden="true"
-      className="pointer-events-none fixed inset-0"
-      style={{ zIndex: -1, background: "var(--bg)" }}
-    />
+    <>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0"
+        style={{ zIndex: -2, background: `${NEBULA}, var(--bg)` }}
+      />
+      <canvas
+        ref={canvasRef}
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0"
+        style={{ zIndex: -1 }}
+      />
+    </>
   );
 }

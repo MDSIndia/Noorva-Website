@@ -45,13 +45,13 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
 
 export default function Footer() {
   return (
-    <footer className="w-full border-t border-[color:var(--line)] bg-[color:var(--paper)] pt-16 pb-10">
+    <footer className="w-full glass-strong !rounded-none !border-x-0 !border-b-0 pt-16 pb-10">
       <div className="mx-auto max-w-7xl px-6 md:px-10">
         <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 md:grid-cols-5">
           <div className="col-span-2 sm:col-span-3 md:col-span-1">
             <div className="mb-4 flex items-center gap-2.5">
               <Image src="/NoorvaLogo.png" alt="" width={24} height={24} className="h-6 w-6" />
-              <span className="font-display text-xl text-[color:var(--ink)] italic">Noorva</span>
+              <span className="font-display text-xl text-[color:var(--ink)]">Noorva</span>
             </div>
             <p className="max-w-[220px] text-sm leading-relaxed text-[color:var(--ink-faint)]">
               A connected ecosystem of human-interactive AI products.

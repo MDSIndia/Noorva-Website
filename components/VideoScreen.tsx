@@ -23,7 +23,7 @@ export default function VideoScreen() {
       <div className="flex flex-1 flex-col gap-3 overflow-hidden px-4">
         {VIDEOS.map((v, i) => (
           <div key={i} className="flex gap-2.5">
-            <div className="relative flex h-14 w-20 shrink-0 items-center justify-center rounded-lg bg-[color:var(--paper-dim)]">
+            <div className="relative flex h-14 w-20 shrink-0 items-center justify-center rounded-lg glass-soft">
               <Play className="h-4 w-4 text-[color:var(--accent)]" fill="currentColor" strokeWidth={0} />
               <span className="absolute right-1 bottom-1 rounded bg-[color:var(--ink)] px-1 text-[7px] font-medium text-[color:var(--paper)]">
                 {v.duration}

@@ -43,7 +43,7 @@ export default function AboutPage() {
             const Icon = v.icon;
             return (
               <div key={v.title}>
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--paper-dim)]">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full glass-soft">
                   <Icon className="h-[18px] w-[18px]" strokeWidth={1.5} style={{ color: "var(--accent-2)" }} />
                 </div>
                 <h3 className="mb-2 text-base font-medium text-[color:var(--ink)]">{v.title}</h3>
@@ -55,7 +55,7 @@ export default function AboutPage() {
       </PageSection>
 
       <PageSection shade="dim">
-        <p className="font-display mx-auto max-w-3xl text-center text-2xl leading-[1.5] font-normal text-[color:var(--ink)] italic md:text-3xl">
+        <p className="font-display mx-auto max-w-3xl text-center text-2xl leading-[1.5] font-normal text-[color:var(--ink)] md:text-3xl">
           &ldquo;A companion that remembers your journey, understands your story, and helps shape your future.&rdquo;
         </p>
         <p className="mt-6 text-center text-xs tracking-[0.2em] text-[color:var(--ink)] uppercase">— Noorva</p>

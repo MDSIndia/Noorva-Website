@@ -71,15 +71,16 @@ export default function Header() {
         className="fixed inset-x-0 top-0 z-50 border-b transition-all duration-300"
         style={{
           borderColor: scrolled ? "var(--line)" : "transparent",
-          background: scrolled ? "color-mix(in srgb, var(--paper) 92%, transparent)" : "transparent",
-          backdropFilter: scrolled ? "blur(14px)" : "none",
+          background: scrolled ? "rgba(2, 2, 8, 0.55)" : "transparent",
+          backdropFilter: scrolled ? "blur(20px) saturate(150%)" : "none",
+          WebkitBackdropFilter: scrolled ? "blur(20px) saturate(150%)" : "none",
           boxShadow: scrolled ? "0 8px 24px -18px var(--shadow-accent)" : "none",
         }}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10">
           <button type="button" onClick={() => goTo("home")} className="flex items-center gap-2.5">
             <Image src="/NoorvaLogo.png" alt="" width={28} height={28} className="h-7 w-7" />
-            <span className="font-display text-lg tracking-tight text-[color:var(--ink)] italic">Noorva</span>
+            <span className="font-display text-lg tracking-tight text-[color:var(--ink)]">Noorva</span>
           </button>
 
           <nav className="hidden items-center gap-5 xl:flex">
@@ -98,12 +99,6 @@ export default function Header() {
                 </button>
               );
             })}
-            <Link
-              href="/contact"
-              className="rounded-full border border-[color:var(--ink)] px-5 py-2 text-[11px] font-medium tracking-[0.18em] text-[color:var(--ink)] uppercase shadow-[0_8px_18px_-10px_var(--shadow-accent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[color:var(--ink)] hover:text-[color:var(--paper)] hover:shadow-[0_12px_24px_-10px_var(--shadow-accent)]"
-            >
-              Get Started
-            </Link>
           </nav>
 
           <button
@@ -126,7 +121,7 @@ export default function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="fixed inset-x-0 top-[72px] z-40 border-b border-[color:var(--line)] bg-[color:var(--paper)] xl:hidden"
+            className="fixed inset-x-0 top-[72px] z-40 glass-strong !border-x-0 !border-t-0 xl:hidden"
           >
             <div className="flex flex-col px-6 py-4">
               {NAV_ITEMS.map((item) =>
@@ -149,13 +144,6 @@ export default function Header() {
                   </button>
                 )
               )}
-              <Link
-                href="/contact"
-                onClick={() => setMobileOpen(false)}
-                className="mt-4 rounded-full bg-[color:var(--ink)] px-5 py-3 text-center text-sm font-medium tracking-[0.1em] text-[color:var(--paper)] uppercase"
-              >
-                Get Started
-              </Link>
             </div>
           </motion.div>
         )}
