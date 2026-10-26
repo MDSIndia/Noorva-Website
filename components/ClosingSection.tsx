@@ -104,7 +104,7 @@ export default function ClosingSection() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="mx-auto max-w-lg text-base md:text-lg text-white/60 font-light mb-12"
         >
-          Noorva is a human-interactive AI companion — not another assistant, but a guide,
+          Noorva is a Noorva Properative AI companion — not another assistant, but a guide,
           mentor, planner, and companion that grows with you. The next chapter is still being written.
         </motion.p>
 

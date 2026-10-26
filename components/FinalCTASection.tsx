@@ -39,7 +39,7 @@ export default function FinalCTASection() {
           <br />
           <span className="relative inline-block">
             Come explore it.
-            <CircleDoodle className="pointer-events-none absolute -inset-x-6 -inset-y-3 h-[calc(100%+1.5rem)] w-[calc(100%+3rem)]" />
+            <CircleDoodle className="pointer-events-none absolute hidden sm:block -inset-x-6 -inset-y-3 h-[calc(100%+1.5rem)] w-[calc(100%+3rem)]" />
           </span>
         </motion.h2>
 

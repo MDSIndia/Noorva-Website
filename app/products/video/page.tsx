@@ -4,8 +4,7 @@ import { Search, Bell, Sparkles, ShieldCheck, Layers, MessageSquareQuote, PlayCi
 import PageSection from "@/components/ui/PageSection";
 import SectionHeading from "@/components/ui/SectionHeading";
 import Card from "@/components/ui/Card";
-import PhoneMockup from "@/components/ui/PhoneMockup";
-import VideoScreen from "@/components/VideoScreen";
+import Phone3D from "@/components/ui/Phone3D";
 
 export const metadata: Metadata = {
   title: "Noorva Video — Content Product",
@@ -41,9 +40,7 @@ export default function VideoPage() {
             </Link>
           </div>
           <div className="lg:col-span-5">
-            <PhoneMockup tilt={2}>
-              <VideoScreen />
-            </PhoneMockup>
+            <Phone3D screen="video" />
           </div>
         </div>
       </PageSection>

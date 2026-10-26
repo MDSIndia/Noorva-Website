@@ -20,28 +20,28 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Noorva — A Connected Ecosystem of Human-Interactive AI",
+  title: "Noorva — A Connected Ecosystem of Noorva Properative AI",
   description:
-    "Noorva is building a connected ecosystem of human-interactive AI products — Noorva Companion, Noorva Video, and the wearables and devices that follow.",
+    "Noorva is building a connected ecosystem of Noorva Properative AI products — Noorva Companion, Noorva Video, and the wearables and devices that follow.",
   keywords: [
     "Noorva",
     "Noorva Companion",
     "Noorva Video",
-    "Human Interactive AI",
+    "Noorva Properative AI",
     "AI Ecosystem",
     "Personal AI",
     "AI Companion",
   ],
   authors: [{ name: "Noorva" }],
   openGraph: {
-    title: "Noorva — A Connected Ecosystem of Human-Interactive AI",
+    title: "Noorva — A Connected Ecosystem of Noorva Properative AI",
     description: "Noorva Companion, Noorva Video, and the wearables and devices that follow — one connected ecosystem.",
     type: "website",
     siteName: "Noorva",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Noorva — A Connected Ecosystem of Human-Interactive AI",
+    title: "Noorva — A Connected Ecosystem of Noorva Properative AI",
     description: "Noorva Companion, Noorva Video, and the wearables and devices that follow — one connected ecosystem.",
   },
 };

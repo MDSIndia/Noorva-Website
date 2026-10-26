@@ -9,13 +9,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
 const FAQS = [
-  { q: "What is Noorva?", a: "Noorva is a connected ecosystem of human-interactive AI products, beginning with a personal companion and extending into video, wearables and devices." },
-  { q: "What is Noorva Companion?", a: "Noorva's primary product — a personalized, human-interactive AI companion for everyday life. A guide, mentor, planner and companion, not just another assistant." },
+  { q: "What is Noorva?", a: "Noorva is a connected ecosystem of Noorva Properative AI products, beginning with a personal companion and extending into video, wearables and devices." },
+  { q: "What is Noorva Companion?", a: "Noorva's primary product — a personalized, Noorva Properative AI companion for everyday life. A guide, mentor, planner and companion, not just another assistant." },
   { q: "What is Noorva Video?", a: "Noorva's video sharing and discovery platform, focused on personalized, useful, relevant and credible content rather than endless scrolling." },
   { q: "How does Noorva personalize the experience?", a: "Through natural interaction, Noorva builds an understanding of your goals, preferences and context over time, and uses that to shape guidance, reminders and content." },
-  { q: "What is Human-Interactive AI?", a: "The foundation of Noorva's intelligence — AI that learns through natural conversation and interaction, rather than rigid commands or menus." },
+  { q: "What is Noorva Properative AI?", a: "The foundation of Noorva's intelligence — AI that learns through natural conversation and interaction, rather than rigid commands or menus." },
   { q: "What is Noorva Guide?", a: "The part of Noorva that turns understanding into practical action: goals, tasks, reminders and timely follow-ups." },
-  { q: "How does source filtering work?", a: "Noorva's Advanced Source Filtering uses intent detection, source verification and summarization to prioritize credible, relevant information." },
+  { q: "How does source filtering work?", a: "Noorva's Noorva Source Filtering uses intent detection, source verification and summarization to prioritize credible, relevant information." },
   { q: "Who can create content on Noorva Video?", a: "Noorva Video is built around a creator ecosystem, with channels, uploads and a verification process for creators." },
   { q: "What does the verified creator badge mean?", a: "A verified badge signals that a creator has been through Noorva's creator verification process, helping viewers identify credible sources." },
   { q: "What products are part of the Noorva ecosystem?", a: "Noorva Companion, Noorva Video, Noorva Glasses and Noorva Phones today, with future products joining the ecosystem over time." },

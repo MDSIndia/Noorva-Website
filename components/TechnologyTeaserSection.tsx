@@ -13,10 +13,10 @@ import SectionHeading from "./ui/SectionHeading";
 import { motion } from "framer-motion";
 
 const TECH = [
-  { n: "01", title: "Human-Interactive AI", description: "Learns through natural interaction, not forms and menus." },
+  { n: "01", title: "Noorva Properative AI", description: "Learns through natural interaction, not forms and menus." },
   { n: "02", title: "Noorva Guide", description: "Turns understanding into practical, everyday action." },
-  { n: "03", title: "Mood-Based Algorithm", description: "Understands timing and context, not just requests." },
-  { n: "04", title: "Advanced Source Filtering", description: "Focuses on credible, relevant information." },
+  { n: "03", title: "Noorva Appropriate Algorithm", description: "Understands timing and context, not just requests." },
+  { n: "04", title: "Noorva Source Filtering", description: "Focuses on credible, relevant information." },
 ];
 
 export default function TechnologyTeaserSection() {

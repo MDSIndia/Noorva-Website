@@ -6,8 +6,7 @@
 import { Search, Bell, ShieldCheck, Users } from "lucide-react";
 import PageSection from "./ui/PageSection";
 import ProductFeatureRow from "./ProductFeatureRow";
-import PhoneMockup from "./ui/PhoneMockup";
-import VideoScreen from "./VideoScreen";
+import Phone3D from "./ui/Phone3D";
 
 const FEATURES = [
   { icon: Search, title: "Precise Video Search", description: "Natural-language discovery, not endless scrolling." },
@@ -25,11 +24,7 @@ export default function VideoTeaserSection() {
         accent="content worth your time."
         description="Noorva isn't intended to be another conventional scrolling video app. It's built for personalized discovery, useful content, credible creators and efficient consumption."
         features={FEATURES}
-        visual={
-          <PhoneMockup tilt={2}>
-            <VideoScreen />
-          </PhoneMockup>
-        }
+        visual={<Phone3D screen="video" />}
         ctaHref="/products/video"
         ctaLabel="Explore Noorva Video"
         reverse

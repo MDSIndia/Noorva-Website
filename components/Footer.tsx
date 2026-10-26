@@ -21,7 +21,7 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
   {
     heading: "Technology",
     links: [
-      { label: "Human-Interactive AI", href: "/technology#human-interactive-ai" },
+      { label: "Noorva Properative AI", href: "/technology#human-interactive-ai" },
       { label: "Noorva Guide", href: "/technology#noorva-guide" },
       { label: "Mood Intelligence", href: "/technology#mood-algorithm" },
       { label: "Source Filtering", href: "/technology#source-filtering" },
@@ -54,7 +54,7 @@ export default function Footer() {
               <span className="font-display text-xl text-[color:var(--ink)]">Noorva</span>
             </div>
             <p className="max-w-[220px] text-sm leading-relaxed text-[color:var(--ink-faint)]">
-              A connected ecosystem of human-interactive AI products.
+              A connected ecosystem of Noorva Properative AI products.
             </p>
           </div>
 

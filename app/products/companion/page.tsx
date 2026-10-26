@@ -1,22 +1,20 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { Brain, ListTodo, Search, BookOpen, Mic, Bell, UserCog, ShieldCheck, ArrowRight } from "lucide-react";
 import PageSection from "@/components/ui/PageSection";
 import SectionHeading from "@/components/ui/SectionHeading";
 import Card from "@/components/ui/Card";
-import PhoneMockup from "@/components/ui/PhoneMockup";
-import CompanionScreen from "@/components/CompanionScreen";
+import Phone3D from "@/components/ui/Phone3D";
 import CompanionDemoSection from "@/components/CompanionDemoSection";
 import LifeCategoriesSection from "@/components/LifeCategoriesSection";
 
 export const metadata: Metadata = {
   title: "Noorva Companion — Primary Product",
-  description: "A personalized, human-interactive AI companion for everyday life. A guide, mentor, planner and companion — not another assistant.",
+  description: "A personalized, Noorva Properative AI companion for everyday life. A guide, mentor, planner and companion — not another assistant.",
 };
 
 const CAPABILITIES = [
-  { icon: Brain, title: "Human-Interactive AI", description: "Natural, personalized conversations that build understanding over time." },
+  { icon: Brain, title: "Noorva Properative AI", description: "Natural, personalized conversations that build understanding over time." },
   { icon: ListTodo, title: "Noorva Guide", description: "Goals, tasks, reminders, follow-ups and daily guidance." },
   { icon: Search, title: "Precise Search", description: "Natural-language discovery of relevant information." },
   { icon: BookOpen, title: "Basic Memory", description: "Goals, preferences, tasks and notes, remembered for continuity." },
@@ -44,9 +42,7 @@ export default function CompanionPage() {
             </Link>
           </div>
           <div className="lg:col-span-5">
-            <PhoneMockup>
-              <CompanionScreen />
-            </PhoneMockup>
+            <Phone3D />
           </div>
         </div>
       </PageSection>
@@ -93,13 +89,7 @@ export default function CompanionPage() {
             </Link>
           </div>
           <div className="order-1 flex justify-center lg:order-2 lg:col-span-6">
-            <Image
-              src="/phone-in-hand-trimmed.png"
-              alt="A hand holding a phone with the Noorva mark glowing on screen"
-              width={420}
-              height={406}
-              className="h-auto w-full max-w-[340px]"
-            />
+            <Phone3D />
           </div>
         </div>
       </PageSection>

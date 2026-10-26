@@ -6,7 +6,7 @@ import SectionHeading from "@/components/ui/SectionHeading";
 
 export const metadata: Metadata = {
   title: "Technology — The Intelligence Behind Noorva",
-  description: "Human-Interactive AI, Noorva Guide, Mood-Based Algorithm, Advanced Source Filtering and Voice Experience.",
+  description: "Noorva Properative AI, Noorva Guide, Noorva Appropriate Algorithm, Noorva Source Filtering and Voice Experience.",
 };
 
 interface TechEntry {
@@ -20,7 +20,7 @@ const ENTRIES: TechEntry[] = [
   {
     id: "human-interactive-ai",
     icon: Brain,
-    title: "Human-Interactive AI",
+    title: "Noorva Properative AI",
     description: "Learns through natural interaction — conversation, tone and context — rather than forms, menus or rigid commands.",
   },
   {
@@ -32,13 +32,13 @@ const ENTRIES: TechEntry[] = [
   {
     id: "mood-algorithm",
     icon: Gauge,
-    title: "Mood-Based Algorithm",
+    title: "Noorva Appropriate Algorithm",
     description: "Helps Noorva understand not just what you need, but when and how you need it.",
   },
   {
     id: "source-filtering",
     icon: ShieldCheck,
-    title: "Advanced Source Filtering",
+    title: "Noorva Source Filtering",
     description: "Intent detection, source verification, summarization and personalized delivery — focused on credible, relevant information.",
   },
   {

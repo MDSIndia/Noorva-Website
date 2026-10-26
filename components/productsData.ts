@@ -17,7 +17,7 @@ export const ECOSYSTEM_PRODUCTS: EcosystemProduct[] = [
     name: "Noorva Companion",
     role: "Primary product",
     status: "Primary Product",
-    message: "A personalized, human-interactive AI companion for everyday life.",
+    message: "A personalized, Noorva Properative AI companion for everyday life.",
     href: "/products/companion",
   },
   {

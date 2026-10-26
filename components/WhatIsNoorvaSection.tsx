@@ -49,10 +49,10 @@ export default function WhatIsNoorvaSection() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, amount: 0.4 }}
               transition={{ duration: 0.5, ease: "easeOut", delay: i * 0.06 }}
-              className="flex items-baseline gap-6 border-t border-[color:var(--line)] py-5 first:border-t-0 md:py-6"
+              className="flex items-baseline gap-4 border-t border-[color:var(--line)] py-5 first:border-t-0 md:gap-6 md:py-6"
             >
-              <span className="font-display shrink-0 text-sm text-[color:var(--ink-faint)]">{p.n}</span>
-              <span className="w-32 shrink-0 text-base font-medium text-[color:var(--ink)] md:text-lg">{p.label}</span>
+              <span className="font-display w-6 shrink-0 text-sm text-[color:var(--ink-faint)]">{p.n}</span>
+              <span className="w-28 shrink-0 text-base md:w-32 font-medium text-[color:var(--ink)] md:text-lg">{p.label}</span>
               <span className="text-sm text-[color:var(--ink-soft)] md:text-base">{p.detail}</span>
             </motion.div>
           ))}

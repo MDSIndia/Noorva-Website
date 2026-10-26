@@ -2,9 +2,9 @@
 
 import { useRef } from "react";
 import type { MouseEvent } from "react";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { Brain, Heart, Compass, Sprout } from "lucide-react";
+import Phone3D from "./ui/Phone3D";
 import type { LucideIcon } from "lucide-react";
 
 // An emotional "who Noorva is" beat, not a corporate About page — sits
@@ -173,15 +173,7 @@ export default function AboutNoorvaSection() {
                 className="pointer-events-none absolute inset-[-20%] -z-10 rounded-full opacity-70 blur-3xl animate-float-slow"
                 style={{ background: "radial-gradient(circle, rgba(124,92,252,0.55), transparent 70%)" }}
               />
-              <Image
-                src="/phone-in-hand-trimmed.png"
-                alt="A hand holding a phone with Noorva's companion mark glowing on the screen"
-                width={1525}
-                height={1475}
-                priority
-                className="h-auto w-[360px] md:w-[440px]"
-                style={{ filter: "drop-shadow(0 20px 45px rgba(0,0,0,0.55)) drop-shadow(0 0 40px rgba(124,92,252,0.45))" }}
-              />
+              <Phone3D className="w-[260px] sm:w-[300px] md:w-[340px]" />
             </div>
           </div>
         </motion.div>

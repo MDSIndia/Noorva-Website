@@ -83,7 +83,7 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
           className="relative lg:col-span-5 lg:justify-self-end"
         >
-          <div className="animate-float-slow gradient-border rounded-[1.4rem] p-[1.5px] shadow-[0_24px_50px_-20px_var(--shadow-accent)]">
+          <div className="animate-float-slow gradient-border w-full max-w-[300px] rounded-[1.4rem] p-[1.5px] shadow-[0_24px_50px_-20px_var(--shadow-accent)]">
             <div className="glass-panel group relative w-full max-w-[300px] overflow-hidden rounded-[1.35rem] p-7">
               <span
                 className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-1000 ease-out group-hover:translate-x-full"
