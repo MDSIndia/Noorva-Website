@@ -11,13 +11,12 @@ export const metadata: Metadata = {
 };
 
 // No backend/email service exists in this repo yet, so these route through
-// mailto: rather than a form that would silently go nowhere. Addresses are
-// placeholders pending the client's confirmed official contact details
-// (doc §26/§27).
+// mailto: rather than a form that would silently go nowhere. All channels
+// route to the single official address.
 const CHANNELS = [
-  { icon: Mail, title: "General Inquiries", description: "Questions about Noorva or the ecosystem.", email: "hello@noorva.com" },
-  { icon: Briefcase, title: "Business & Partnerships", description: "B2B, integrations and partnership requests.", email: "business@noorva.com" },
-  { icon: Users, title: "Creators", description: "Interested in creating on Noorva Video?", email: "creators@noorva.com" },
+  { icon: Mail, title: "General Inquiries", description: "Questions about Noorva or the ecosystem.", email: "info@noorva.ai" },
+  { icon: Briefcase, title: "Business & Partnerships", description: "B2B, integrations and partnership requests.", email: "info@noorva.ai" },
+  { icon: Users, title: "Creators", description: "Interested in creating on Noorva Video?", email: "info@noorva.ai" },
 ];
 
 export default function ContactPage() {

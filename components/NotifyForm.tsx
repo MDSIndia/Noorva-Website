@@ -12,7 +12,7 @@ import { Bell, Check, ArrowRight } from "lucide-react";
 import Card from "./ui/Card";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const NOTIFY_EMAIL = "hello@noorva.com";
+const NOTIFY_EMAIL = "info@noorva.ai";
 
 export default function NotifyForm() {
   const [email, setEmail] = useState("");
