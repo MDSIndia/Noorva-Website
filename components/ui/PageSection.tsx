@@ -22,7 +22,7 @@ export default function PageSection({ id, children, className = "", shade = "pap
   return (
     <section
       id={id}
-      className={`relative w-full overflow-hidden py-24 md:py-32 ${className}`}
+      className={`relative w-full overflow-hidden py-16 sm:py-24 md:py-32 ${className}`}
       // "paper" is fully transparent so the fixed cosmos shows through; "dim"
       // is a frosted-glass band so alternating bands still read as bands.
       style={shade === "dim" ? { background: "rgba(255, 255, 255, 0.03)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" } : { background: "transparent" }}

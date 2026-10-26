@@ -121,7 +121,7 @@ export default function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="fixed inset-x-0 top-[72px] z-40 glass-strong !border-x-0 !border-t-0 !bg-[#060914] xl:hidden"
+            className="fixed inset-x-0 top-[72px] z-40 max-h-[calc(100dvh-72px)] overflow-y-auto glass-strong !border-x-0 !border-t-0 !bg-[#060914] xl:hidden"
           >
             <div className="flex flex-col px-6 py-4">
               {NAV_ITEMS.map((item) =>

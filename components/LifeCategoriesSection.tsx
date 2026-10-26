@@ -28,7 +28,7 @@ export default function LifeCategoriesSection() {
         description="Noorva works across your life and adapts to you."
       />
 
-      <div className="mt-16 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="mt-16 grid grid-cols-1 gap-5 min-[480px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         {CATEGORIES.map((c, i) => {
           const Icon = c.icon;
           return (

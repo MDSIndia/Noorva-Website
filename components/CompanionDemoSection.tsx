@@ -190,13 +190,13 @@ export default function CompanionDemoSection() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
-                  className="p-6 md:p-8"
+                  className="p-4 sm:p-6 md:p-8"
                 >
                   <div className="mb-5 flex items-start gap-3">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full glass-soft">
                       <User className="h-4 w-4 text-[color:var(--ink)]" strokeWidth={1.5} />
                     </div>
-                    <div className="rounded-2xl rounded-tl-sm glass-soft px-4 py-3 text-sm leading-relaxed text-[color:var(--ink)]">
+                    <div className="min-w-0 rounded-2xl rounded-tl-sm glass-soft px-4 py-3 text-sm leading-relaxed text-[color:var(--ink)]">
                       {ex.userMessage}
                     </div>
                   </div>
@@ -208,7 +208,7 @@ export default function CompanionDemoSection() {
                     >
                       <Sparkles className="h-4 w-4 text-white" strokeWidth={1.5} />
                     </div>
-                    <div className="w-full">
+                    <div className="w-full min-w-0">
                       <p className="mb-3 text-sm font-medium text-[color:var(--ink)]">{ex.intro}</p>
                       <div className="flex flex-col gap-2">
                         {ex.items.map((s) => {
@@ -219,8 +219,10 @@ export default function CompanionDemoSection() {
                               className="flex items-center gap-3 rounded-xl border border-[color:var(--line)] px-3.5 py-2.5"
                             >
                               <Icon className="h-4 w-4 shrink-0 text-[color:var(--ink-soft)]" strokeWidth={1.5} />
-                              <span className="w-28 shrink-0 text-xs font-medium text-[color:var(--ink-faint)]">{s.meta}</span>
-                              <span className="text-sm text-[color:var(--ink)]">{s.label}</span>
+                              <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-3">
+                                <span className="shrink-0 text-xs font-medium text-[color:var(--ink-faint)] sm:w-28">{s.meta}</span>
+                                <span className="text-sm text-[color:var(--ink)]">{s.label}</span>
+                              </div>
                             </div>
                           );
                         })}
@@ -240,7 +242,7 @@ export default function CompanionDemoSection() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
-                  className="p-6 md:p-8"
+                  className="p-4 sm:p-6 md:p-8"
                 >
                   <h3 className="mb-5 text-xs font-semibold tracking-[0.15em] text-[color:var(--ink-faint)] uppercase">
                     Noorva at a glance
